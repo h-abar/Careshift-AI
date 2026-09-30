@@ -9,8 +9,10 @@ export default defineConfig({
     environment: "node",
     include: ["tests/**/*.test.ts"],
     env: {
-      DATABASE_URL: "file:./prisma/dev.db",
-      SESSION_SECRET: "vitest-session-secret",
+      // Separate test DB (prisma/test.db) — reset + re-seeded per run
+      // by tests/routes.test.ts beforeAll.
+      DATABASE_URL: "file:./test.db",
+      SESSION_SECRET: "vitest-session-secret-minimum-32chars",
     },
   },
 });
