@@ -14,8 +14,6 @@ import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { computeCareValue } from "@/lib/engines/care-value";
 import { simulateWhatIf } from "@/lib/engines/simulator";
-import { journeys } from "@/lib/data/journeys";
-import { savingsTrend } from "@/lib/data/claims";
 
 const J = <T>(s: string | null | undefined, fb: T): T =>
   s ? (JSON.parse(s) as T) : fb;
@@ -152,15 +150,69 @@ export async function dbSnapshots(): Promise<PatientSnapshot[]> {
     .sort((a, b) => b.risk.score - a.risk.score);
 }
 
+/* ── Computed savings trend (B7 — replaces the static fixture) ── */
+
+const MONTHS_EN = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+const MONTHS_AR = [
+  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+];
+
+/**
+ * Monthly claim-value trend COMPUTED from claim rows: `avoided` = approved
+ * claim value, `exposure` = non-approved claim value (SAR thousands),
+ * bucketed by claim.updatedAt over the last 6 calendar months.
+ */
+export async function dbSavingsTrend() {
+  const rows = await prisma.insuranceClaim.findMany({
+    select: { amountSar: true, status: true, updatedAt: true },
+  });
+  const now = new Date();
+  const buckets = new Map<
+    string,
+    { month: string; monthAr: string; avoided: number; exposure: number }
+  >();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    buckets.set(`${d.getFullYear()}-${d.getMonth()}`, {
+      month: MONTHS_EN[d.getMonth()],
+      monthAr: MONTHS_AR[d.getMonth()],
+      avoided: 0,
+      exposure: 0,
+    });
+  }
+  for (const c of rows) {
+    const b = buckets.get(
+      `${c.updatedAt.getFullYear()}-${c.updatedAt.getMonth()}`,
+    );
+    if (!b) continue;
+    if (c.status === "approved") b.avoided += c.amountSar;
+    else b.exposure += c.amountSar;
+  }
+  return [...buckets.values()].map((b) => ({
+    ...b,
+    avoided: Math.round(b.avoided / 1000),
+    exposure: Math.round(b.exposure / 1000),
+  }));
+}
+
 /**
  * Hospital-level aggregates — every figure derived from data.
  * includeSnaps controls whether patient-level records are returned at all;
  * claimLinked is the minimum-necessary view for claim-linked roles.
  */
 export async function dbOrgStats(opts?: { includeSnaps?: boolean }) {
-  const snaps = await dbSnapshots();
-  const claims = await dbClaims();
-  const handoffsCount = await prisma.handoff.count();
+  const [snaps, claims, handoffsCount, journeyRows, savingsTrend] =
+    await Promise.all([
+      dbSnapshots(),
+      dbClaims(),
+      prisma.handoff.count(),
+      prisma.patient.findMany({ select: { journeyJson: true } }),
+      dbSavingsTrend(),
+    ]);
   const byPatient = new Map(snaps.map((s) => [s.patient.id, s]));
   const steps = snaps.flatMap((s) => s.plan);
   const pendingSteps = steps.filter(
@@ -174,7 +226,9 @@ export async function dbOrgStats(opts?: { includeSnaps?: boolean }) {
 
   const escalations =
     steps.filter((s) => s.status === "escalated").length +
-    Object.values(journeys).flat().filter((e) => e.kind === "escalation").length;
+    journeyRows
+      .flatMap((r) => J<{ kind: string }[]>(r.journeyJson, []))
+      .filter((e) => e.kind === "escalation").length;
   const overdue = steps.filter(
     (s) => s.status !== "done" && s.offsetMin <= 3 && s.dueInMin <= 5,
   ).length;

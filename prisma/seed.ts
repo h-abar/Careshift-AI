@@ -112,7 +112,7 @@ async function main() {
     });
   }
 
-  for (const c of claims) {
+  for (const [i, c] of claims.entries()) {
     await prisma.insuranceClaim.create({
       data: {
         id: c.id,
@@ -124,6 +124,10 @@ async function main() {
         icuDays: c.icuDays,
         evidenceJson: JSON.stringify(c.evidence),
         frictionJson: JSON.stringify(c.frictionKeys),
+        // Spread across the last 6 months so the savings trend is real.
+        updatedAt: new Date(
+          Date.now() - (i % 6) * 30 * 24 * 60 * 60 * 1000,
+        ),
       },
     });
   }

@@ -87,12 +87,4 @@ export const EVIDENCE_KEYS = [
   "lab",
 ] as const;
 
-// Monthly simulated savings trend for the Insurance screen (SAR thousands).
-export const savingsTrend = [
-  { month: "Apr", monthAr: "أبريل", avoided: 42, exposure: 310 },
-  { month: "May", monthAr: "مايو", avoided: 58, exposure: 288 },
-  { month: "Jun", monthAr: "يونيو", avoided: 71, exposure: 244 },
-  { month: "Jul", monthAr: "يوليو", avoided: 96, exposure: 221 },
-  { month: "Aug", monthAr: "أغسطس", avoided: 118, exposure: 196 },
-  { month: "Sep", monthAr: "سبتمبر", avoided: 146, exposure: 186 },
-];
+

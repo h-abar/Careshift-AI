@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/server/prisma";
 import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
 import { notify } from "@/lib/server/notify";
+import { appendJourney } from "@/lib/server/journey";
 import type { ClinicalRisk, Patient } from "@/lib/types";
 
 export const LEVEL_RANK: Record<string, number> = {
@@ -37,6 +38,11 @@ export async function runRiskAssessment(patient: Patient): Promise<{
     !last || LEVEL_RANK[risk.level] > (LEVEL_RANK[last.level] ?? 0);
 
   if (crossedUp && LEVEL_RANK[risk.level] >= LEVEL_RANK.high) {
+    await appendJourney(patient.id, {
+      kind: "risk",
+      key: "riskDetected",
+      riskScore: risk.score,
+    });
     const assign = await prisma.assignment.findUnique({
       where: { patientId: patient.id },
     });

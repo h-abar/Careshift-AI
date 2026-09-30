@@ -149,6 +149,8 @@ const ar: Record<string, string> = {
   "journey.sepsisBundle": "بدء حزمة الإنتان",
   "journey.admitted": "دخول",
   "journey.routineMonitoring": "استمرار المراقبة الروتينية",
+  "journey.interventionDone": "اكتمل التدخل — حلقة مغلقة",
+  "journey.escalated": "صُعِّد التدخل",
 
   // ── SBAR ──
   "sbar.s": "الموقف",

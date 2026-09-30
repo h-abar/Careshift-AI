@@ -1141,6 +1141,57 @@ describe("B2 risk reassessment", () => {
   });
 });
 
+/* ── B7: computed savings trend + live journey events ── */
+
+import { dbSavingsTrend } from "@/lib/server/data";
+
+describe("B7 computed static-data replacements", () => {
+  it("savingsTrend is computed from claim rows (6 months, real sums)", async () => {
+    const trend = await dbSavingsTrend();
+    expect(trend).toHaveLength(6);
+    const rows = await prisma.insuranceClaim.findMany();
+    const approved = rows
+      .filter((c) => c.status === "approved")
+      .reduce((a, c) => a + c.amountSar, 0);
+    const trendAvoided = trend.reduce((a, b) => a + b.avoided, 0);
+    // Within rounding tolerance (SAR thousands per bucket).
+    expect(Math.abs(trendAvoided - approved / 1000)).toBeLessThan(6);
+    expect(trend.every((b) => b.month && b.monthAr)).toBe(true);
+  });
+
+  it("reassessment crossing appends a journey event to the DB row", async () => {
+    await prisma.riskAssessment.create({
+      data: {
+        patientId: "P-6304", score: 5, level: "low",
+        conditionKey: "routine", factorsJson: "[]",
+        windowHrs: 24, confidence: 50,
+      },
+    });
+    const before = await prisma.patient.findUnique({
+      where: { id: "P-6304" }, select: { journeyJson: true },
+    });
+    const beforeLen = JSON.parse(before!.journeyJson ?? "[]").length;
+    await loginAs("physician");
+    const r = await reassessPost(post({}), ctx({ id: "P-6304" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    if (body.crossedUp && (body.risk.level === "high" || body.risk.level === "critical")) {
+      const after = await prisma.patient.findUnique({
+        where: { id: "P-6304" }, select: { journeyJson: true },
+      });
+      const arr = JSON.parse(after!.journeyJson ?? "[]");
+      expect(arr.length).toBeGreaterThan(beforeLen);
+      expect(arr[arr.length - 1].kind).toBe("risk");
+    } else {
+      // No crossing → no fabricated event.
+      const after = await prisma.patient.findUnique({
+        where: { id: "P-6304" }, select: { journeyJson: true },
+      });
+      expect(JSON.parse(after!.journeyJson ?? "[]").length).toBe(beforeLen);
+    }
+  });
+});
+
 /* ── B5: dismiss + mark-all-read ── */
 
 import { POST as notifMarkAll } from "@/app/api/notifications/route";

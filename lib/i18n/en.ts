@@ -149,6 +149,8 @@ const en: Record<string, string> = {
   "journey.sepsisBundle": "Sepsis bundle initiated",
   "journey.admitted": "Admitted",
   "journey.routineMonitoring": "Routine monitoring continues",
+  "journey.interventionDone": "Intervention completed — closed loop",
+  "journey.escalated": "Intervention escalated",
 
   // ── SBAR ──
   "sbar.s": "Situation",

@@ -4,6 +4,7 @@ import { dbPatient } from "@/lib/server/data";
 import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
 import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { notify } from "@/lib/server/notify";
+import { appendJourney } from "@/lib/server/journey";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 import type { InterventionStatus, Role } from "@/lib/types";
@@ -159,6 +160,16 @@ export const POST = handle(
           detail: body.escalatedTo,
         });
       }
+      await appendJourney(body.patientId, {
+        kind: "escalation",
+        key: "escalated",
+      });
+    }
+    if (body.status === "done" || body.status === "resolved") {
+      await appendJourney(body.patientId, {
+        kind: "action",
+        key: "interventionDone",
+      });
     }
 
     await audit(

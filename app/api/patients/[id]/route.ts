@@ -6,7 +6,6 @@ import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 import { simulateWhatIf } from "@/lib/engines/simulator";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
-import { journeys } from "@/lib/data/journeys";
 import type { LabResult, VitalPoint } from "@/lib/types";
 
 /** Full patient bundle for the Digital Journey screen. Records the view. */
@@ -74,10 +73,13 @@ export const GET = handle(
       insurance: snap.insurance,
       plan: snap.plan,
       sim: simulateWhatIf(snap.patient, snap.risk),
-      journey:
-        journeyRow?.journeyJson
-          ? JSON.parse(journeyRow.journeyJson)
-          : journeys[id] ?? [],
+      // Digital journey — served from the DB, grown by real events.
+      journey: journeyRow?.journeyJson
+        ? JSON.parse(journeyRow.journeyJson)
+        : [
+            { t: "—", kind: "admission", key: "admitted" },
+            { t: "—", kind: "review", key: "routineMonitoring" },
+          ],
       riskHistory: riskHistory.map((r) => ({
         score: r.score,
         level: r.level,
