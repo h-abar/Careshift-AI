@@ -57,13 +57,29 @@ export function useApi<T>(path: string | null, deps: unknown[] = []) {
 
 /* ── Typed endpoints ── */
 
+export interface ClaimLinkedCase {
+  patientId: string;
+  claimId: string;
+  claimStatus: string;
+  dxKey: string;
+  riskLevel: string;
+  claimRisk: string;
+  docCompleteness: number;
+  exposureSar: number;
+}
+
 export interface OrgStats {
-  snaps: PatientSnapshot[];
+  /** Present ONLY for roles with patients_view — see A1 PHI split. */
+  snaps?: PatientSnapshot[];
+  /** Minimum-necessary claim-linked cases for oversight roles. */
+  claimLinked: ClaimLinkedCase[];
   savingsTrend: { month: string; monthAr: string; avoided: number; exposure: number }[];
   clinical: {
     monitored: number;
     highRisk: number;
+    elevated: number;
     critical: number;
+    docGaps: number;
     interventionsPending: number;
   };
   operational: {

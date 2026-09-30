@@ -218,9 +218,30 @@ describe("API permission matrix", () => {
     expect((await auditGet(get())).status).toBe(200);
   });
 
-  it("GET /api/snapshots: 200 for clinical + oversight roles", async () => {
+  it("GET /api/snapshots: no patient-level data without patients_view", async () => {
+    // Insurance reviewer: aggregates + claim-linked minimum only — NO PHI.
     await loginAs("insurance");
-    expect((await snapshotsGet(get())).status).toBe(200);
+    const ins = await (await snapshotsGet(get())).json();
+    expect(ins.snaps).toBeUndefined();
+    expect(ins.clinical.monitored).toBeGreaterThan(0);
+    expect(ins.claimLinked.length).toBeGreaterThan(0);
+    const allowed = [
+      "claimId", "claimStatus", "claimRisk", "docCompleteness",
+      "dxKey", "exposureSar", "patientId", "riskLevel",
+    ];
+    for (const c of ins.claimLinked) {
+      expect(Object.keys(c).sort()).toEqual([...allowed].sort());
+      expect(JSON.stringify(c)).not.toMatch(
+        /nameAr|nameEn|vitals|labs|meds|mrn|dob/i,
+      );
+    }
+    // Roles WITH patients_view still receive the full snapshots.
+    for (const who of ["admin", "physician", "hosp"] as const) {
+      await loginAs(who);
+      const body = await (await snapshotsGet(get())).json();
+      expect(Array.isArray(body.snaps)).toBe(true);
+      expect(body.snaps[0].patient.id).toBeTruthy();
+    }
   });
 });
 

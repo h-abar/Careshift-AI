@@ -131,11 +131,16 @@ export async function dbSnapshots(): Promise<PatientSnapshot[]> {
     .sort((a, b) => b.risk.score - a.risk.score);
 }
 
-/** Hospital-level aggregates — every figure derived from data. */
-export async function dbOrgStats() {
+/**
+ * Hospital-level aggregates — every figure derived from data.
+ * includeSnaps controls whether patient-level records are returned at all;
+ * claimLinked is the minimum-necessary view for claim-linked roles.
+ */
+export async function dbOrgStats(opts?: { includeSnaps?: boolean }) {
   const snaps = await dbSnapshots();
   const claims = await dbClaims();
   const handoffsCount = await prisma.handoff.count();
+  const byPatient = new Map(snaps.map((s) => [s.patient.id, s]));
   const steps = snaps.flatMap((s) => s.plan);
   const pendingSteps = steps.filter(
     (i) => i.status === "pending" || i.status === "in_progress",
@@ -209,13 +214,37 @@ export async function dbOrgStats() {
     insuranceReadiness: avgReadiness,
   });
 
+  // Minimum-necessary, claim-linked patient fields for roles that may not
+  // read patient records (e.g. insurance reviewer): id + dx + risk summary
+  // only — never names, vitals, labs or meds.
+  const claimLinked = claims
+    .filter((c) => c.patientId && byPatient.has(c.patientId))
+    .map((c) => {
+      const s = byPatient.get(c.patientId!)!;
+      return {
+        patientId: c.patientId!,
+        claimId: c.id,
+        claimStatus: c.status,
+        dxKey: c.dxKey,
+        riskLevel: s.risk.level,
+        claimRisk: s.insurance.claimRisk,
+        docCompleteness: s.insurance.docCompleteness,
+        exposureSar: s.insurance.exposureSar,
+      };
+    })
+    .sort((a, b) => b.exposureSar - a.exposureSar)
+    .slice(0, 12);
+
   return {
-    snaps,
     savingsTrend,
+    claimLinked,
+    ...(opts?.includeSnaps ? { snaps } : {}),
     clinical: {
       monitored: snaps.length,
       highRisk: snaps.filter((s) => s.risk.level === "high").length,
+      elevated: snaps.filter((s) => s.risk.level !== "low").length,
       critical: snaps.filter((s) => s.risk.level === "critical").length,
+      docGaps: snaps.filter((s) => s.insurance.docCompleteness < 85).length,
       interventionsPending: pendingSteps.length,
     },
     operational: {

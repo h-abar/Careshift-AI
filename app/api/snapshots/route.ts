@@ -1,24 +1,29 @@
 import { requireAnyPerm } from "@/lib/server/session";
+import { can } from "@/lib/permissions";
 import { dbOrgStats } from "@/lib/server/data";
-import { audit } from "@/lib/server/audit";
+import { auditOnce } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 
+/**
+ * Org aggregates. Patient-level rows are ONLY included for roles holding
+ * patients_view — oversight roles receive aggregates + the claim-linked
+ * minimum-necessary list instead (see lib/server/data.ts).
+ */
 export const GET = handle(async (req: Request) => {
-  // Org-level aggregates are consumed by command, insurance and reports —
-  // any clinical/oversight role may read them.
   const auth = await requireAnyPerm([
     "patients_view", "insurance_view", "reports_view", "command_view",
   ]);
-  const org = await dbOrgStats();
-  await audit(
-    {
-      userId: auth.user.id,
-      action: "org.view",
-      entityType: "org",
-      entityId: "snapshots",
-      sessionId: auth.sid,
-    },
+  const org = await dbOrgStats({
+    includeSnaps: can(auth.user.role, "patients_view"),
+  });
+  await auditOnce(
+    auth.user.id,
+    "org.view",
+    "org",
+    "snapshots",
+    30, // at most one org.view row per user per 30 min
+    auth.sid,
     req,
   );
-  return ok(org); // { snaps, clinical, operational, financial, value }
+  return ok(org);
 });

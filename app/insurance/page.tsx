@@ -48,22 +48,20 @@ export default function InsurancePage() {
   const { data: org } = useOrg();
   const { data: claimsData, refetch } = useClaims();
   if (!org || !claimsData) return <Loading />;
-  const snaps = org.snaps;
   const claims = claimsData.claims;
   const savingsTrend = claimsData.savingsTrend;
 
+  // All figures are server-computed aggregates / minimum-necessary claim
+  // fields — this page must work for roles WITHOUT patients_view.
   const exposure = {
-    highRisk: snaps.filter((s) => s.risk.level !== "low").length,
-    icu: snaps.filter((s) => s.risk.level === "critical").length,
-    docGaps: snaps.filter((s) => s.insurance.docCompleteness < 85).length,
+    highRisk: org.clinical.elevated,
+    icu: org.clinical.critical,
+    docGaps: org.clinical.docGaps,
     claimsAtRisk: org.financial.claimsAtRisk,
-    total: snaps.reduce((s, x) => s + x.insurance.exposureSar, 0),
+    total: org.financial.exposureSar,
   };
 
-  const topCases = snaps
-    .filter((s) => s.insurance.exposureSar > 0)
-    .sort((a, b) => b.insurance.exposureSar - a.insurance.exposureSar)
-    .slice(0, 6);
+  const topCases = org.claimLinked.slice(0, 6);
 
   const byStatus = (["approved", "pending", "review", "denied"] as const).map(
     (st) => ({
@@ -139,43 +137,38 @@ export default function InsurancePage() {
               </tr>
             </thead>
             <tbody>
-              {topCases.map(({ patient, risk, insurance }) => (
-                <tr key={patient.id} className="border-b border-[#e2e9f2]/60">
+              {topCases.map((c) => (
+                <tr key={c.claimId} className="border-b border-[#e2e9f2]/60">
                   <td className="py-2.5">
-                    <Link
-                      href={`/patient/${patient.id}`}
-                      className="font-mono text-[#0e9bb5] hover:underline"
-                    >
-                      {patient.id}
-                    </Link>
-                    <span className="ms-2 text-slate-600">
-                      {lang === "ar" ? patient.nameAr : patient.nameEn}
+                    <span className="font-mono text-[#0e9bb5]">{c.claimId}</span>
+                    <span className="ms-2 font-mono text-xs text-slate-500">
+                      {c.patientId} · {t(`dx.${c.dxKey}`)}
                     </span>
                   </td>
                   <td>
-                    <RiskBadge level={risk.level} score={risk.score} />
+                    <RiskBadge level={c.riskLevel as never} />
                   </td>
                   <td>
-                    <RiskBadge level={insurance.claimRisk} />
+                    <RiskBadge level={c.claimRisk as never} />
                   </td>
                   <td className="min-w-28">
                     <div className="flex items-center gap-2">
                       <Meter
-                        pct={insurance.docCompleteness}
+                        pct={c.docCompleteness}
                         color={
-                          insurance.docCompleteness >= 85
+                          c.docCompleteness >= 85
                             ? "bg-[#0e9bb5]"
                             : "bg-amber-400"
                         }
                         className="!h-1.5 w-16"
                       />
                       <span className="font-mono text-xs text-slate-600">
-                        {insurance.docCompleteness}%
+                        {c.docCompleteness}%
                       </span>
                     </div>
                   </td>
                   <td className="text-end font-mono font-bold text-red-600">
-                    {fmtSar(insurance.exposureSar)}
+                    {fmtSar(c.exposureSar)}
                   </td>
                 </tr>
               ))}

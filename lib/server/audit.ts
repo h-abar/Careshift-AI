@@ -38,3 +38,32 @@ export async function audit(
     console.error("audit failed:", err);
   }
 }
+
+/**
+ * Deduped audit — writes only if the same user didn't record the same
+ * action on the same entity within `windowMin`. Keeps list/page views
+ * honest without flooding the trail on every poll/refetch.
+ */
+export async function auditOnce(
+  userId: string,
+  action: string,
+  entityType: string,
+  entityId: string,
+  windowMin: number,
+  sessionId?: string,
+  req?: Request,
+) {
+  try {
+    const since = new Date(Date.now() - windowMin * 60 * 1000);
+    const recent = await prisma.auditLog.findFirst({
+      where: { userId, action, entityId, createdAt: { gt: since } },
+    });
+    if (recent) return;
+    await audit(
+      { userId, action, entityType, entityId, sessionId },
+      req,
+    );
+  } catch (err) {
+    console.error("audit failed:", err);
+  }
+}

@@ -28,11 +28,69 @@ import {
 } from "recharts";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   if (!user) return <Loading />;
   if (user.role === "admin" || user.role === "hospital_admin")
     return <CommandCenter />;
+  if (!can("patients_view")) return <OversightHome />;
   return <MyWork />;
+}
+
+/* ── Oversight home (e.g. insurance reviewer) — aggregates only, no PHI ── */
+function OversightHome() {
+  const { t } = useI18n();
+  const { data: s } = useOrg();
+  if (!s) return <Loading />;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
+          {t("ins.title")}
+        </h1>
+        <p className="mt-0.5 text-sm text-slate-500">{t("ins.subtitle")}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard label={t("ins.highRisk")} value={s.clinical.elevated} />
+        <KpiCard label={t("ins.docGaps")} value={s.clinical.docGaps} accent="text-amber-600" />
+        <KpiCard label={t("ins.claimsRisk")} value={s.financial.claimsAtRisk} accent="text-red-600" />
+        <KpiCard
+          label={t("ins.estExposure")}
+          value={fmtSarK(s.financial.exposureSar)}
+          unit={t("common.sar")}
+          accent="text-red-600"
+        />
+      </div>
+      <Card>
+        <SectionTitle>{t("ins.topCases")}</SectionTitle>
+        <div className="space-y-2">
+          {s.claimLinked.slice(0, 8).map((c) => (
+            <div
+              key={c.claimId}
+              className="flex items-center justify-between rounded-lg border border-[#eef2f7] bg-[#f8fafc] px-4 py-2.5"
+            >
+              <div className="flex items-center gap-3">
+                <RiskBadge level={c.claimRisk as never} />
+                <span className="font-mono text-xs text-[#0e9bb5]">{c.claimId}</span>
+                <span className="font-mono text-xs text-slate-500">
+                  {c.patientId} · {t(`dx.${c.dxKey}`)}
+                </span>
+              </div>
+              <span className="font-mono text-sm font-bold text-red-600">
+                {t("common.sar")} {fmtSarK(c.exposureSar)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <Link
+          href="/insurance"
+          className="mt-3 block text-center text-xs font-semibold text-[#0e9bb5] hover:underline"
+        >
+          {t("common.viewAll")} →
+        </Link>
+      </Card>
+    </div>
+  );
 }
 
 /* ═══════════ Command Center — "what needs attention now?" ═══════════ */
@@ -40,7 +98,7 @@ function CommandCenter() {
   const { t, lang } = useI18n();
   const { data: s } = useOrg();
   if (!s) return <Loading />;
-  const snaps = s.snaps;
+  const snaps = s.snaps ?? [];
 
   const riskMap = snaps.map((x) => ({
     x: x.risk.score,
