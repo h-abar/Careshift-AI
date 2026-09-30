@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# android / capacitor build artifacts
+/android/
+*.aab
+*.apk
+*.keystore
+local.properties
+
+# prisma / local db
+/prisma/*.db
+/prisma/*.db-journal
+/prisma/migrations/dev*
