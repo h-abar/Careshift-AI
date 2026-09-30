@@ -79,10 +79,11 @@ async function loginAs(who: keyof typeof USERS) {
 }
 
 beforeAll(async () => {
-  // Reset the dedicated test DB and re-seed it.
+  // Reset the dedicated test DB and re-seed it — via COMMITTED migrations
+  // (migrate deploy), so tests exercise exactly what production runs.
   rmSync("prisma/test.db", { force: true });
   const env = { ...process.env, DATABASE_URL: "file:./test.db" };
-  execSync("npx prisma db push --skip-generate", { env, stdio: "ignore" });
+  execSync("npx prisma migrate deploy", { env, stdio: "ignore" });
   execSync("npx tsx prisma/seed.ts", { env, stdio: "ignore" });
 }, 120_000);
 
