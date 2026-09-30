@@ -29,7 +29,7 @@ export default function AuditPage() {
   });
 
   if (!can("audit_view"))
-    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-600">{t("common.noAccess")}</p>;
   if (loading && !data) return <Skeleton rows={6} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
@@ -71,7 +71,7 @@ export default function AuditPage() {
           placeholder={t("audit.filterAction")}
           className="rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-sm outline-none focus:border-[#0e9bb5]/50"
         />
-        <span className="ms-auto self-center text-xs text-slate-500">
+        <span className="ms-auto self-center text-xs text-slate-600">
           {data.total}
         </span>
       </div>
@@ -79,7 +79,7 @@ export default function AuditPage() {
       <Card className="!p-0 overflow-x-auto">
         <table className="w-full min-w-[860px] text-sm">
           <thead>
-            <tr className="border-b border-[#e2e9f2] text-xs text-slate-500">
+            <tr className="border-b border-[#e2e9f2] text-xs text-slate-600">
               {[
                 t("audit.user"),
                 t("audit.action"),
@@ -103,23 +103,23 @@ export default function AuditPage() {
               >
                 <td className="px-4 py-3 font-medium text-[#13304d]">
                   {lang === "ar" ? e.userNameAr : e.userName}
-                  <div className="font-mono text-[10px] text-slate-500">
+                  <div className="font-mono text-[10px] text-slate-600">
                     {e.userId}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-slate-600">
                   {t(`auditAction.${e.action}`)}
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-[#0e9bb5]">
+                <td className="px-4 py-3 font-mono text-xs text-[#0b7a8d]">
                   {e.entityType}:{e.entityId}
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                <td className="px-4 py-3 font-mono text-xs text-slate-600">
                   {fmt(e.createdAt)}
                 </td>
-                <td className="px-4 py-3 font-mono text-[11px] text-slate-500">
+                <td className="px-4 py-3 font-mono text-[11px] text-slate-600">
                   {e.ip ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-xs text-slate-500">{kv(e.prev)}</td>
+                <td className="px-4 py-3 text-xs text-slate-600">{kv(e.prev)}</td>
                 <td className="px-4 py-3 text-xs font-medium text-slate-700">
                   {kv(e.next)}
                 </td>
@@ -134,7 +134,7 @@ export default function AuditPage() {
         </table>
       </Card>
 
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs text-slate-600">
         <span>
           {t("common.page")} {data.page} / {totalPages}
         </span>

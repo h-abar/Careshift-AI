@@ -125,7 +125,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
 
   return (
     <div className="space-y-5">
-      <Link href="/handoffs" className="text-xs text-slate-500 hover:text-[#0e9bb5]">
+      <Link href="/handoffs" className="text-xs text-slate-600 hover:text-[#0b7a8d]">
         ← {t("common.back")}
       </Link>
 
@@ -139,7 +139,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                 {t(`hfst.${h.status}`)}
               </span>
             </div>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-600">
               {t(`dept.${h.dept}`)} · {t(`hf.shift.${h.shift}`)} · {h.date}
             </p>
             {isRejected && h.rejectionReason && (
@@ -150,20 +150,20 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
           </div>
           <div className="flex items-center gap-6 text-sm">
             <div>
-              <div className="text-[11px] font-bold uppercase text-slate-500">{t("hf.outgoing")}</div>
+              <div className="text-[11px] font-bold uppercase text-slate-600">{t("hf.outgoing")}</div>
               <div className="font-semibold text-[#13304d]">{userName(h.outgoingId)}</div>
             </div>
-            <span className="text-xl text-[#0e9bb5]">→</span>
+            <span className="text-xl text-[#0b7a8d]">→</span>
             <div>
-              <div className="text-[11px] font-bold uppercase text-slate-500">{t("hf.incoming")}</div>
+              <div className="text-[11px] font-bold uppercase text-slate-600">{t("hf.incoming")}</div>
               <div className="font-semibold text-[#13304d]">{userName(h.incomingId)}</div>
             </div>
           </div>
         </div>
         <div className="mt-4 flex gap-5 border-t border-[#eef2f7] pt-3 text-sm">
-          <span className="text-slate-500"><b className="text-[#13304d]">{h.patientIds.length}</b> {t("hf.patients")}</span>
-          <span className="text-slate-500"><b className="text-emerald-600">{reviewed}</b> {t("hf.completed")}</span>
-          <span className="text-slate-500"><b className="text-red-600">{criticalCount}</b> {t("hf.critical")}</span>
+          <span className="text-slate-600"><b className="text-[#13304d]">{h.patientIds.length}</b> {t("hf.patients")}</span>
+          <span className="text-slate-600"><b className="text-emerald-700">{reviewed}</b> {t("hf.completed")}</span>
+          <span className="text-slate-600"><b className="text-red-600">{criticalCount}</b> {t("hf.critical")}</span>
         </div>
         {err && (
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{err}</p>
@@ -181,7 +181,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
               <Card key={patient.id} className="!p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <Link href={`/patient/${patient.id}`} className="font-mono text-xs font-bold text-[#0e9bb5] hover:underline">
+                    <Link href={`/patient/${patient.id}`} className="font-mono text-xs font-bold text-[#0b7a8d] hover:underline">
                       {patient.id}
                     </Link>
                     <span className="text-sm font-semibold text-[#13304d]">
@@ -190,7 +190,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                   </div>
                   <div className="flex items-center gap-2">
                     {canAct && (
-                      <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <label className="flex items-center gap-1.5 text-[11px] text-slate-600">
                         <input
                           type="checkbox"
                           checked={Boolean(h.reviewed[patient.id])}
@@ -206,14 +206,14 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                 </div>
 
                 <details className="mt-2.5 rounded-lg border border-[#eef2f7] bg-[#f8fafc] px-3 py-2">
-                  <summary className="cursor-pointer text-xs font-bold text-[#0e9bb5]">
+                  <summary className="cursor-pointer text-xs font-bold text-[#0b7a8d]">
                     {t("ho.sbarTitle")}
                   </summary>
                   <dl className="mt-2 space-y-1.5 text-xs">
                     {(["s", "b", "a", "r"] as const).map((k) => (
                       <div key={k}>
                         <dt className="font-bold text-slate-600">{t(`sbar.${k}`)}</dt>
-                        <dd className="text-slate-500">{sbar?.[k]}</dd>
+                        <dd className="text-slate-600">{sbar?.[k]}</dd>
                       </div>
                     ))}
                   </dl>
@@ -221,18 +221,18 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
 
                 <div className="mt-2.5 grid grid-cols-3 gap-2 text-[11px]">
                   <div className="rounded-lg bg-[#f8fafc] border border-[#eef2f7] p-2">
-                    <div className="font-bold text-slate-500">{t("hf.pendingIv")}</div>
+                    <div className="font-bold text-slate-600">{t("hf.pendingIv")}</div>
                     <div className="mt-0.5 text-sm font-bold text-[#13304d]">{pending.length}</div>
                   </div>
                   <div className="rounded-lg bg-[#f8fafc] border border-[#eef2f7] p-2">
-                    <div className="font-bold text-slate-500">{t("hf.insDocs")}</div>
+                    <div className="font-bold text-slate-600">{t("hf.insDocs")}</div>
                     <div className="mt-0.5 flex items-center gap-1.5">
                       <Meter pct={insurance.docCompleteness} className="!h-1.5 flex-1" />
                       <span className="font-mono text-xs font-bold text-[#13304d]">{insurance.docCompleteness}%</span>
                     </div>
                   </div>
                   <div className="rounded-lg bg-[#f8fafc] border border-[#eef2f7] p-2">
-                    <div className="font-bold text-slate-500">{t("common.exposure")}</div>
+                    <div className="font-bold text-slate-600">{t("common.exposure")}</div>
                     <div className="mt-0.5 font-mono text-sm font-bold text-red-600">
                       {fmtSar(insurance.exposureSar, lang)}
                     </div>
@@ -282,7 +282,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                   className={`w-full rounded-lg py-2.5 text-sm font-bold transition-colors ${
                     allReviewed && allChecked
                       ? "bg-[#13304d] text-white hover:bg-[#1b5fad]"
-                      : "bg-[#f0f4f8] text-slate-500 cursor-not-allowed"
+                      : "bg-[#f0f4f8] text-slate-600 cursor-not-allowed"
                   }`}
                 >
                   {t("hf.signoff")}
@@ -305,8 +305,8 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                       disabled={!isSignedOff || busy}
                       className={`flex-1 rounded-lg py-2.5 text-sm font-bold transition-colors ${
                         isSignedOff
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "bg-[#f0f4f8] text-slate-500 cursor-not-allowed"
+                          ? "bg-emerald-700 text-white hover:bg-emerald-800"
+                          : "bg-[#f0f4f8] text-slate-600 cursor-not-allowed"
                       }`}
                     >
                       {isDone ? `✓ ${t("hf.accepted")}` : t("hf.accept")}
@@ -317,7 +317,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                       className={`flex-1 rounded-lg border py-2.5 text-sm font-bold transition-colors ${
                         rejectReason.trim()
                           ? "border-red-300 text-red-600 hover:bg-red-50"
-                          : "border-[#e2e9f2] text-slate-500 cursor-not-allowed"
+                          : "border-[#e2e9f2] text-slate-600 cursor-not-allowed"
                       }`}
                     >
                       {t("hf.reject")}
@@ -345,20 +345,20 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
               {(events.length ? events : null)?.map((e, i) => (
                 <li key={i} className="relative">
                   <span className="absolute -start-[1.32rem] top-1 h-2.5 w-2.5 rounded-full bg-[#0e9bb5]" />
-                  <div className="font-mono text-[11px] text-[#0e9bb5]">
+                  <div className="font-mono text-[11px] text-[#0b7a8d]">
                     {new Date(e.createdAt).toTimeString().slice(0, 5)}
                   </div>
                   <div className="text-sm text-slate-600">
                     {t(EVENT_LABEL[e.action] ?? "hftl.created")}
                     {e.detail ? ` — ${e.detail}` : ""}
-                    <span className="text-slate-500"> · {userName(e.actorId)}</span>
+                    <span className="text-slate-600"> · {userName(e.actorId)}</span>
                   </div>
                 </li>
               )) ??
                 legacyTimeline.map((e, i) => (
                   <li key={i} className="relative">
                     <span className="absolute -start-[1.32rem] top-1 h-2.5 w-2.5 rounded-full bg-[#0e9bb5]" />
-                    <div className="font-mono text-[11px] text-[#0e9bb5]">{e.t}</div>
+                    <div className="font-mono text-[11px] text-[#0b7a8d]">{e.t}</div>
                     <div className="text-sm text-slate-600">{t(e.key)}</div>
                   </li>
                 ))}

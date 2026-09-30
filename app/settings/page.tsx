@@ -16,7 +16,7 @@ export default function SettingsPage() {
   const { can } = useAuth();
 
   if (!can("settings_manage"))
-    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-600">{t("common.noAccess")}</p>;
 
   return (
     <div className="space-y-5">
@@ -28,7 +28,7 @@ export default function SettingsPage() {
         </div>
         <table className="w-full min-w-[860px] text-xs">
           <thead>
-            <tr className="border-b border-[#e2e9f2] text-slate-500">
+            <tr className="border-b border-[#e2e9f2] text-slate-600">
               <th className="px-4 py-2.5 text-start font-medium">{t("set.roleCol")}</th>
               {ROLES.map((r) => (
                 <th key={r} className="px-2 py-2.5 text-center font-medium">
@@ -43,7 +43,7 @@ export default function SettingsPage() {
                 <td className="px-4 py-2 text-slate-600">{t(`perm.${p}`)}</td>
                 {ROLES.map((r) => (
                   <td key={r} className="px-2 py-2 text-center">
-                    <span className={ROLE_PERMISSIONS[r][p] ? "text-emerald-600 font-bold" : "text-slate-300"}>
+                    <span className={ROLE_PERMISSIONS[r][p] ? "text-emerald-700 font-bold" : "text-slate-500"}>
                       {ROLE_PERMISSIONS[r][p] ? "✓" : "—"}
                     </span>
                   </td>
@@ -68,19 +68,19 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-          <div className="my-2 text-center text-[#0e9bb5]">
-            <div className="text-[10px] text-slate-500">{t("arch.systems")}</div>
+          <div className="my-2 text-center text-[#0b7a8d]">
+            <div className="text-[10px] text-slate-600">{t("arch.systems")}</div>
             ▼
           </div>
           <div className="rounded-xl border-2 border-[#0e9bb5]/30 bg-gradient-to-l from-[#13304d] to-[#1b5fad] px-4 py-3 text-center text-sm font-bold text-white shadow-sm">
             {t("arch.careshift")}
           </div>
-          <div className="my-2 text-center text-[#0e9bb5]">▼</div>
+          <div className="my-2 text-center text-[#0b7a8d]">▼</div>
           <div className="grid grid-cols-3 gap-2">
             {[t("cmd.clinical"), t("imp.title"), t("pt.evidence")].map((s) => (
               <div
                 key={s}
-                className="rounded-lg border border-teal-200 bg-teal-50 px-2 py-2 text-center text-[11px] font-semibold text-[#0e9bb5]"
+                className="rounded-lg border border-teal-200 bg-teal-50 px-2 py-2 text-center text-[11px] font-semibold text-[#0b7a8d]"
               >
                 {s}
               </div>

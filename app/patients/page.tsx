@@ -23,7 +23,7 @@ export default function PatientsPage() {
     data?.assignments.find((a) => a.patientId === pid);
 
   if (!can("patients_view"))
-    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-600">{t("common.noAccess")}</p>;
   if (loading && !data) return <Skeleton rows={6} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
@@ -36,7 +36,7 @@ export default function PatientsPage() {
       <Card className="hidden !p-0 md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#e2e9f2] text-xs text-slate-500">
+            <tr className="border-b border-[#e2e9f2] text-xs text-slate-600">
               {[
                 t("common.patient"), t("common.room"), t("common.dx"),
                 t("common.score"), t("pts.vitals"), t("common.team"),
@@ -53,18 +53,18 @@ export default function PatientsPage() {
               return (
                 <tr key={patient.id} className="border-b border-[#eef2f7] last:border-0 hover:bg-[#f8fafc]">
                   <td className="px-4 py-3">
-                    <Link href={`/patient/${patient.id}`} className="font-semibold text-[#13304d] hover:text-[#0e9bb5]">
+                    <Link href={`/patient/${patient.id}`} className="font-semibold text-[#13304d] hover:text-[#0b7a8d]">
                       {lang === "ar" ? patient.nameAr : patient.nameEn}
                     </Link>
-                    <div className="font-mono text-[11px] text-slate-500">{patient.id}</div>
+                    <div className="font-mono text-[11px] text-slate-600">{patient.id}</div>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{patient.room}</td>
                   <td className="px-4 py-3 text-slate-600">{t(`dx.${patient.dxKey}`)}</td>
                   <td className="px-4 py-3"><RiskBadge level={risk.level} score={risk.score} /></td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                  <td className="px-4 py-3 font-mono text-xs text-slate-600">
                     HR {v.hr} · BP {v.sbp} · SpO₂ {v.spo2}%{v.glucose ? ` · Glu ${v.glucose}` : ""}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
+                  <td className="px-4 py-3 text-xs text-slate-600">
                     {a ? userName(a.nurseId) : "—"}
                   </td>
                   <td className="px-4 py-3 w-28">
@@ -93,17 +93,17 @@ export default function PatientsPage() {
             <Card className="!p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="font-mono text-[11px] text-slate-500">{patient.id}</span>
+                  <span className="font-mono text-[11px] text-slate-600">{patient.id}</span>
                   <div className="text-sm font-semibold text-[#13304d]">
                     {lang === "ar" ? patient.nameAr : patient.nameEn}
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-600">
                     {patient.room} · {t(`dx.${patient.dxKey}`)}
                   </div>
                 </div>
                 <RiskBadge level={risk.level} score={risk.score} />
               </div>
-              <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
+              <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-600">
                 <span>{t("common.documentation")}: {insurance.docCompleteness}%</span>
                 <span className="font-mono text-red-600">
                   {t("common.sar")} {fmtSarK(insurance.exposureSar, lang)}
@@ -114,7 +114,7 @@ export default function PatientsPage() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs text-slate-600">
         <span>
           {t("common.page")} {page} / {totalPages} · {data.total ?? snaps.length}
         </span>

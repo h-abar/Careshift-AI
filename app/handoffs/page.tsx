@@ -33,7 +33,7 @@ export default function HandoffsPage() {
   const riskOf = (pid: string) => snaps.find((s) => s.patient.id === pid)?.risk;
 
   if (!can("handoff_view"))
-    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-600">{t("common.noAccess")}</p>;
   if (loading && !data) return <Skeleton rows={4} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data || !snapData) return <Loading />;
@@ -68,22 +68,22 @@ export default function HandoffsPage() {
               <Card className="!p-4 hover:border-[#0e9bb5]/40 transition-colors">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-4">
-                    <span className="font-mono text-sm font-bold text-[#0e9bb5]">{h.id}</span>
+                    <span className="font-mono text-sm font-bold text-[#0b7a8d]">{h.id}</span>
                     <div>
                       <div className="text-sm font-semibold text-[#13304d]">
                         {t(`dept.${h.dept}`)} · {t(`hf.shift.${h.shift}`)} · {h.date}
                       </div>
-                      <div className="mt-0.5 text-xs text-slate-500">
+                      <div className="mt-0.5 text-xs text-slate-600">
                         {t("hf.outgoing")}: {userName(h.outgoingId)}
-                        <span className="mx-2 text-[#0e9bb5]">→</span>
+                        <span className="mx-2 text-[#0b7a8d]">→</span>
                         {t("hf.incoming")}: {userName(h.incomingId)}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <div className="flex items-center gap-3 text-xs text-slate-600">
                       <span><b className="text-[#13304d]">{h.patientIds.length}</b> {t("hf.patients")}</span>
-                      <span><b className="text-emerald-600">{reviewed}</b> {t("hf.completed")}</span>
+                      <span><b className="text-emerald-700">{reviewed}</b> {t("hf.completed")}</span>
                       {criticalCount > 0 && (
                         <span><b className="text-red-600">{criticalCount}</b> {t("hf.critical")}</span>
                       )}
@@ -162,10 +162,10 @@ function HandoffWizard({
                 key={s}
                 className={`flex-1 rounded-full py-1 text-center text-[11px] font-semibold ${
                   i === step
-                    ? "bg-[#0e9bb5] text-white"
+                    ? "bg-[#0b7a8d] text-white"
                     : i < step
                       ? "bg-emerald-100 text-emerald-700"
-                      : "bg-[#f0f4f8] text-slate-500"
+                      : "bg-[#f0f4f8] text-slate-600"
                 }`}
               >
                 {s}
@@ -176,18 +176,18 @@ function HandoffWizard({
 
         <div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">
           {done ? (
-            <p className="py-8 text-center text-sm font-semibold text-emerald-600">
+            <p className="py-8 text-center text-sm font-semibold text-emerald-700">
               ✓ {t("hf.created")}
             </p>
           ) : step === 0 ? (
             <>
-              <label className="block text-xs font-semibold text-slate-500">{t("hf.selectDept")}</label>
+              <label className="block text-xs font-semibold text-slate-600">{t("hf.selectDept")}</label>
               <select aria-label={t("hf.selectDept")} value={dept} onChange={(e) => setDept(e.target.value)} className={select}>
                 {["icu", "er", "medical", "surgical"].map((d) => (
                   <option key={d} value={d}>{t(`dept.${d}`)}</option>
                 ))}
               </select>
-              <label className="block text-xs font-semibold text-slate-500">{t("hf.selectShift")}</label>
+              <label className="block text-xs font-semibold text-slate-600">{t("hf.selectShift")}</label>
               <div className="flex gap-2">
                 {(["day", "night"] as const).map((s) => (
                   <button
@@ -195,8 +195,8 @@ function HandoffWizard({
                     onClick={() => setShift(s)}
                     className={`flex-1 rounded-lg border py-2 text-sm font-medium ${
                       shift === s
-                        ? "border-[#0e9bb5] bg-[#0e9bb5]/10 text-[#0e9bb5]"
-                        : "border-[#e2e9f2] text-slate-500"
+                        ? "border-[#0e9bb5] bg-[#0e9bb5]/10 text-[#075e6e]"
+                        : "border-[#e2e9f2] text-slate-600"
                     }`}
                   >
                     {t(`hf.shift.${s}`)}
@@ -206,7 +206,7 @@ function HandoffWizard({
             </>
           ) : step === 1 ? (
             <>
-              <label className="block text-xs font-semibold text-slate-500">{t("hf.selectOutgoing")}</label>
+              <label className="block text-xs font-semibold text-slate-600">{t("hf.selectOutgoing")}</label>
               <select aria-label={t("hf.selectOutgoing")} value={outgoing} onChange={(e) => setOutgoing(e.target.value)} className={select}>
                 <option value="">—</option>
                 {staff.map((u) => (
@@ -215,7 +215,7 @@ function HandoffWizard({
                   </option>
                 ))}
               </select>
-              <label className="block text-xs font-semibold text-slate-500">{t("hf.selectIncoming")}</label>
+              <label className="block text-xs font-semibold text-slate-600">{t("hf.selectIncoming")}</label>
               <select aria-label={t("hf.selectIncoming")} value={incoming} onChange={(e) => setIncoming(e.target.value)} className={select}>
                 <option value="">—</option>
                 {staff.filter((u) => u.id !== outgoing).map((u) => (
@@ -227,7 +227,7 @@ function HandoffWizard({
             </>
           ) : (
             <>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 {t("hf.suggested")}: {suggested.size}
               </p>
               <div className="space-y-1.5">
@@ -248,7 +248,7 @@ function HandoffWizard({
                         onChange={() => toggle(s.patient.id)}
                         className="accent-[#0e9bb5]"
                       />
-                      <span className="font-mono text-xs text-slate-500">{s.patient.id}</span>
+                      <span className="font-mono text-xs text-slate-600">{s.patient.id}</span>
                       <span className="text-sm text-slate-700">
                         {lang === "ar" ? s.patient.nameAr : s.patient.nameEn}
                       </span>

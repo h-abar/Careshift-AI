@@ -26,7 +26,7 @@ export function UserProfile({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-5">
-      <Link href="/users" className="text-xs text-slate-500 hover:text-[#0e9bb5]">
+      <Link href="/users" className="text-xs text-slate-600 hover:text-[#0b7a8d]">
         ← {t("common.back")}
       </Link>
 
@@ -37,7 +37,7 @@ export function UserProfile({ userId }: { userId: string }) {
             <h1 className="text-xl font-bold text-[#13304d]">
               {lang === "ar" ? u.nameAr : u.nameEn}
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-600">
               {t(`userRole.${u.role}`)} · {t(`dept.${u.dept}`)}
             </p>
           </div>
@@ -45,7 +45,7 @@ export function UserProfile({ userId }: { userId: string }) {
             className={`rounded-full border px-3 py-1 text-xs font-semibold ${
               u.status === "active"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : "bg-slate-100 text-slate-500 border-slate-200"
+                : "bg-slate-100 text-slate-600 border-slate-200"
             }`}
           >
             {t(`ustatus.${u.status}`)}
@@ -59,12 +59,12 @@ export function UserProfile({ userId }: { userId: string }) {
           <dl className="space-y-3">
             {info.map(([k, v]) => (
               <div key={k} className="flex items-center justify-between text-sm">
-                <dt className="text-slate-500">{k}</dt>
+                <dt className="text-slate-600">{k}</dt>
                 <dd className="font-medium text-[#13304d]">{v}</dd>
               </div>
             ))}
             <div className="flex items-center justify-between text-sm">
-              <dt className="text-slate-500">{t("usr.lastLogin")}</dt>
+              <dt className="text-slate-600">{t("usr.lastLogin")}</dt>
               <dd className="font-medium text-[#13304d]">
                 {u.lastLoginMin === null
                   ? t("usr.never")
@@ -83,10 +83,10 @@ export function UserProfile({ userId }: { userId: string }) {
           <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {PERMISSION_KEYS.map((k) => (
               <li key={k} className="flex items-center gap-2 text-xs">
-                <span className={perms[k] ? "text-emerald-600" : "text-slate-300"}>
+                <span className={perms[k] ? "text-emerald-700" : "text-slate-500"}>
                   {perms[k] ? "✓" : "✗"}
                 </span>
-                <span className={perms[k] ? "text-slate-700" : "text-slate-500"}>
+                <span className={perms[k] ? "text-slate-700" : "text-slate-600"}>
                   {t(`perm.${k}`)}
                 </span>
               </li>

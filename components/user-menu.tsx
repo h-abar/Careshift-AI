@@ -37,7 +37,7 @@ export function UserMenu() {
           <span className="block text-xs font-semibold text-[#13304d] leading-tight">
             {lang === "ar" ? user.nameAr : user.nameEn}
           </span>
-          <span className="block text-[10px] text-slate-500 leading-tight">
+          <span className="block text-[10px] text-slate-600 leading-tight">
             {t(`userRole.${user.role}`)}
           </span>
         </span>
@@ -49,7 +49,7 @@ export function UserMenu() {
             <div className="text-sm font-bold text-[#13304d]">
               {lang === "ar" ? user.nameAr : user.nameEn}
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-600">
               {t(`userRole.${user.role}`)} · {t(`dept.${user.dept}`)}
             </div>
             {impersonator && (
@@ -61,7 +61,7 @@ export function UserMenu() {
 
           {usersData && !impersonator && (
             <div className="px-4 py-2.5">
-              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 {t("usr.viewAs")} (admin)
               </div>
               <div className="max-h-44 space-y-0.5 overflow-y-auto">
@@ -74,7 +74,7 @@ export function UserMenu() {
                     }}
                     className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-xs ${
                       u.id === user.id
-                        ? "bg-[#0e9bb5]/10 text-[#0e9bb5] font-semibold"
+                        ? "bg-[#0e9bb5]/10 text-[#075e6e] font-semibold"
                         : "text-slate-600 hover:bg-[#f4f7fa]"
                     }`}
                   >
@@ -82,7 +82,7 @@ export function UserMenu() {
                     <span className="flex-1 truncate">
                       {lang === "ar" ? u.nameAr : u.nameEn}
                     </span>
-                    <span className="text-[10px] text-slate-500">
+                    <span className="text-[10px] text-slate-600">
                       {t(`userRole.${u.role}`)}
                     </span>
                   </button>
@@ -100,7 +100,7 @@ export function UserMenu() {
             </button>
             <button
               onClick={logout}
-              className="w-full rounded-lg border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100"
+              className="w-full rounded-lg border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
             >
               {t("login.logout")}
             </button>

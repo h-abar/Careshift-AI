@@ -118,7 +118,7 @@ export function LoginScreen() {
                     <span className="text-[11px] text-teal-200/80">{t(s.sub)}</span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <span className="mb-9 text-lg text-teal-300/60 rtl:rotate-180">→</span>
+                    <span className="mb-9 text-lg text-teal-300 rtl:rotate-180">→</span>
                   )}
                 </div>
               ))}
@@ -138,16 +138,16 @@ export function LoginScreen() {
             <Logo size="h-10 w-10" />
             <span className="leading-tight">
               <span className="block text-base font-bold text-[#13304d]">
-                Careshift <span className="text-[#0e9bb5]">AI</span>
+                Careshift <span className="text-[#0b7a8d]">AI</span>
               </span>
-              <span className="block text-[10px] font-medium tracking-wide text-slate-500">
+              <span className="block text-[10px] font-medium tracking-wide text-slate-600">
                 Predict. Intervene. Prove.
               </span>
             </span>
           </div>
           <button
             onClick={toggle}
-            className="flex items-center gap-1.5 rounded-full border border-[#e2e9f2] bg-white px-4 py-2 text-xs font-semibold text-slate-500 transition-colors hover:border-[#0e9bb5]/50 hover:text-[#0e9bb5]"
+            className="flex items-center gap-1.5 rounded-full border border-[#e2e9f2] bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-[#0e9bb5]/50 hover:text-[#0b7a8d]"
           >
             🌐 {lang === "ar" ? "English" : "العربية"} ▾
           </button>
@@ -156,8 +156,8 @@ export function LoginScreen() {
         {/* Form card */}
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
           <h1 className="text-3xl font-bold text-[#13304d]">{t("login.title")}</h1>
-          <p className="mt-1.5 text-base text-slate-500">{t("login.sub")}</p>
-          <p className="mt-0.5 text-sm text-slate-500">{t("login.access")}</p>
+          <p className="mt-1.5 text-base text-slate-600">{t("login.sub")}</p>
+          <p className="mt-0.5 text-sm text-slate-600">{t("login.access")}</p>
 
           <div className="mt-8 rounded-3xl border border-[#eef2f7] bg-white p-7 shadow-[0_8px_40px_rgba(19,48,77,0.07)]">
             <form
@@ -184,7 +184,7 @@ export function LoginScreen() {
                   />
                   <Icon
                     name="user"
-                    className="absolute end-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
+                    className="absolute end-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-600"
                   />
                 </div>
               </div>
@@ -207,7 +207,7 @@ export function LoginScreen() {
                   <button
                     type="button"
                     onClick={() => setShowPw((s) => !s)}
-                    className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-[#0e9bb5]"
+                    className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-600 transition-colors hover:text-[#0b7a8d]"
                     aria-label={showPw ? t("login.hide") : t("login.show")}
                   >
                     <Icon name={showPw ? "eyeOff" : "eye"} className="h-5 w-5" />
@@ -216,7 +216,7 @@ export function LoginScreen() {
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <label className="flex cursor-pointer items-center gap-2 text-slate-500">
+                <label className="flex cursor-pointer items-center gap-2 text-slate-600">
                   {t("login.remember")}
                   <input
                     type="checkbox"
@@ -227,7 +227,7 @@ export function LoginScreen() {
                 </label>
                 <button
                   type="button"
-                  className="font-semibold text-[#0e9bb5] hover:underline"
+                  className="font-semibold text-[#0b7a8d] hover:underline"
                 >
                   {t("login.forgot")}
                 </button>
@@ -249,7 +249,7 @@ export function LoginScreen() {
               )}
 
               {error && (
-                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                   ⚠ {error === "locked" || error === "captcha" ? t("login.locked") : t("login.error")}
                 </p>
               )}
@@ -257,7 +257,7 @@ export function LoginScreen() {
               <button
                 type="submit"
                 disabled={busy}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[#1d6ae5] to-[#38bdf8] py-4 text-base font-bold text-white shadow-lg shadow-[#1d6ae5]/25 transition-all hover:shadow-xl hover:shadow-[#1d6ae5]/30 hover:brightness-105 disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[#1d6ae5] to-[#0b7a8d] py-4 text-base font-bold text-white shadow-lg shadow-[#1d6ae5]/25 transition-all hover:shadow-xl hover:shadow-[#1d6ae5]/30 hover:brightness-105 disabled:opacity-60"
               >
                 {busy ? "…" : t("login.signin")}{" "}
                 <span className="rtl:rotate-180">→</span>
@@ -267,7 +267,7 @@ export function LoginScreen() {
             {/* Divider */}
             <div className="mt-7 flex items-center gap-3">
               <span className="h-px flex-1 bg-[#eef2f7]" />
-              <span className="text-xs font-semibold text-slate-500">{t("login.orDemo")}</span>
+              <span className="text-xs font-semibold text-slate-600">{t("login.orDemo")}</span>
               <span className="h-px flex-1 bg-[#eef2f7]" />
             </div>
 
@@ -281,14 +281,14 @@ export function LoginScreen() {
                 <img src="/logo.png" alt="" className="h-full w-full object-cover" />
               </span>
               <span className="flex-1">
-                <span className="block text-base font-bold text-[#13304d] transition-colors group-hover:text-[#0e9bb5]">
+                <span className="block text-base font-bold text-[#13304d] transition-colors group-hover:text-[#0b7a8d]">
                   {t("login.runDemo")}
                 </span>
-                <span className="mt-0.5 block text-xs text-slate-500">
+                <span className="mt-0.5 block text-xs text-slate-600">
                   {t("login.demoSub")}
                 </span>
               </span>
-              <span className="text-xl text-slate-300 transition-transform group-hover:-translate-x-1.5 rtl:rotate-180 rtl:group-hover:translate-x-1.5">
+              <span className="text-xl text-slate-500 transition-transform group-hover:-translate-x-1.5 rtl:rotate-180 rtl:group-hover:translate-x-1.5">
                 →
               </span>
             </Link>
@@ -296,11 +296,11 @@ export function LoginScreen() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
           <span className="flex items-center gap-1.5">🛡 {t("login.secure")}</span>
           <span className="text-end leading-tight">
             <span dir="ltr" className="block">{t("login.version")}</span>
-            <span className="block text-[10px] text-slate-500">{t("login.tags")}</span>
+            <span className="block text-[10px] text-slate-600">{t("login.tags")}</span>
           </span>
         </div>
       </div>

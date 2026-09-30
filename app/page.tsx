@@ -52,11 +52,11 @@ function OversightHome() {
         <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
           {t("ins.title")}
         </h1>
-        <p className="mt-0.5 text-sm text-slate-500">{t("ins.subtitle")}</p>
+        <p className="mt-0.5 text-sm text-slate-600">{t("ins.subtitle")}</p>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label={t("ins.highRisk")} value={s.clinical.elevated} />
-        <KpiCard label={t("ins.docGaps")} value={s.clinical.docGaps} accent="text-amber-600" />
+        <KpiCard label={t("ins.docGaps")} value={s.clinical.docGaps} accent="text-amber-700" />
         <KpiCard label={t("ins.claimsRisk")} value={s.financial.claimsAtRisk} accent="text-red-600" />
         <KpiCard
           label={t("ins.estExposure")}
@@ -75,8 +75,8 @@ function OversightHome() {
             >
               <div className="flex items-center gap-3">
                 <RiskBadge level={c.claimRisk as never} />
-                <span className="font-mono text-xs text-[#0e9bb5]">{c.claimId}</span>
-                <span className="font-mono text-xs text-slate-500">
+                <span className="font-mono text-xs text-[#0b7a8d]">{c.claimId}</span>
+                <span className="font-mono text-xs text-slate-600">
                   {c.patientId} · {t(`dx.${c.dxKey}`)}
                 </span>
               </div>
@@ -88,7 +88,7 @@ function OversightHome() {
         </div>
         <Link
           href="/insurance"
-          className="mt-3 block text-center text-xs font-semibold text-[#0e9bb5] hover:underline"
+          className="mt-3 block text-center text-xs font-semibold text-[#0b7a8d] hover:underline"
         >
           {t("common.viewAll")} →
         </Link>
@@ -130,7 +130,7 @@ function CommandCenter() {
           <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
             {t("cmd.title")}
           </h1>
-          <p className="mt-0.5 text-sm text-slate-500">{t("cmd.pipeline")}</p>
+          <p className="mt-0.5 text-sm text-slate-600">{t("cmd.pipeline")}</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -141,7 +141,7 @@ function CommandCenter() {
       {/* KPI row — hierarchy level 1 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label={t("cmd.monitored")} value={s.clinical.monitored} />
-        <KpiCard label={t("cmd.highRisk")} value={s.clinical.highRisk} accent="text-orange-600" />
+        <KpiCard label={t("cmd.highRisk")} value={s.clinical.highRisk} accent="text-orange-700" />
         <KpiCard label={t("cmd.critical")} value={s.clinical.critical} accent="text-red-600" />
         <KpiCard label={t("cmd.pending")} value={s.clinical.interventionsPending} accent="text-sky-700" />
       </div>
@@ -212,7 +212,7 @@ function CommandCenter() {
                       <div className="truncate text-sm font-semibold text-[#13304d]">
                         {x.patient.id} · {t(`action.${st.actionKey}`)}
                       </div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="text-[11px] text-slate-600">
                         {lang === "ar" ? x.patient.nameAr : x.patient.nameEn} · {t(`role.${st.role}`)}
                       </div>
                     </div>
@@ -223,7 +223,7 @@ function CommandCenter() {
           </div>
           <Link
             href="/interventions"
-            className="mt-3 block text-center text-xs font-semibold text-[#0e9bb5] hover:underline"
+            className="mt-3 block text-center text-xs font-semibold text-[#0b7a8d] hover:underline"
           >
             {t("common.viewAll")} →
           </Link>
@@ -257,7 +257,7 @@ function CommandCenter() {
             ].map((r) => (
               <div key={r.label}>
                 <div className="mb-1 flex justify-between text-xs">
-                  <span className="text-slate-500">{r.label}</span>
+                  <span className="text-slate-600">{r.label}</span>
                   <span className="font-bold text-[#13304d]">
                     {r.label === t("cmd.avgTime") ? s.operational.avgInterventionMin : Math.round(r.v / (r.suffix ? 1 : 20)) || r.v}
                     {r.label === t("cmd.closedLoop") ? "%" : r.suffix}
@@ -273,19 +273,19 @@ function CommandCenter() {
           <SectionTitle>{t("cmd.financial")}</SectionTitle>
           <div className="flex h-40 flex-col justify-center gap-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">{t("cmd.claimsDoc")}</span>
+              <span className="text-xs text-slate-600">{t("cmd.claimsDoc")}</span>
               <span className="text-2xl font-bold text-[#13304d]">{s.financial.claimsDocPct}%</span>
             </div>
             <Meter pct={s.financial.claimsDocPct} color="bg-[#1b5fad]" />
             <div className="flex items-center justify-between border-t border-[#eef2f7] pt-3">
-              <span className="text-xs text-slate-500">{t("cmd.exposure")}</span>
+              <span className="text-xs text-slate-600">{t("cmd.exposure")}</span>
               <span className="font-mono text-lg font-bold text-red-600">
                 {t("common.sar")} {fmtSarK(s.financial.exposureSar, lang)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">{t("cmd.careValue")}</span>
-              <span className="text-lg font-bold text-[#0e9bb5]">{cvs.total}/100</span>
+              <span className="text-xs text-slate-600">{t("cmd.careValue")}</span>
+              <span className="text-lg font-bold text-[#0b7a8d]">{cvs.total}/100</span>
             </div>
           </div>
         </Card>
@@ -317,7 +317,7 @@ function MyWork() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">{t("my.title")}</h1>
-        <p className="mt-0.5 text-sm text-slate-500">
+        <p className="mt-0.5 text-sm text-slate-600">
           {lang === "ar" ? user.nameAr : user.nameEn} · {t(`userRole.${user.role}`)} · {t(`dept.${user.dept}`)}
         </p>
       </div>
@@ -326,13 +326,13 @@ function MyWork() {
         <KpiCard label={t("my.patients")} value={myPatients.length} />
         <KpiCard label={t("my.criticalPatients")} value={critical.length} accent="text-red-600" />
         <KpiCard label={t("my.interventions")} value={mySteps.length} accent="text-sky-700" />
-        <KpiCard label={t("my.handoffs")} value={1} accent="text-[#0e9bb5]" />
+        <KpiCard label={t("my.handoffs")} value={1} accent="text-[#0b7a8d]" />
       </div>
 
       <Card>
         <SectionTitle sub={t("ho.subtitle")}>{t("my.patients")}</SectionTitle>
         {myPatients.length === 0 && (
-          <p className="py-6 text-center text-sm text-slate-500">{t("my.nothing")}</p>
+          <p className="py-6 text-center text-sm text-slate-600">{t("my.nothing")}</p>
         )}
         <div className="space-y-2.5">
           {myPatients.map(({ patient, risk, insurance, plan }) => {
@@ -348,12 +348,12 @@ function MyWork() {
                   <div>
                     <div className="text-sm font-semibold text-[#13304d]">
                       {lang === "ar" ? patient.nameAr : patient.nameEn}
-                      <span className="ms-2 font-mono text-xs text-slate-500">{patient.id}</span>
+                      <span className="ms-2 font-mono text-xs text-slate-600">{patient.id}</span>
                     </div>
-                    <div className="text-xs text-slate-500">{t(`condition.${risk.conditionKey}`)}</div>
+                    <div className="text-xs text-slate-600">{t(`condition.${risk.conditionKey}`)}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500">
+                <div className="flex items-center gap-4 text-xs text-slate-600">
                   {next && (
                     <span className="hidden sm:block">
                       {t("common.nextAction")}: <b className="text-[#13304d]">{t(`action.${next.actionKey}`)}</b>

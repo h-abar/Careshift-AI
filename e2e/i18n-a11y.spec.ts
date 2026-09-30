@@ -1,6 +1,39 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { loginAs } from "./helpers";
+import { api, loginAs } from "./helpers";
+
+/**
+ * Phase 3 item 1 — WCAG 2.1 AA audit: every page × every role, with the
+ * color-contrast rule ENABLED (0 serious/critical required).
+ */
+
+async function axePage(page: import("@playwright/test").Page, path: string) {
+  await page.goto(path);
+  await page.waitForTimeout(800); // let data settle
+  const res = await new AxeBuilder({ page }).analyze();
+  const bad = res.violations.filter(
+    (v) => v.impact === "serious" || v.impact === "critical",
+  );
+  expect(
+    bad.map(
+      (v) =>
+        `${path}: ${v.id} (${v.impact}) — ${v.nodes
+          .slice(0, 3)
+          .map((n) => n.target.join(" "))
+          .join(" | ")}`,
+    ),
+  ).toEqual([]);
+}
+
+/** First handoff id the role can see, or null. */
+async function anyHandoffId(page: import("@playwright/test").Page) {
+  const { status, json } = await api<{ handoffs?: { id: string }[] }>(
+    page,
+    "GET",
+    "/api/handoffs",
+  );
+  return status === 200 ? (json.handoffs?.[0]?.id ?? null) : null;
+}
 
 test.describe("i18n + a11y", () => {
   test("ar RTL → en LTR language switch", async ({ page }) => {
@@ -13,22 +46,83 @@ test.describe("i18n + a11y", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
 
-  test("axe: key pages have no serious/critical violations", async ({
-    page,
-  }) => {
+  test("axe: login screen (unauthenticated, both dirs)", async ({ page }) => {
+    await page.goto("/");
+    await expect(
+      page.locator('input[autocomplete="username"]'),
+    ).toBeVisible();
+    await page.waitForTimeout(400);
+    let res = await new AxeBuilder({ page }).analyze();
+    let bad = res.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(
+      bad.map((v) => `login(ar): ${v.id} — ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`),
+    ).toEqual([]);
+    // LTR variant — the login screen toggle reads "English" in ar mode
+    await page
+      .getByRole("button", { name: /English|العربية/ })
+      .first()
+      .click();
+    await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+    res = await new AxeBuilder({ page }).analyze();
+    bad = res.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(
+      bad.map((v) => `login(en): ${v.id} — ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`),
+    ).toEqual([]);
+  });
+
+  test("axe: admin pages", async ({ page }) => {
     await loginAs(page, "admin");
-    for (const path of ["/", "/patients", "/users", "/insurance"]) {
-      await page.goto(path);
-      await page.waitForTimeout(800); // let data settle
-      const res = await new AxeBuilder({ page })
-        .disableRules(["color-contrast"]) // checked separately via palette
-        .analyze();
-      const bad = res.violations.filter(
-        (v) => v.impact === "serious" || v.impact === "critical",
-      );
-      expect(
-        bad.map((v) => `${path}: ${v.id}`),
-      ).toEqual([]);
+    for (const path of [
+      "/",
+      "/patients",
+      "/patient/P-1042",
+      "/interventions",
+      "/handoffs",
+      "/insurance",
+      "/reports",
+      "/users",
+      "/audit",
+      "/settings",
+    ]) {
+      await axePage(page, path);
+    }
+    const hid = await anyHandoffId(page);
+    if (hid) await axePage(page, `/handoffs/${hid}`);
+  });
+
+  test("axe: physician pages", async ({ page }) => {
+    await loginAs(page, "physician");
+    for (const path of ["/", "/patients", "/patient/P-1042", "/interventions", "/handoffs", "/reports"]) {
+      await axePage(page, path);
+    }
+  });
+
+  for (const who of ["charge", "nurse"] as const) {
+    test(`axe: ${who} pages`, async ({ page }) => {
+      await loginAs(page, who);
+      for (const path of ["/", "/patients", "/patient/P-1042", "/interventions", "/handoffs"]) {
+        await axePage(page, path);
+      }
+      const hid = await anyHandoffId(page);
+      if (hid) await axePage(page, `/handoffs/${hid}`);
+    });
+  }
+
+  test("axe: insurance reviewer pages", async ({ page }) => {
+    await loginAs(page, "insurance");
+    for (const path of ["/", "/insurance", "/reports"]) {
+      await axePage(page, path);
+    }
+  });
+
+  test("axe: hospital admin pages", async ({ page }) => {
+    await loginAs(page, "hosp");
+    for (const path of ["/", "/patients", "/patient/P-1042", "/interventions", "/reports", "/audit"]) {
+      await axePage(page, path);
     }
   });
 });

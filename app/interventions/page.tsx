@@ -99,7 +99,7 @@ export default function InterventionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#13304d]">{t("inv.title")}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t("inv.subtitle")}</p>
+        <p className="mt-1 text-sm text-slate-600">{t("inv.subtitle")}</p>
       </div>
 
       {/* Closed-loop lifecycle strip */}
@@ -107,7 +107,7 @@ export default function InterventionsPage() {
         <div className="flex flex-wrap items-center justify-center gap-2">
           {stages.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
-              <span className="rounded-lg border border-[#0e9bb5]/30 bg-[#0e9bb5]/5 px-3 py-1.5 text-xs font-bold text-[#0e9bb5]">
+              <span className="rounded-lg border border-[#0e9bb5]/30 bg-[#0e9bb5]/5 px-3 py-1.5 text-xs font-bold text-[#0b7a8d]">
                 {i + 1}. {s}
               </span>
               {i < stages.length - 1 && (
@@ -125,8 +125,8 @@ export default function InterventionsPage() {
             onClick={() => setFilter(f)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
               filter === f
-                ? "bg-[#0e9bb5]/10 text-[#0e9bb5]"
-                : "text-slate-500 hover:text-slate-200"
+                ? "bg-[#0e9bb5]/10 text-[#075e6e]"
+                : "text-slate-600 hover:text-slate-200"
             }`}
           >
             {t(f === "active" ? "inv.activeOnly" : "inv.completed")} (
@@ -140,17 +140,17 @@ export default function InterventionsPage() {
           <Card key={step.id} className="!p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-4">
-                <span className="w-12 font-mono text-sm text-[#0e9bb5]">
+                <span className="w-12 font-mono text-sm text-[#0b7a8d]">
                   +{step.offsetMin}m
                 </span>
                 <div>
                   <div className="text-sm font-semibold text-[#13304d]">
                     {t(`action.${step.actionKey}`)}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-600">
                     <Link
                       href={`/patient/${patient.id}`}
-                      className="font-mono text-[#0e9bb5] hover:underline"
+                      className="font-mono text-[#0b7a8d] hover:underline"
                     >
                       {patient.id}
                     </Link>
@@ -215,12 +215,12 @@ export default function InterventionsPage() {
                 {status === "in_progress" && (
                   <button
                     onClick={() => simulateOverdue(step.id, patient.id)}
-                    className="rounded-lg border border-[#e2e9f2] px-3 py-1 text-xs text-slate-500 hover:text-slate-200"
+                    className="rounded-lg border border-[#e2e9f2] px-3 py-1 text-xs text-slate-600 hover:text-slate-200"
                   >
                     ⏱ {t("common.simulateDelay")}
                   </button>
                 )}
-                <span className="ms-auto text-[11px] text-slate-500">
+                <span className="ms-auto text-[11px] text-slate-600">
                   {t("common.exposure")}: {t("common.sar")} {fmtSar(insurance.exposureSar, lang)}
                 </span>
               </div>

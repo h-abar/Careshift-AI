@@ -93,16 +93,16 @@ export function PatientView({ patientId }: { patientId: string }) {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/handoff" className="text-xs text-slate-500 hover:text-[#0e9bb5]">
+          <Link href="/handoff" className="text-xs text-slate-600 hover:text-[#0b7a8d]">
             ← {t("common.back")}
           </Link>
           <h1 className="mt-1 text-2xl font-bold text-[#13304d]">
             {lang === "ar" ? p.nameAr : p.nameEn}
-            <span className="ms-3 font-mono text-sm font-normal text-slate-500">
+            <span className="ms-3 font-mono text-sm font-normal text-slate-600">
               {p.id}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             {p.age} {t("common.years")} ·{" "}
             {t(p.sex === "M" ? "common.male" : "common.female")} · {p.room} ·{" "}
             {t(`dx.${p.dxKey}`)} · {t("common.attending")}: {p.attending}
@@ -122,7 +122,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                   .finally(() => setReassessing(false));
               }}
               disabled={reassessing}
-              className="rounded-lg border border-[#0e9bb5]/40 px-3 py-1.5 text-xs font-semibold text-[#0e9bb5] hover:bg-[#0e9bb5]/5 disabled:opacity-50"
+              className="rounded-lg border border-[#0e9bb5]/40 px-3 py-1.5 text-xs font-semibold text-[#0b7a8d] hover:bg-[#0e9bb5]/5 disabled:opacity-50"
             >
               {reassessing ? "…" : t("pt.reassess")}
             </button>
@@ -139,7 +139,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           </SectionTitle>
           {/* trajectory chips */}
           <div className="mb-4 flex items-center gap-2">
-            <span className="text-[11px] text-slate-500">{t("pt.trajectory")}:</span>
+            <span className="text-[11px] text-slate-600">{t("pt.trajectory")}:</span>
             {journey
               .filter((e) => e.riskScore !== undefined)
               .map((e, i, arr) => (
@@ -147,10 +147,10 @@ export function PatientView({ patientId }: { patientId: string }) {
                   <span
                     className={`rounded-full px-2 py-0.5 font-mono text-xs font-bold ${
                       e.riskScore! >= 60
-                        ? "bg-red-50 text-red-600"
+                        ? "bg-red-50 text-red-700"
                         : e.riskScore! >= 30
-                          ? "bg-amber-50 text-amber-600"
-                          : "bg-emerald-50 text-emerald-600"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-emerald-50 text-emerald-700"
                     }`}
                   >
                     {e.riskScore}
@@ -167,7 +167,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                 <span className="absolute -start-[1.4rem] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs">
                   {KIND_ICON[e.kind]}
                 </span>
-                <div className="font-mono text-[11px] text-[#0e9bb5]">{e.t}</div>
+                <div className="font-mono text-[11px] text-[#0b7a8d]">{e.t}</div>
                 <div className="text-sm text-slate-700">{t(`journey.${e.key}`)}</div>
               </li>
             ))}
@@ -204,16 +204,16 @@ export function PatientView({ patientId }: { patientId: string }) {
                 key={l.key}
                 className="flex items-center justify-between rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-2 text-sm"
               >
-                <span className="text-slate-500">{t(`lab.${l.key}`)}</span>
+                <span className="text-slate-600">{t(`lab.${l.key}`)}</span>
                 <span className="flex items-center gap-2 font-mono text-slate-700">
                   {l.value}
                   <span
                     className={`rounded px-1.5 text-[10px] font-bold ${
                       l.flag === "high"
-                        ? "bg-red-50 text-red-600"
+                        ? "bg-red-50 text-red-700"
                         : l.flag === "low"
-                          ? "bg-amber-50 text-amber-600"
-                          : "bg-emerald-50 text-emerald-600"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-emerald-50 text-emerald-700"
                     }`}
                   >
                     {t(`pt.flag.${l.flag}`)}
@@ -234,7 +234,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           <div className="space-y-2">
             {risk.factors.map((f) => (
               <div key={f.key} className="flex items-center gap-2">
-                <span className="w-9 shrink-0 text-end font-mono text-[11px] text-slate-500">
+                <span className="w-9 shrink-0 text-end font-mono text-[11px] text-slate-600">
                   {f.weight}%
                 </span>
                 <div className="flex-1">
@@ -248,7 +248,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           </div>
           <div className="mt-4 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 {t("why.confidence")}
               </span>
               <span className="font-mono text-sm font-bold text-[#1b5fad]">
@@ -256,10 +256,10 @@ export function PatientView({ patientId }: { patientId: string }) {
               </span>
             </div>
             <Meter pct={risk.confidence} color="bg-[#1b5fad]" className="mt-1.5" />
-            <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">
+            <p className="mt-1.5 text-[10px] leading-relaxed text-slate-600">
               {t("why.note")}
             </p>
-            <div className="mt-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <div className="mt-3 text-[11px] font-bold uppercase tracking-wide text-slate-600">
               {t("common.meds")}
             </div>
             <div className="mt-1 flex flex-wrap gap-1.5">
@@ -272,14 +272,14 @@ export function PatientView({ patientId }: { patientId: string }) {
                 </span>
               ))}
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-slate-500">
+            <p className="mt-3 text-xs leading-relaxed text-slate-600">
               {lang === "ar" ? p.noteAr : p.noteEn}
             </p>
           </div>
           {/* Persisted RiskAssessment history — chart + rows */}
           {riskHistory.length > 0 && (
             <div className="mt-4 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
-              <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                 {t("why.history")}
               </div>
               {riskHistory.length > 1 && (
@@ -308,11 +308,11 @@ export function PatientView({ patientId }: { patientId: string }) {
                     key={r.assessedAt}
                     className="flex items-center justify-between text-xs"
                   >
-                    <span className="font-mono text-slate-500">
+                    <span className="font-mono text-slate-600">
                       {r.assessedAt.slice(5, 16).replace("T", " ")}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="text-slate-500">
+                      <span className="text-slate-600">
                         {t(`condition.${r.conditionKey}`)} · {r.confidence}%
                       </span>
                       <RiskBadge
@@ -325,7 +325,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                 {riskHistory.length > 1 &&
                   riskHistory[0].score !==
                     riskHistory[riskHistory.length - 1].score && (
-                    <div className="pt-1 text-end font-mono text-[11px] text-slate-500">
+                    <div className="pt-1 text-end font-mono text-[11px] text-slate-600">
                       Δ {riskHistory[0].score - riskHistory[riskHistory.length - 1].score > 0 ? "+" : ""}
                       {riskHistory[0].score - riskHistory[riskHistory.length - 1].score}
                     </div>
@@ -341,7 +341,7 @@ export function PatientView({ patientId }: { patientId: string }) {
 
           {/* What happens next — the closed-loop contract */}
           <div className="mb-3 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
-            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-600">
               {t("whn.title")}
             </div>
             <ol className="space-y-1.5 text-xs">
@@ -360,8 +360,8 @@ export function PatientView({ patientId }: { patientId: string }) {
                     <span
                       className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
                         i === 0
-                          ? "bg-[#0e9bb5] text-white"
-                          : "bg-white border border-[#e2e9f2] text-slate-500"
+                          ? "bg-[#0b7a8d] text-white"
+                          : "bg-white border border-[#e2e9f2] text-slate-600"
                       }`}
                     >
                       {i + 1}
@@ -380,14 +380,14 @@ export function PatientView({ patientId }: { patientId: string }) {
                 className="flex items-center justify-between gap-2 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-2"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs text-[#0e9bb5]">
+                  <span className="font-mono text-xs text-[#0b7a8d]">
                     +{s.offsetMin}m
                   </span>
                   <div>
                     <div className="text-sm text-slate-700">
                       {t(`action.${s.actionKey}`)}
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-600">
                       {t(`role.${s.role}`)}
                     </div>
                   </div>
@@ -416,21 +416,21 @@ export function PatientView({ patientId }: { patientId: string }) {
                     : "border-teal-200 bg-teal-50"
                 }`}
               >
-                <div className={`text-xs font-bold ${danger ? "text-red-600" : "text-[#0e9bb5]"}`}>
+                <div className={`text-xs font-bold ${danger ? "text-red-600" : "text-[#0b7a8d]"}`}>
                   {t(key)}
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                  <span className="text-slate-500">{t("pt.icuRisk")}</span>
+                  <span className="text-slate-600">{t("pt.icuRisk")}</span>
                   <b className="text-end text-slate-700">{s.icuRiskPct}%</b>
-                  <span className="text-slate-500">{t("pt.extraLos")}</span>
+                  <span className="text-slate-600">{t("pt.extraLos")}</span>
                   <b className="text-end text-slate-700">
                     +{s.extraLosDays} {t("cmd.days")}
                   </b>
-                  <span className="text-slate-500">{t("pt.exposureLabel")}</span>
+                  <span className="text-slate-600">{t("pt.exposureLabel")}</span>
                   <b className="text-end text-slate-700">
                     {t("common.sar")} {fmtSar(s.exposureSar, lang)}
                   </b>
-                  <span className="text-slate-500">{t("pt.docLabel")}</span>
+                  <span className="text-slate-600">{t("pt.docLabel")}</span>
                   <b className="text-end text-slate-700">{s.docCompleteness}%</b>
                 </div>
               </div>
@@ -445,7 +445,7 @@ export function PatientView({ patientId }: { patientId: string }) {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">{t("common.documentation")}</span>
+              <span className="text-slate-600">{t("common.documentation")}</span>
               <b className="font-mono text-[#13304d]">{ins.docCompleteness}%</b>
             </div>
             <Meter
@@ -456,7 +456,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           </div>
           <div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">{t("imp.claimReady")}</span>
+              <span className="text-slate-600">{t("imp.claimReady")}</span>
               <b className="font-mono text-[#13304d]">{readiness?.score ?? ins.docCompleteness}%</b>
             </div>
             <Meter
@@ -467,7 +467,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           </div>
           <div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">{t("imp.evidence")}</span>
+              <span className="text-slate-600">{t("imp.evidence")}</span>
               <b className="font-mono text-[#13304d]">
                 {readiness
                   ? Math.round(
@@ -490,7 +490,7 @@ export function PatientView({ patientId }: { patientId: string }) {
             />
           </div>
           <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-            <div className="text-[11px] text-slate-500">
+            <div className="text-[11px] text-slate-600">
               {t("imp.estExposure")}{" "}
               <span className="text-[10px]">({t("common.simulated")})</span>
             </div>
@@ -537,7 +537,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           <SectionTitle sub={t("pt.evidenceSub")}>{t("pt.evidence")}</SectionTitle>
           <button
             onClick={exportEvidence}
-            className="rounded-lg border border-[#0e9bb5]/40 bg-[#0e9bb5]/10 px-3 py-1.5 text-xs font-semibold text-[#0e9bb5] hover:bg-[#0e9bb5]/20"
+            className="rounded-lg border border-[#0e9bb5]/40 bg-[#0e9bb5]/10 px-3 py-1.5 text-xs font-semibold text-[#075e6e] hover:bg-[#0e9bb5]/20"
           >
             ⤓ {t("common.export")}
           </button>
@@ -546,9 +546,9 @@ export function PatientView({ patientId }: { patientId: string }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-slate-500">
+                <span className="text-slate-600">
                   {t("ins.linkedClaim")}:{" "}
-                  <span className="font-mono text-[#0e9bb5]">{linkedClaim.id}</span>
+                  <span className="font-mono text-[#0b7a8d]">{linkedClaim.id}</span>
                 </span>
                 <span className="font-bold text-[#13304d]">
                   {t("ins.readiness")}: {readiness.score}%
@@ -561,27 +561,27 @@ export function PatientView({ patientId }: { patientId: string }) {
               <ul className="mt-3 space-y-1.5 text-xs">
                 {readiness.checklist.map((c) => (
                   <li key={c.key} className="flex items-center gap-2">
-                    <span className={c.ok ? "text-emerald-600" : "text-amber-600"}>
+                    <span className={c.ok ? "text-emerald-700" : "text-amber-700"}>
                       {c.ok ? "✓" : "⚠"}
                     </span>
-                    <span className={c.ok ? "text-slate-600" : "text-amber-600"}>
+                    <span className={c.ok ? "text-slate-600" : "text-amber-700"}>
                       {t(`ev.${c.key}`)}
                     </span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3 text-xs leading-relaxed text-slate-500">
+            <div className="rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3 text-xs leading-relaxed text-slate-600">
               {journey.map((e, i) => (
                 <div key={i} className="flex gap-2 py-0.5">
-                  <span className="font-mono text-[#0e9bb5]">{e.t}</span>
+                  <span className="font-mono text-[#0b7a8d]">{e.t}</span>
                   <span>{t(`journey.${e.key}`)}</span>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-600">
             {journey.length} {t("pt.evidenceSub")}
           </p>
         )}

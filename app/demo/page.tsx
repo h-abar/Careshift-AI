@@ -60,7 +60,7 @@ export default function DemoPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-[#13304d]">{t("demo.title")}</h1>
-          <p className="text-xs text-slate-500">{t("demo.simNotice")}</p>
+          <p className="text-xs text-slate-600">{t("demo.simNotice")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -77,7 +77,7 @@ export default function DemoPage() {
           </button>
           <Link
             href="/handoff"
-            className="rounded-lg border border-[#e2e9f2] bg-white px-4 py-2 text-sm font-semibold text-[#0e9bb5]"
+            className="rounded-lg border border-[#e2e9f2] bg-white px-4 py-2 text-sm font-semibold text-[#0b7a8d]"
           >
             {t("demo.exit")}
           </Link>
@@ -103,11 +103,11 @@ export default function DemoPage() {
           <div className="rounded-2xl border border-[#e2e9f2] bg-white p-6 shadow-[0_2px_12px_rgba(19,48,77,0.08)]">
             <div className="flex items-start justify-between">
               <div>
-                <span className="font-mono text-sm text-slate-500">{p.id}</span>
+                <span className="font-mono text-sm text-slate-600">{p.id}</span>
                 <h2 className="text-2xl font-bold text-[#13304d]">
                   {lang === "ar" ? p.nameAr : p.nameEn}
                 </h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-600">
                   {p.age} {t("common.years")} · {p.room} · {t(`dx.${p.dxKey}`)}
                 </p>
               </div>
@@ -119,12 +119,12 @@ export default function DemoPage() {
               <div className="text-center">
                 <div
                   className={`font-mono text-7xl font-bold tabular-nums transition-colors duration-500 ${
-                    riskNow >= 60 ? "text-red-600" : riskNow >= 30 ? "text-amber-500" : "text-emerald-600"
+                    riskNow >= 60 ? "text-red-600" : riskNow >= 30 ? "text-amber-700" : "text-emerald-700"
                   }`}
                 >
                   {riskNow}
                 </div>
-                <div className="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                <div className="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-600">
                   {t("demo.risk")} %
                 </div>
               </div>
@@ -134,12 +134,12 @@ export default function DemoPage() {
             <div className={`mt-5 space-y-2 transition-opacity duration-700 ${step >= 1 ? "opacity-100" : "opacity-20"}`}>
               {risk.factors.slice(0, 5).map((f) => (
                 <div key={f.key} className="flex items-center gap-3">
-                  <span className="w-8 text-end font-mono text-xs text-slate-500">{f.weight}%</span>
+                  <span className="w-8 text-end font-mono text-xs text-slate-600">{f.weight}%</span>
                   <div className="flex-1"><Meter pct={f.weight} color="bg-[#1b5fad]" /></div>
                   <span className="w-36 truncate text-xs text-slate-600">{t(`factor.${f.key}`)}</span>
                 </div>
               ))}
-              <p className="pt-1 text-center text-[10px] text-slate-500">{t("why.note")}</p>
+              <p className="pt-1 text-center text-[10px] text-slate-600">{t("why.note")}</p>
             </div>
           </div>
 
@@ -147,10 +147,10 @@ export default function DemoPage() {
           <div className="rounded-xl border border-[#0e9bb5]/25 bg-[#0e9bb5]/5 px-5 py-4 text-center">
             <p className="text-sm font-semibold text-[#13304d]">{t(`demo.step${step}`)}</p>
             {step >= 3 && step < 5 && (
-              <p className="mt-1 font-mono text-2xl font-bold text-[#0e9bb5]">29:5{7 - (step - 3) * 3}</p>
+              <p className="mt-1 font-mono text-2xl font-bold text-[#0b7a8d]">29:5{7 - (step - 3) * 3}</p>
             )}
             {step >= 4 && (
-              <p className="mt-1 text-sm font-bold text-emerald-600">✓ {t("iv.done")} — 09:52</p>
+              <p className="mt-1 text-sm font-bold text-emerald-700">✓ {t("iv.done")} — 09:52</p>
             )}
           </div>
 
@@ -159,14 +159,14 @@ export default function DemoPage() {
             <div className="rounded-xl border border-[#e2e9f2] bg-white p-5">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-slate-600">{t("demo.evidence")}</span>
-                <span className="font-mono text-lg font-bold text-[#0e9bb5]">{evidenceNow}%</span>
+                <span className="font-mono text-lg font-bold text-[#0b7a8d]">{evidenceNow}%</span>
               </div>
               <Meter pct={evidenceNow} className="mt-2" />
               {step >= 6 && (
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   {["ev.diagnosis", "ev.justification", "ev.intervention", "ev.clinician", "ev.timeline"].map((k) => (
                     <span key={k} className="flex items-center gap-1.5 text-slate-600">
-                      <span className="text-emerald-600">✓</span> {t(k)}
+                      <span className="text-emerald-700">✓</span> {t(k)}
                     </span>
                   ))}
                   <span className="flex items-center gap-1.5 font-semibold text-red-600">
@@ -198,10 +198,10 @@ export default function DemoPage() {
               >
                 {t(k)}
               </div>
-              {i < 5 && <div className="my-1.5 text-[#0e9bb5]">↓</div>}
+              {i < 5 && <div className="my-1.5 text-[#0b7a8d]">↓</div>}
             </div>
           ))}
-          <p className="mt-6 text-xs text-slate-500">{t("app.tagline")} · {t("demo.simNotice")}</p>
+          <p className="mt-6 text-xs text-slate-600">{t("app.tagline")} · {t("demo.simNotice")}</p>
         </div>
       )}
     </div>

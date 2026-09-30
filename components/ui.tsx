@@ -20,21 +20,21 @@ export const LEVEL_STYLES: Record<
   high: {
     badge: "bg-orange-50 text-orange-700 border-orange-200",
     dot: "bg-orange-500",
-    text: "text-orange-600",
+    text: "text-orange-700",
     ring: "border-orange-300",
     bar: "bg-orange-500",
   },
   medium: {
     badge: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
-    text: "text-amber-600",
+    text: "text-amber-700",
     ring: "border-amber-300",
     bar: "bg-amber-400",
   },
   low: {
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
-    text: "text-emerald-600",
+    text: "text-emerald-700",
     ring: "border-emerald-200",
     bar: "bg-emerald-500",
   },
@@ -49,7 +49,7 @@ export function RiskBadge({ level, score }: { level: RiskLevel; score?: number }
     >
       <span className={`h-1.5 w-1.5 rounded-full ${s.dot} animate-pulse`} />
       {t(`risk.${level}`)}
-      {score !== undefined && <span className="opacity-70">· {score}</span>}
+      {score !== undefined && <span>· {score}</span>}
     </span>
   );
 }
@@ -74,7 +74,7 @@ export function SectionTitle({ children, sub }: { children: ReactNode; sub?: str
   return (
     <div className="mb-4">
       <h2 className="text-base font-bold text-[#13304d]">{children}</h2>
-      {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
+      {sub && <p className="mt-0.5 text-xs text-slate-600">{sub}</p>}
     </div>
   );
 }
@@ -98,21 +98,21 @@ export function KpiCard({
 }) {
   return (
     <div className="rounded-xl border border-[#e2e9f2] bg-white p-4 shadow-[0_1px_3px_rgba(19,48,77,0.06)]">
-      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="text-xs font-medium text-slate-600">{label}</div>
       <div className={`mt-1 text-[28px] leading-8 font-bold tabular-nums ${accent}`}>
         {value}
         {unit && (
-          <span className="ms-1 text-xs font-medium text-slate-500">{unit}</span>
+          <span className="ms-1 text-xs font-medium text-slate-600">{unit}</span>
         )}
       </div>
       {(sub || trend) && (
         <div className="mt-1 flex items-center gap-1 text-[11px]">
           {trend && (
-            <span className={`font-semibold ${trendUp ? "text-emerald-600" : "text-red-500"}`}>
+            <span className={`font-semibold ${trendUp ? "text-emerald-700" : "text-red-600"}`}>
               {trendUp ? "▲" : "▼"} {trend}
             </span>
           )}
-          {sub && <span className="text-slate-500">{sub}</span>}
+          {sub && <span className="text-slate-600">{sub}</span>}
         </div>
       )}
     </div>
@@ -185,11 +185,11 @@ export function Countdown({
   return (
     <span
       className={`inline-flex items-center gap-1 font-mono text-sm font-bold tabular-nums ${
-        over ? "text-red-600" : secs <= 300 ? "text-amber-600" : "text-[#0e9bb5]"
+        over ? "text-red-600" : secs <= 300 ? "text-amber-700" : "text-[#0b7a8d]"
       }`}
     >
       {over ? `−${fmtTime(-secs)}` : fmtTime(secs)}
-      <span className="text-[10px] font-medium text-slate-500">
+      <span className="text-[10px] font-medium text-slate-600">
         {over ? t("common.overdue") : t("common.dueIn")}
       </span>
     </span>
@@ -206,7 +206,7 @@ export function Avatar({ name, size = "h-9 w-9", className = "" }: { name: strin
     .join("");
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[#1b5fad] to-[#0e9bb5] text-xs font-bold text-white ${size} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[#1b5fad] to-[#0b7a8d] text-xs font-bold text-white ${size} ${className}`}
     >
       {initials}
     </span>
@@ -238,10 +238,10 @@ export function Empty({ title, hint }: { title?: string; hint?: string }) {
   const { t } = useI18n();
   return (
     <div className="py-12 text-center">
-      <p className="text-sm font-semibold text-slate-500">
+      <p className="text-sm font-semibold text-slate-600">
         {title ?? t("common.empty")}
       </p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-slate-600">{hint}</p>}
     </div>
   );
 }
@@ -251,13 +251,13 @@ export function ErrorState({ onRetry }: { onRetry?: () => void }) {
   const { t } = useI18n();
   return (
     <div className="py-12 text-center" role="alert">
-      <p className="text-sm font-semibold text-red-500">
+      <p className="text-sm font-semibold text-red-600">
         {t("common.loadError")}
       </p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-3 rounded-lg border border-[#e2e9f2] px-4 py-2 text-sm font-semibold text-[#0e9bb5] hover:bg-[#0e9bb5]/5"
+          className="mt-3 rounded-lg border border-[#e2e9f2] px-4 py-2 text-sm font-semibold text-[#0b7a8d] hover:bg-[#0e9bb5]/5"
         >
           {t("common.retry")}
         </button>
@@ -295,7 +295,7 @@ export function Gate({
 export function Loading() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center">
-      <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
+      <div className="flex items-center gap-3 text-sm font-semibold text-slate-600">
         <span className="h-2.5 w-2.5 animate-ping rounded-full bg-[#0e9bb5]" />
         Careshift AI
       </div>
@@ -388,7 +388,7 @@ export function ConfirmDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-base font-bold text-[#13304d]">{title}</h3>
-        {body && <p className="mt-2 text-sm text-slate-500">{body}</p>}
+        {body && <p className="mt-2 text-sm text-slate-600">{body}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
@@ -400,7 +400,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             autoFocus
             className={`rounded-lg px-4 py-2 text-sm font-bold text-white ${
-              danger ? "bg-red-500 hover:bg-red-600" : "bg-[#0e9bb5] hover:bg-[#1b5fad]"
+              danger ? "bg-red-600 hover:bg-red-700" : "bg-[#0b7a8d] hover:bg-[#1b5fad]"
             }`}
           >
             {confirmLabel}

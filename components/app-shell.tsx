@@ -68,8 +68,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       onClick={onClick}
       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
         isActive(n.href)
-          ? "bg-[#0e9bb5]/10 text-[#0e9bb5]"
-          : "text-slate-500 hover:bg-[#f4f7fa] hover:text-[#13304d]"
+          ? "bg-[#0e9bb5]/10 text-[#075e6e]"
+          : "text-slate-600 hover:bg-[#f4f7fa] hover:text-[#13304d]"
       }`}
     >
       <Icon name={n.icon as never} className="h-5 w-5 shrink-0" />
@@ -79,13 +79,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const sidebarBody = (
     <>
-      <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
         {t("nav.main")}
       </div>
       <nav className="space-y-0.5 px-3">{visibleMain.map((n) => navLink(n, () => setDrawer(false)))}</nav>
       {visibleAdmin.length > 0 && (
         <>
-          <div className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <div className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-600">
             {t("nav.admin")}
           </div>
           <nav className="space-y-0.5 px-3">{visibleAdmin.map((n) => navLink(n, () => setDrawer(false)))}</nav>
@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="truncate text-xs font-semibold text-[#13304d]">
               {lang === "ar" ? user.nameAr : user.nameEn}
             </div>
-            <div className="truncate text-[10px] text-slate-500">
+            <div className="truncate text-[10px] text-slate-600">
               {t(`userRole.${user.role}`)} · {t(`dept.${user.dept}`)}
             </div>
           </div>
@@ -118,7 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
           <span className="leading-tight">
             <span className="block text-sm font-bold text-[#13304d]">{t("app.name")}</span>
-            <span className="block text-[10px] font-semibold text-[#0e9bb5]">
+            <span className="block text-[10px] font-semibold text-[#0b7a8d]">
               {t("app.tagline")}
             </span>
           </span>
@@ -168,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className={`sticky ${impersonator ? "top-8" : "top-0"} z-30 flex h-16 items-center gap-3 border-b border-[#e2e9f2] bg-white/95 px-4 backdrop-blur sm:px-6`}>
           <button
             onClick={() => setDrawer(true)}
-            className="rounded-lg border border-[#e2e9f2] p-2 text-slate-500 lg:hidden"
+            className="rounded-lg border border-[#e2e9f2] p-2 text-slate-600 lg:hidden"
             aria-label="menu"
           >
             <Icon name="menu" />
@@ -176,19 +176,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           {/* Facility / department */}
           <div className="hidden items-center gap-2 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-1.5 md:flex">
-            <Icon name="home" className="h-4 w-4 text-[#0e9bb5]" />
+            <Icon name="home" className="h-4 w-4 text-[#0b7a8d]" />
             <span className="text-xs font-semibold text-[#13304d]">
               {t("dept.hospital")}
             </span>
-            <span className="text-xs text-slate-500">·</span>
-            <span className="text-xs text-slate-500">{t(`dept.${user.dept}`)}</span>
+            <span className="text-xs text-slate-600">·</span>
+            <span className="text-xs text-slate-600">{t(`dept.${user.dept}`)}</span>
           </div>
 
           {/* Search */}
           <div className="relative ms-auto hidden sm:block">
             <Icon
               name="search"
-              className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+              className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600"
             />
             <input
               aria-label={t("common.search")}
@@ -201,13 +201,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NotificationCenter />
           <Link
             href="/demo"
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-l from-[#1b5fad] to-[#0e9bb5] px-3 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
+            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-l from-[#1b5fad] to-[#0b7a8d] px-3 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90"
           >
             ▶ {t("demo.mode")}
           </Link>
           <button
             onClick={toggle}
-            className="rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#0e9bb5]/40 hover:text-[#0e9bb5]"
+            className="rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:border-[#0e9bb5]/40 hover:text-[#0b7a8d]"
           >
             {lang === "ar" ? "EN" : "ع"}
           </button>
@@ -221,7 +221,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Disclaimer */}
         <footer className="border-t border-[#e2e9f2] bg-white">
-          <p className="mx-auto max-w-7xl px-4 py-2.5 text-center text-[11px] text-slate-500 sm:px-6">
+          <p className="mx-auto max-w-7xl px-4 py-2.5 text-center text-[11px] text-slate-600 sm:px-6">
             {t("app.disclaimer")}
           </p>
         </footer>
@@ -234,7 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             key={n.href}
             href={n.href}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${
-              isActive(n.href) ? "text-[#0e9bb5]" : "text-slate-500"
+              isActive(n.href) ? "text-[#0b7a8d]" : "text-slate-600"
             }`}
           >
             <Icon name={n.icon as never} className="h-5 w-5" />
@@ -243,7 +243,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ))}
         <button
           onClick={() => setDrawer(true)}
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-slate-500"
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-slate-600"
         >
           <Icon name="user" className="h-5 w-5" />
           {t("usr.profile")}

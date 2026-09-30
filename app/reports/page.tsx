@@ -25,7 +25,7 @@ export default function ReportsPage() {
   const { data: s, loading, error, refetch } = useOrg();
 
   if (!can("reports_view"))
-    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-600">{t("common.noAccess")}</p>;
   if (loading && !s) return <Skeleton rows={5} />;
   if (error && !s) return <ErrorState onRetry={refetch} />;
   if (!s) return <Loading />;
@@ -46,20 +46,20 @@ export default function ReportsPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SectionTitle sub={t("rpt.subtitle")}>{t("rpt.title")}</SectionTitle>
-        <button className="rounded-lg border border-[#e2e9f2] bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:border-[#0e9bb5]/40 hover:text-[#0e9bb5]">
+        <button className="rounded-lg border border-[#e2e9f2] bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:border-[#0e9bb5]/40 hover:text-[#0b7a8d]">
           ⤓ {t("rpt.export")}
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label={t("rpt.handoffs")} value={handoffCount} />
-        <KpiCard label={t("rpt.closures")} value={`${s.operational.closedLoopCompletion}%`} accent="text-emerald-600" />
-        <KpiCard label={t("rpt.denials")} value={deniedCount} accent="text-[#0e9bb5]" />
+        <KpiCard label={t("rpt.closures")} value={`${s.operational.closedLoopCompletion}%`} accent="text-emerald-700" />
+        <KpiCard label={t("rpt.denials")} value={deniedCount} accent="text-[#0b7a8d]" />
         <KpiCard
           label={t("ins.avoided")}
           value={fmtSarK(trend[trend.length - 1].avoided * 1000, lang)}
           unit={t("common.sar")}
-          accent="text-emerald-600"
+          accent="text-emerald-700"
           sub={t("common.simulated")}
         />
       </div>
@@ -93,7 +93,7 @@ export default function ReportsPage() {
           ].map((r) => (
             <div key={r.k} className="rounded-lg border border-[#eef2f7] bg-[#f8fafc] p-3">
               <div className="mb-1.5 flex justify-between text-xs">
-                <span className="text-slate-500">{t(r.k)}</span>
+                <span className="text-slate-600">{t(r.k)}</span>
                 <b className="text-[#13304d]">{r.v}</b>
               </div>
               <Meter pct={r.v} />

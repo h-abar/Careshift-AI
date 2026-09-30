@@ -112,23 +112,23 @@ export function ClaimDetail({
     <div className="mt-3 border-t border-[#e2e9f2] pt-3">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="text-xs font-semibold text-[#0e9bb5] hover:underline"
+        className="text-xs font-semibold text-[#0b7a8d] hover:underline"
       >
         {open ? "▾" : "▸"} {t("claim.detail")}
       </button>
       {claim.denialCode && (
-        <span className="ms-3 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] text-red-600">
+        <span className="ms-3 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] text-red-700">
           {t(`deny.${claim.denialCode}`)}
         </span>
       )}
-      {err && <span className="ms-3 text-[11px] text-red-500">{err}</span>}
+      {err && <span className="ms-3 text-[11px] text-red-600">{err}</span>}
 
       {!open ? null : detailErr ? (
         <div className="mt-2 flex items-center gap-3">
-          <span className="text-xs text-red-500">{t("common.loadError")}</span>
+          <span className="text-xs text-red-600">{t("common.loadError")}</span>
           <button
             onClick={() => refetch()}
-            className="text-xs font-semibold text-[#0e9bb5] hover:underline"
+            className="text-xs font-semibold text-[#0b7a8d] hover:underline"
           >
             {t("common.retry")}
           </button>
@@ -184,7 +184,7 @@ export function ClaimDetail({
                   </button>
                   <button
                     onClick={() => setPendingDenied(false)}
-                    className={`${btnCls} border-[#e2e9f2] text-slate-500`}
+                    className={`${btnCls} border-[#e2e9f2] text-slate-600`}
                   >
                     {t("usr.cancel")}
                   </button>
@@ -231,13 +231,13 @@ export function ClaimDetail({
                     }),
                   )
                 }
-                className={`${btnCls} bg-[#0e9bb5]/10 border-[#0e9bb5]/30 text-[#0e9bb5] disabled:opacity-40`}
+                className={`${btnCls} bg-[#0e9bb5]/10 border-[#0e9bb5]/30 text-[#075e6e] disabled:opacity-40`}
               >
                 {t(appealMode === "appeal" ? "claim.appeal" : "claim.resubmit")}
               </button>
               <button
                 onClick={() => setAppealMode(null)}
-                className={`${btnCls} border-[#e2e9f2] text-slate-500`}
+                className={`${btnCls} border-[#e2e9f2] text-slate-600`}
               >
                 {t("usr.cancel")}
               </button>
@@ -247,7 +247,7 @@ export function ClaimDetail({
           {/* documents */}
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-500">
+              <span className="text-[11px] font-semibold text-slate-600">
                 {t("claim.documents")} ({detail.documents.length})
               </span>
               {canEdit && (
@@ -267,7 +267,7 @@ export function ClaimDetail({
                   </select>
                   <button
                     onClick={() => fileRef.current?.click()}
-                    className={`${btnCls} bg-[#0e9bb5]/10 border-[#0e9bb5]/30 text-[#0e9bb5]`}
+                    className={`${btnCls} bg-[#0e9bb5]/10 border-[#0e9bb5]/30 text-[#075e6e]`}
                   >
                     {t("claim.upload")}
                   </button>
@@ -294,28 +294,28 @@ export function ClaimDetail({
                 className="flex items-center justify-between rounded-md border border-[#e2e9f2] bg-white px-2.5 py-1.5 text-xs text-slate-600 hover:border-[#0e9bb5]/40"
               >
                 <span className="truncate">{d.fileName}</span>
-                <span className="ms-2 shrink-0 font-mono text-[10px] text-slate-500">
+                <span className="ms-2 shrink-0 font-mono text-[10px] text-slate-600">
                   {Math.ceil(d.sizeBytes / 1024)} KB
                 </span>
               </a>
             ))}
             {detail.documents.length === 0 && (
-              <p className="text-[11px] text-slate-500">—</p>
+              <p className="text-[11px] text-slate-600">—</p>
             )}
           </div>
 
           {/* history */}
           <div>
-            <span className="text-[11px] font-semibold text-slate-500">
+            <span className="text-[11px] font-semibold text-slate-600">
               {t("claim.history")}
             </span>
             <ul className="mt-1 space-y-1">
               {detail.events.map((e) => (
                 <li
                   key={e.id}
-                  className="flex items-baseline gap-2 text-[11px] text-slate-500"
+                  className="flex items-baseline gap-2 text-[11px] text-slate-600"
                 >
-                  <span className="font-mono text-[10px] text-slate-500">
+                  <span className="font-mono text-[10px] text-slate-600">
                     {new Date(e.createdAt).toLocaleString()}
                   </span>
                   <span className="font-semibold text-[#13304d]">
@@ -325,7 +325,7 @@ export function ClaimDetail({
                 </li>
               ))}
               {detail.events.length === 0 && (
-                <li className="text-[11px] text-slate-500">—</li>
+                <li className="text-[11px] text-slate-600">—</li>
               )}
             </ul>
           </div>

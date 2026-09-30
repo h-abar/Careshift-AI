@@ -88,7 +88,7 @@ export default function InsurancePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#13304d]">{t("ins.title")}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t("ins.subtitle")}</p>
+        <p className="mt-1 text-sm text-slate-600">{t("ins.subtitle")}</p>
       </div>
 
       {/* Current exposure KPIs */}
@@ -96,27 +96,27 @@ export default function InsurancePage() {
         <SectionTitle>{t("ins.exposure")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-500">{t("ins.highRisk")}</div>
+            <div className="text-xs text-slate-600">{t("ins.highRisk")}</div>
             <div className="mt-1 text-2xl font-bold text-[#13304d]">{exposure.highRisk}</div>
           </div>
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-500">{t("ins.potentialIcu")}</div>
-            <div className="mt-1 text-2xl font-bold text-orange-400">{exposure.icu}</div>
+            <div className="text-xs text-slate-600">{t("ins.potentialIcu")}</div>
+            <div className="mt-1 text-2xl font-bold text-orange-700">{exposure.icu}</div>
           </div>
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-500">{t("ins.docGaps")}</div>
-            <div className="mt-1 text-2xl font-bold text-amber-600">{exposure.docGaps}</div>
+            <div className="text-xs text-slate-600">{t("ins.docGaps")}</div>
+            <div className="mt-1 text-2xl font-bold text-amber-700">{exposure.docGaps}</div>
           </div>
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-500">{t("ins.claimsRisk")}</div>
-            <div className="mt-1 text-2xl font-bold text-red-400">{exposure.claimsAtRisk}</div>
+            <div className="text-xs text-slate-600">{t("ins.claimsRisk")}</div>
+            <div className="mt-1 text-2xl font-bold text-red-600">{exposure.claimsAtRisk}</div>
           </div>
           <div className="col-span-2 rounded-xl border border-red-200 bg-red-50 p-4 lg:col-span-1">
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-600">
               {t("ins.estExposure")}{" "}
               <span className="text-[10px]">({t("common.simulated")})</span>
             </div>
-            <div className="mt-1 text-2xl font-bold text-red-400">
+            <div className="mt-1 text-2xl font-bold text-red-600">
               {t("common.sar")} {fmtSarK(exposure.total, lang)}
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function InsurancePage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#e2e9f2] text-start text-xs text-slate-500">
+              <tr className="border-b border-[#e2e9f2] text-start text-xs text-slate-600">
                 <th className="pb-2 text-start font-medium">{t("common.patient")}</th>
                 <th className="pb-2 text-start font-medium">{t("cmd.clinical")}</th>
                 <th className="pb-2 text-start font-medium">{t("ins.claimRisk")}</th>
@@ -141,8 +141,8 @@ export default function InsurancePage() {
               {topCases.map((c) => (
                 <tr key={c.claimId} className="border-b border-[#e2e9f2]/60">
                   <td className="py-2.5">
-                    <span className="font-mono text-[#0e9bb5]">{c.claimId}</span>
-                    <span className="ms-2 font-mono text-xs text-slate-500">
+                    <span className="font-mono text-[#0b7a8d]">{c.claimId}</span>
+                    <span className="ms-2 font-mono text-xs text-slate-600">
                       {c.patientId} · {t(`dx.${c.dxKey}`)}
                     </span>
                   </td>
@@ -179,7 +179,7 @@ export default function InsurancePage() {
             </tbody>
           </table>
         </div>
-        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
           <span>
             {t("common.page")} {claimsData.page} / {claimsTotalPages} · {claimsData.total}
           </span>
@@ -281,11 +281,11 @@ export default function InsurancePage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm text-[#0e9bb5]">{c.id}</span>
+                  <span className="font-mono text-sm text-[#0b7a8d]">{c.id}</span>
                   {c.patientId && (
                     <Link
                       href={`/patient/${c.patientId}`}
-                      className="font-mono text-[11px] text-slate-500 hover:text-[#0e9bb5]"
+                      className="font-mono text-[11px] text-slate-600 hover:text-[#0b7a8d]"
                     >
                       → {c.patientId}
                     </Link>
@@ -297,10 +297,10 @@ export default function InsurancePage() {
                       c.status === "approved"
                         ? "bg-emerald-50 border-emerald-200 text-emerald-700"
                         : c.status === "denied"
-                          ? "bg-red-50 border-red-200 text-red-600"
+                          ? "bg-red-50 border-red-200 text-red-700"
                           : c.status === "review"
                             ? "bg-amber-50 border-amber-200 text-amber-700"
-                            : "bg-slate-50 border-[#e2e9f2] text-slate-500"
+                            : "bg-slate-50 border-[#e2e9f2] text-slate-600"
                     }`}
                   >
                     {t(`claim.${c.status}`)}
@@ -320,10 +320,10 @@ export default function InsurancePage() {
                   <span
                     key={item.key}
                     className={`flex items-center gap-1.5 ${
-                      item.ok ? "text-slate-500" : "text-amber-300"
+                      item.ok ? "text-slate-600" : "text-amber-700"
                     }`}
                   >
-                    <span className={item.ok ? "text-emerald-600" : "text-amber-600"}>
+                    <span className={item.ok ? "text-emerald-700" : "text-amber-700"}>
                       {item.ok ? "✓" : "⚠"}
                     </span>
                     {t(`ev.${item.key}`)}
@@ -335,7 +335,7 @@ export default function InsurancePage() {
                   {c.frictionKeys.map((f) => (
                     <span
                       key={f}
-                      className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] text-red-600"
+                      className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] text-red-700"
                     >
                       {t(`friction.${f}`)}
                     </span>

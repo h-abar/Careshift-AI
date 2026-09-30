@@ -73,12 +73,12 @@ export function NotificationCenter() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-lg border border-[#e2e9f2] bg-white p-2 text-slate-500 hover:text-[#0e9bb5] hover:border-[#0e9bb5]/40 transition-colors"
+        className="relative rounded-lg border border-[#e2e9f2] bg-white p-2 text-slate-600 hover:text-[#0b7a8d] hover:border-[#0e9bb5]/40 transition-colors"
         aria-label={t("ntf.title")}
       >
         <Icon name="bell" />
         {unread > 0 && (
-          <span className="absolute -top-1 -end-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-1 -end-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
             {unread}
           </span>
         )}
@@ -90,7 +90,7 @@ export function NotificationCenter() {
             <span className="text-sm font-bold text-[#13304d]">{t("ntf.title")}</span>
             <button
               onClick={markAll}
-              className="text-[11px] font-medium text-[#0e9bb5] hover:underline"
+              className="text-[11px] font-medium text-[#0b7a8d] hover:underline"
             >
               {t("ntf.markAll")}
             </button>
@@ -111,7 +111,7 @@ export function NotificationCenter() {
                     <span className="block truncate text-sm text-slate-700">
                       {text(n)}
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-slate-600">
                       {minutesAgo(n)} {t("usr.minAgo")}
                     </span>
                   </span>
@@ -119,14 +119,14 @@ export function NotificationCenter() {
                 <button
                   onClick={() => dismiss(n.id)}
                   aria-label={t("ntf.dismiss")}
-                  className="absolute end-2 top-2 rounded p-1 text-slate-300 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-500 group-hover:opacity-100"
+                  className="absolute end-2 top-2 rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
                 >
                   ✕
                 </button>
               </li>
             ))}
             {items.length === 0 && (
-              <li className="px-4 py-6 text-center text-sm text-slate-500">
+              <li className="px-4 py-6 text-center text-sm text-slate-600">
                 {t("ntf.empty")}
               </li>
             )}
