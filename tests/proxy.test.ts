@@ -94,3 +94,83 @@ describe("proxy — page gates by role", () => {
     expect(isRedirect(hosp)).toBe(false);
   });
 });
+
+/* ── 3. CSRF: cookie-authed mutations must be same-origin ── */
+describe("proxy — CSRF origin check", () => {
+  const reqH = (
+    path: string,
+    method: string,
+    token: string,
+    headers: Record<string, string> = {},
+  ) =>
+    new NextRequest(`http://localhost${path}`, {
+      method,
+      headers: {
+        cookie: `${SESSION_COOKIE}=${token}`,
+        host: "localhost",
+        ...headers,
+      },
+    });
+
+  it("cross-site Origin on a cookie POST → 403 csrf", async () => {
+    const t = await jwt("nurse");
+    const r = await proxy(
+      reqH("/api/interventions/x", "PATCH", t, {
+        origin: "https://evil.example",
+      }),
+    );
+    expect(r.status).toBe(403);
+    expect((await r.json()).code).toBe("csrf");
+  });
+
+  it("Sec-Fetch-Site: cross-site without Origin → 403", async () => {
+    const t = await jwt("nurse");
+    const r = await proxy(
+      reqH("/api/interventions/x", "PATCH", t, {
+        "sec-fetch-site": "cross-site",
+      }),
+    );
+    expect(r.status).toBe(403);
+  });
+
+  it("same-origin Origin → passes through", async () => {
+    const t = await jwt("nurse");
+    const r = await proxy(
+      reqH("/api/interventions/x", "PATCH", t, {
+        origin: "http://localhost",
+        "sec-fetch-site": "same-origin",
+      }),
+    );
+    expect(r.status).not.toBe(403);
+  });
+
+  it("native shell origin (capacitor://) → allowed", async () => {
+    const t = await jwt("nurse");
+    const r = await proxy(
+      reqH("/api/interventions/x", "PATCH", t, {
+        origin: "capacitor://localhost",
+      }),
+    );
+    expect(r.status).not.toBe(403);
+  });
+
+  it("GET is exempt even cross-site", async () => {
+    const t = await jwt("nurse");
+    const r = await proxy(
+      reqH("/api/patients", "GET", t, {
+        origin: "https://evil.example",
+      }),
+    );
+    expect(r.status).not.toBe(403);
+  });
+
+  it("no session cookie → CSRF check skipped (401 path still applies)", async () => {
+    const r = await proxy(
+      new NextRequest("http://localhost/api/patients", {
+        method: "POST",
+        headers: { origin: "https://evil.example" },
+      }),
+    );
+    expect(r.status).toBe(401);
+  });
+});

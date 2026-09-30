@@ -61,6 +61,42 @@ function pageCsp(nonce: string): string {
 
 const API_CSP = "default-src 'none'; frame-ancestors 'none'";
 
+/**
+ * Phase 3 item 3 — CSRF guard for cookie-authenticated mutations.
+ * The session cookie is SameSite=Lax (kept for top-level navigation UX);
+ * the real anti-CSRF control is origin verification here. A state-changing
+ * request that carries a session cookie must prove it is same-origin:
+ *  - `Sec-Fetch-Site: cross-site` → reject outright.
+ *  - `Origin` header present → its host must equal the request host
+ *    (x-forwarded-host honoured only under TRUSTED_PROXY).
+ *  - No Origin/Sec-Fetch headers → non-browser client (curl, mobile shell):
+ *    allowed — browsers ALWAYS send at least one of these on cross-site
+ *    form/fetch POSTs, so a forged cross-origin request cannot sneak past.
+ * GET/HEAD/OPTIONS are not state-changing and are exempt.
+ */
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+function csrfOk(req: NextRequest): boolean {
+  if (SAFE_METHODS.has(req.method)) return true;
+  const origin = req.headers.get("origin");
+  if (origin) {
+    try {
+      const u = new URL(origin);
+      // Native WebViews (Capacitor) use capacitor:// / app:// origins —
+      // not forgeable by a web attacker → allowed.
+      if (u.protocol !== "http:" && u.protocol !== "https:") return true;
+      const expected = req.headers.get("host") ?? req.nextUrl.host;
+      return u.host === expected;
+    } catch {
+      return false; // e.g. Origin: null — a stripped/privacy-mode cross-site POST
+    }
+  }
+  // No Origin: browsers always send one on a cross-site POST, so an
+  // origin-less mutation is a non-browser client or same-origin POST.
+  // Belt-and-braces: honour an explicit cross-site marker anyway.
+  return req.headers.get("sec-fetch-site") !== "cross-site";
+}
+
 /** Baseline hardening headers applied to every response. */
 function applySecurityHeaders(res: NextResponse, nonce: string, isApi: boolean) {
   res.headers.set("Content-Security-Policy", isApi ? API_CSP : pageCsp(nonce));
@@ -109,11 +145,22 @@ export async function proxy(req: NextRequest) {
       nonce,
       isApi,
     );
+  const deny403 = () =>
+    applySecurityHeaders(
+      NextResponse.json(
+        { error: "forbidden", code: "csrf" },
+        { status: 403 },
+      ),
+      nonce,
+      isApi,
+    );
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const payload = token ? await verifyToken(token) : null;
 
   if (isApi) {
+    // CSRF: cookie-authed mutations must be verifiably same-origin.
+    if (token && !csrfOk(req)) return deny403();
     if (PUBLIC_API.some((p) => pathname.startsWith(p))) return next();
     if (req.method === "GET" && PUBLIC_API_GET.some((p) => pathname.startsWith(p))) {
       return next();

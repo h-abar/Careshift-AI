@@ -78,3 +78,32 @@ test.describe("security headers", () => {
     expect(headers.xfo).toBe("DENY");
   });
 });
+
+test.describe("CSRF", () => {
+  test("cross-origin POST with a session cookie → 403", async ({ page }) => {
+    await loginAs(page, "nurse");
+    const cookie = (await page.context().cookies()).find(
+      (c) => c.name === "cs_session",
+    );
+    expect(cookie).toBeTruthy();
+    const res = await page.request.post("/api/interventions/P-1042-s0", {
+      headers: {
+        cookie: `${cookie!.name}=${cookie!.value}`,
+        origin: "https://evil.example",
+        "content-type": "application/json",
+      },
+      data: { action: "start" },
+    });
+    expect(res.status()).toBe(403);
+    expect((await res.json()).code).toBe("csrf");
+    // same-origin control request → not 403
+    const ok = await page.request.post("/api/interventions/P-1042-s0", {
+      headers: {
+        cookie: `${cookie!.name}=${cookie!.value}`,
+        "content-type": "application/json",
+      },
+      data: { action: "start" },
+    });
+    expect(ok.status()).not.toBe(403);
+  });
+});
