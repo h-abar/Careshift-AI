@@ -1277,3 +1277,75 @@ describe("B5 notification center", () => {
     ).toBeTruthy();
   });
 });
+
+/* ── C6: server-side pagination ── */
+
+describe("pagination", () => {
+  const getQ = (url: string) => new Request(url);
+
+  it("users: filters + page/pageSize + total are server-side", async () => {
+    await loginAs("admin");
+    const r = await usersGet(
+      getQ("http://test/api/users?role=nurse&pageSize=2&page=1"),
+    );
+    expect(r.status).toBe(200);
+    const d = await r.json();
+    expect(d.page).toBe(1);
+    expect(d.pageSize).toBe(2);
+    expect(d.users.length).toBeLessThanOrEqual(2);
+    expect(d.total).toBeGreaterThanOrEqual(d.users.length);
+    expect(d.users.every((u: { role: string }) => u.role === "nurse")).toBe(
+      true,
+    );
+    const r2 = await usersGet(getQ("http://test/api/users?q=zzz-nomatch"));
+    expect((await r2.json()).users).toHaveLength(0);
+  });
+
+  it("audit: page slices differ and total is stable", async () => {
+    await loginAs("admin");
+    // generate some audit rows
+    await auditGet(getQ("http://test/api/audit"));
+    const p1 = await (
+      await auditGet(getQ("http://test/api/audit?pageSize=3&page=1"))
+    ).json();
+    const p2 = await (
+      await auditGet(getQ("http://test/api/audit?pageSize=3&page=2"))
+    ).json();
+    expect(p1.entries).toHaveLength(3);
+    expect(p1.total).toBeGreaterThan(3);
+    expect(p2.entries.length).toBeGreaterThan(0);
+    expect(p1.entries[0].id).not.toBe(p2.entries[0].id);
+    const filtered = await (
+      await auditGet(getQ("http://test/api/audit?action=auth.login"))
+    ).json();
+    expect(
+      filtered.entries.every((e: { action: string }) =>
+        e.action.includes("auth.login"),
+      ),
+    ).toBe(true);
+  });
+
+  it("claims: pageSize honoured + status filter", async () => {
+    await loginAs("insurance");
+    const r = await claimsGet(
+      getQ("http://test/api/claims?pageSize=5&page=1&status=denied"),
+    );
+    expect(r.status).toBe(200);
+    const d = await r.json();
+    expect(d.claims.length).toBeLessThanOrEqual(5);
+    expect(d.claims.every((c: { status: string }) => c.status === "denied")).toBe(
+      true,
+    );
+  });
+
+  it("patients: ?page returns a slice; default returns all", async () => {
+    await loginAs("nurse");
+    const all = await (await patientsGet(getQ("http://test/api/patients"))).json();
+    const p1 = await (
+      await patientsGet(getQ("http://test/api/patients?page=1&pageSize=5"))
+    ).json();
+    expect(p1.snaps).toHaveLength(5);
+    expect(p1.total).toBe(all.snaps.length);
+    expect(all.snaps.length).toBeGreaterThan(5);
+  });
+});

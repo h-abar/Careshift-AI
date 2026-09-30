@@ -1,27 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { useAudit } from "@/lib/api";
 import { Card, Empty, ErrorState, Loading, Skeleton, SectionTitle } from "@/components/ui";
 
-const KNOWN = [
-  "auth.login", "auth.logout", "auth.login_failed", "auth.switch",
-  "auth.switch_end", "auth.locked",
-  "patient.view", "patients.list", "claims.list", "users.list",
-  "audit.list", "org.view",
-  "handoff.accept", "handoff.create", "claim.status",
-  "intervention.status", "intervention.escalate",
-  "user.create", "user.update", "user.password_reset",
-];
-
 export default function AuditPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data, loading, error, refetch } = useAudit();
   const [fUser, setFUser] = useState("");
   const [fAction, setFAction] = useState("");
+  const [page, setPage] = useState(1);
+  // Debounce text filters before hitting the server.
+  const [applied, setApplied] = useState({ user: "", action: "" });
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setApplied({ user: fUser, action: fAction });
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [fUser, fAction]);
+
+  const { data, loading, error, refetch } = useAudit({
+    userId: applied.user || undefined,
+    action: applied.action || undefined,
+    page,
+  });
 
   if (!can("audit_view"))
     return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
@@ -29,13 +34,8 @@ export default function AuditPage() {
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
 
-  const entries = data.entries.filter(
-    (e) =>
-      (!fUser ||
-        e.userName.toLowerCase().includes(fUser.toLowerCase()) ||
-        e.userNameAr.includes(fUser)) &&
-      (!fAction || e.action.includes(fAction)),
-  );
+  const entries = data.entries;
+  const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
 
   const fmt = (iso: string) =>
     `${iso.slice(0, 10)} ${iso.slice(11, 16)}`;
@@ -72,7 +72,7 @@ export default function AuditPage() {
           className="rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-sm outline-none focus:border-[#0e9bb5]/50"
         />
         <span className="ms-auto self-center text-xs text-slate-500">
-          {entries.length} / {data.entries.length}
+          {data.total}
         </span>
       </div>
 
@@ -108,9 +108,7 @@ export default function AuditPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-slate-600">
-                  {KNOWN.includes(e.action)
-                    ? t(`auditAction.${e.action}`)
-                    : e.action}
+                  {t(`auditAction.${e.action}`)}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-[#0e9bb5]">
                   {e.entityType}:{e.entityId}
@@ -135,6 +133,28 @@ export default function AuditPage() {
           </tbody>
         </table>
       </Card>
+
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>
+          {t("common.page")} {data.page} / {totalPages}
+        </span>
+        <div className="flex gap-2">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+          >
+            ‹ {t("common.prev")}
+          </button>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+          >
+            {t("common.next")} ›
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

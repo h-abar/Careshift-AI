@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { usePatientsTable } from "@/lib/api";
@@ -10,8 +11,12 @@ import { Card, Empty, ErrorState, Loading, Skeleton, Meter, RiskBadge, SectionTi
 export default function PatientsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data, loading, error, refetch } = usePatientsTable();
+  const [page, setPage] = useState(1);
+  const { data, loading, error, refetch } = usePatientsTable({ page, pageSize: 15 });
   const snaps = data?.snaps ?? [];
+  const totalPages = data
+    ? Math.max(1, Math.ceil((data.total ?? snaps.length) / (data.pageSize ?? 15)))
+    : 1;
   const userName = (id: string) =>
     data?.userNames[id] ? (lang === "ar" ? data.userNames[id].ar : data.userNames[id].en) : "—";
   const getAssignment = (pid: string) =>
@@ -107,6 +112,28 @@ export default function PatientsPage() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>
+          {t("common.page")} {page} / {totalPages} · {data.total ?? snaps.length}
+        </span>
+        <div className="flex gap-2">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+          >
+            ‹ {t("common.prev")}
+          </button>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+          >
+            {t("common.next")} ›
+          </button>
+        </div>
       </div>
     </div>
   );

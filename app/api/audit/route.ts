@@ -9,17 +9,41 @@ export const GET = handle(async (req: Request) => {
   const userId = url.searchParams.get("userId") ?? undefined;
   const action = url.searchParams.get("action") ?? undefined;
   const entityId = url.searchParams.get("entityId") ?? undefined;
-  const limit = Math.min(200, Number(url.searchParams.get("limit")) || 100);
+  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+  const pageSize = Math.min(
+    50,
+    Math.max(1, Number(url.searchParams.get("pageSize")) || 20),
+  );
 
-  const [entries, users] = await Promise.all([
+  // The user filter matches names too — resolve matching user ids first.
+  let matchIds: string[] | undefined;
+  if (userId) {
+    matchIds = (
+      await prisma.user.findMany({
+        where: {
+          OR: [
+            { id: { contains: userId } },
+            { username: { contains: userId } },
+            { nameEn: { contains: userId } },
+            { nameAr: { contains: userId } },
+          ],
+        },
+        select: { id: true },
+      })
+    ).map((u) => u.id);
+  }
+  const where = {
+    userId: userId ? { in: matchIds } : undefined,
+    action: action ? { contains: action } : undefined,
+    entityId: entityId ? { contains: entityId } : undefined,
+  };
+  const [total, entries, users] = await Promise.all([
+    prisma.auditLog.count({ where }),
     prisma.auditLog.findMany({
-      where: {
-        userId: userId ? { contains: userId } : undefined,
-        action: action ? { contains: action } : undefined,
-        entityId: entityId ? { contains: entityId } : undefined,
-      },
+      where,
       orderBy: { createdAt: "desc" },
-      take: limit,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     }),
     prisma.user.findMany({ select: { id: true, nameEn: true, nameAr: true } }),
   ]);
@@ -43,5 +67,8 @@ export const GET = handle(async (req: Request) => {
       sessionId: e.sessionId,
       createdAt: e.createdAt,
     })),
+    total,
+    page,
+    pageSize,
   });
 });

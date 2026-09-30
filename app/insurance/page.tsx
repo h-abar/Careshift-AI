@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useClaims, useOrg } from "@/lib/api";
 import { ClaimDetail } from "@/components/claim-detail";
@@ -39,11 +40,16 @@ const STATUS_COLORS: Record<string, string> = {
 export default function InsurancePage() {
   const { t, lang } = useI18n();
   const { data: org } = useOrg();
-  const { data: claimsData, loading, error, refetch } = useClaims();
+  const [claimsPage, setClaimsPage] = useState(1);
+  const { data: claimsData, loading, error, refetch } = useClaims({ page: claimsPage });
   if (loading && !claimsData) return <Skeleton rows={5} />;
   if (error && !claimsData) return <ErrorState onRetry={refetch} />;
   if (!org || !claimsData) return <Loading />;
   const claims = claimsData.claims;
+  const claimsTotalPages = Math.max(
+    1,
+    Math.ceil(claimsData.total / claimsData.pageSize),
+  );
   const savingsTrend = claimsData.savingsTrend;
 
   // All figures are server-computed aggregates / minimum-necessary claim
@@ -172,6 +178,27 @@ export default function InsurancePage() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+          <span>
+            {t("common.page")} {claimsData.page} / {claimsTotalPages} · {claimsData.total}
+          </span>
+          <div className="flex gap-2">
+            <button
+              disabled={claimsPage <= 1}
+              onClick={() => setClaimsPage((p) => p - 1)}
+              className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+            >
+              ‹ {t("common.prev")}
+            </button>
+            <button
+              disabled={claimsPage >= claimsTotalPages}
+              onClick={() => setClaimsPage((p) => p + 1)}
+              className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+            >
+              {t("common.next")} ›
+            </button>
+          </div>
         </div>
       </Card>
 

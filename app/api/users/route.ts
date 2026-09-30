@@ -1,5 +1,5 @@
 import { requirePerm } from "@/lib/server/session";
-import { dbUsers } from "@/lib/server/data";
+import { toUser } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
 import { audit, auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
@@ -9,8 +9,37 @@ import bcrypt from "bcryptjs";
 
 export const GET = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage");
-  const [users, lockedNames] = await Promise.all([
-    dbUsers(),
+  const url = new URL(req.url);
+  const q = url.searchParams.get("q")?.trim() ?? "";
+  const role = url.searchParams.get("role") ?? "";
+  const dept = url.searchParams.get("dept") ?? "";
+  const status = url.searchParams.get("status") ?? "";
+  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+  const pageSize = Math.min(
+    50,
+    Math.max(1, Number(url.searchParams.get("pageSize")) || 25),
+  );
+  const where = {
+    ...(role && { roleKey: role }),
+    ...(dept && { dept }),
+    ...(status && { status }),
+    ...(q && {
+      OR: [
+        { username: { contains: q } },
+        { nameEn: { contains: q } },
+        { nameAr: { contains: q } },
+        { employeeId: { contains: q } },
+      ],
+    }),
+  };
+  const [total, rows, lockedNames] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      orderBy: { id: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
     prisma.loginAttempt
       .groupBy({
         by: ["username"],
@@ -33,7 +62,12 @@ export const GET = handle(async (req: Request) => {
     auditDedupeMin(), auth.sid, req,
   );
   return ok({
-    users: users.map((u) => ({ ...u, locked: lockedNames.has(u.username) })),
+    users: rows
+      .map(toUser)
+      .map((u) => ({ ...u, locked: lockedNames.has(u.username) })),
+    total,
+    page,
+    pageSize,
   });
 });
 

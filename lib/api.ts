@@ -114,9 +114,12 @@ export interface OrgStats {
 export const useOrg = () => useApi<OrgStats>("/api/snapshots");
 export const useSnapshots = () =>
   useApi<{ snaps: PatientSnapshot[] }>("/api/patients");
-export const usePatientsTable = () =>
+export const usePatientsTable = (p?: { page?: number; pageSize?: number }) =>
   useApi<{
     snaps: PatientSnapshot[];
+    total?: number;
+    page?: number;
+    pageSize?: number;
     assignments: {
       patientId: string;
       nurseId: string;
@@ -124,7 +127,7 @@ export const usePatientsTable = () =>
       chargeNurseId: string;
     }[];
     userNames: Record<string, { en: string; ar: string }>;
-  }>("/api/patients");
+  }>(`/api/patients${qs(p ?? {})}`);
 export const useHandoffContext = () =>
   useApi<{ ho: ShiftHandoff; snaps: PatientSnapshot[] }>("/api/handoff");
 export const useHandoffs = () =>
@@ -137,21 +140,48 @@ export const useHandoff = (id: string) =>
     users: Omit<User, "password">[];
     snaps: PatientSnapshot[];
   }>(`/api/handoffs/${id}`, [id]);
-export const useUsers = () =>
+export const qs = (p: Record<string, string | number | undefined>) => {
+  const s = new URLSearchParams();
+  for (const [k, v] of Object.entries(p))
+    if (v !== undefined && v !== "") s.set(k, String(v));
+  const str = s.toString();
+  return str ? `?${str}` : "";
+};
+
+export const useUsers = (p?: {
+  q?: string;
+  role?: string;
+  dept?: string;
+  status?: string;
+  page?: number;
+}) =>
   useApi<{
     users: (Omit<User, "password"> & { locked: boolean })[];
-  }>("/api/users");
+    total: number;
+    page: number;
+    pageSize: number;
+  }>(`/api/users${qs(p ?? {})}`);
 export const useUser = (id: string) =>
   useApi<{ user: Omit<User, "password"> }>(`/api/users/${id}`, [id]);
-export const useClaims = () =>
+export const useClaims = (p?: { status?: string; page?: number }) =>
   useApi<{
     claims: (Claim & {
       readiness: { score: number; checklist: { key: string; ok: boolean }[] };
     })[];
     savingsTrend: { month: string; monthAr: string; avoided: number; exposure: number }[];
-  }>("/api/claims");
-export const useAudit = () =>
+    total: number;
+    page: number;
+    pageSize: number;
+  }>(`/api/claims${qs(p ?? {})}`);
+export const useAudit = (p?: {
+  userId?: string;
+  action?: string;
+  page?: number;
+}) =>
   useApi<{
+    total: number;
+    page: number;
+    pageSize: number;
     entries: {
       id: string;
       userId: string;
@@ -166,7 +196,7 @@ export const useAudit = () =>
       sessionId: string | null;
       createdAt: string;
     }[];
-  }>("/api/audit");
+  }>(`/api/audit${qs(p ?? {})}`);
 export const useNotifications = () =>
   useApi<{ notifications: NotificationItem[]; unread: number }>(
     "/api/notifications",

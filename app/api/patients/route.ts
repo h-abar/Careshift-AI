@@ -15,8 +15,19 @@ export const GET = handle(async (req: Request) => {
     auth.user.id, "patients.list", "patient", "list",
     auditDedupeMin(), auth.sid, req,
   );
+  const url = new URL(req.url);
+  const page = Math.max(1, Number(url.searchParams.get("page")) || 0);
+  const pageSize = Math.min(
+    50,
+    Math.max(1, Number(url.searchParams.get("pageSize")) || 25),
+  );
+  const paged = page > 0;
+  const pageSnaps = paged ? snaps.slice((page - 1) * pageSize, page * pageSize) : snaps;
   return ok({
-    snaps,
+    snaps: pageSnaps,
+    total: snaps.length,
+    page: paged ? page : 1,
+    pageSize,
     assignments: assignments.map((a) => ({
       patientId: a.patientId,
       dept: a.dept,

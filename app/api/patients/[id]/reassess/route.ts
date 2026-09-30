@@ -1,5 +1,5 @@
 import { requirePerm } from "@/lib/server/session";
-import { dbPatient } from "@/lib/server/data";
+import { dbPatient, invalidateSnapshots } from "@/lib/server/data";
 import { runRiskAssessment } from "@/lib/server/risk";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
@@ -16,6 +16,7 @@ export const POST = handle(
     }
 
     const { risk, crossedUp } = await runRiskAssessment(patient);
+    invalidateSnapshots();
     await audit(
       {
         userId: auth.user.id,

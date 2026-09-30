@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
-import { dbPatient } from "@/lib/server/data";
+import { dbPatient, invalidateSnapshots } from "@/lib/server/data";
 import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
 import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { notify } from "@/lib/server/notify";
@@ -91,6 +91,7 @@ export const POST = handle(
     }
 
     const dueAt = body.dueAt ? new Date(body.dueAt) : prev?.dueAt ?? undefined;
+    invalidateSnapshots();
     const row = await prisma.interventionOverride.upsert({
       where: { stepId },
       create: {

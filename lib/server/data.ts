@@ -37,7 +37,7 @@ function toPatient(r: {
   };
 }
 
-function toUser(r: {
+export function toUser(r: {
   id: string; username: string; nameEn: string; nameAr: string;
   roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
   email: string; phone: string; employeeId: string; status: string;
@@ -56,7 +56,7 @@ function toUser(r: {
   };
 }
 
-function toClaim(r: {
+export function toClaim(r: {
   id: string; patientId: string | null; amountSar: number; status: string;
   dxKey: string; losDays: number; icuDays: number;
   evidenceJson: string; frictionJson: string;
@@ -112,13 +112,23 @@ export async function dbHandoffs(): Promise<HandoffRecord[]> {
 }
 
 /** Snapshots over DB patients, applying persisted intervention overrides. */
+const SNAPS_TTL_MS = 15_000;
+let snapsCache: { at: number; data: PatientSnapshot[] } | null = null;
+
+/** Bust the snapshot cache after any patient/intervention write. */
+export function invalidateSnapshots() {
+  snapsCache = null;
+}
+
 export async function dbSnapshots(): Promise<PatientSnapshot[]> {
+  if (snapsCache && Date.now() - snapsCache.at < SNAPS_TTL_MS)
+    return snapsCache.data;
   const [rows, overrides] = await Promise.all([
     prisma.patient.findMany(),
     prisma.interventionOverride.findMany(),
   ]);
   const ov = new Map(overrides.map((o) => [o.stepId, o]));
-  return rows
+  const data = rows
     .map(toPatient)
     .map((patient) => {
       const risk = assessClinicalRisk(patient);
@@ -148,6 +158,8 @@ export async function dbSnapshots(): Promise<PatientSnapshot[]> {
       return { patient, risk, insurance: assessInsuranceRisk(patient, risk), plan };
     })
     .sort((a, b) => b.risk.score - a.risk.score);
+  snapsCache = { at: Date.now(), data };
+  return data;
 }
 
 /* ── Computed savings trend (B7 — replaces the static fixture) ── */

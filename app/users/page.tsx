@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { patchJson, postJson, useUsers } from "@/lib/api";
@@ -34,12 +34,31 @@ const EMPTY = {
 export default function UsersPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data, loading, error, refetch } = useUsers();
   const toast = useToast();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [dept, setDept] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [appliedQ, setAppliedQ] = useState("");
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setAppliedQ(q);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [q]);
+  const pick = (set: (v: string) => void) => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    set(e.target.value);
+    setPage(1);
+  };
+  const { data, loading, error, refetch } = useUsers({
+    q: appliedQ || undefined,
+    role: role || undefined,
+    dept: dept || undefined,
+    status: status || undefined,
+    page,
+  });
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [err, setErr] = useState("");
@@ -60,17 +79,8 @@ export default function UsersPage() {
   if (loading && !data) return <Skeleton rows={6} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
-  const users = data.users;
-
-  const filtered = users.filter((u) => {
-    const name = (lang === "ar" ? u.nameAr : u.nameEn).toLowerCase();
-    return (
-      (!q || name.includes(q.toLowerCase()) || u.employeeId.includes(q)) &&
-      (!role || u.role === role) &&
-      (!dept || u.dept === dept) &&
-      (!status || u.status === status)
-    );
-  });
+  const filtered = data.users;
+  const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
 
   const patch = async (id: string, body: Record<string, string>) => {
     try {
@@ -169,19 +179,19 @@ export default function UsersPage() {
             className="w-56 rounded-lg border border-[#e2e9f2] bg-white py-2 ps-9 pe-3 text-sm outline-none focus:border-[#0e9bb5]/50"
           />
         </div>
-        <select aria-label={t("usr.allRoles")} value={role} onChange={(e) => setRole(e.target.value)} className={select}>
+        <select aria-label={t("usr.allRoles")} value={role} onChange={pick(setRole)} className={select}>
           <option value="">{t("usr.allRoles")}</option>
           {ROLES.map((r) => (
             <option key={r} value={r}>{t(`userRole.${r}`)}</option>
           ))}
         </select>
-        <select aria-label={t("usr.allDepts")} value={dept} onChange={(e) => setDept(e.target.value)} className={select}>
+        <select aria-label={t("usr.allDepts")} value={dept} onChange={pick(setDept)} className={select}>
           <option value="">{t("usr.allDepts")}</option>
           {DEPTS.map((d) => (
             <option key={d} value={d}>{t(`dept.${d}`)}</option>
           ))}
         </select>
-        <select aria-label={t("usr.allStatus")} value={status} onChange={(e) => setStatus(e.target.value)} className={select}>
+        <select aria-label={t("usr.allStatus")} value={status} onChange={pick(setStatus)} className={select}>
           <option value="">{t("usr.allStatus")}</option>
           <option value="active">{t("ustatus.active")}</option>
           <option value="suspended">{t("ustatus.suspended")}</option>
@@ -332,6 +342,28 @@ export default function UsersPage() {
             </Link>
           </div>
         ))}
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>
+          {t("common.page")} {data.page} / {totalPages} · {data.total}
+        </span>
+        <div className="flex gap-2">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+          >
+            ‹ {t("common.prev")}
+          </button>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg border border-[#e2e9f2] px-3 py-1.5 font-semibold disabled:opacity-40"
+          >
+            {t("common.next")} ›
+          </button>
+        </div>
       </div>
 
       {/* Create-user modal */}

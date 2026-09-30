@@ -1,5 +1,5 @@
 import { requirePerm } from "@/lib/server/session";
-import { dbPatient, dbSnapshots } from "@/lib/server/data";
+import { dbPatient, dbSnapshots, invalidateSnapshots } from "@/lib/server/data";
 import { runRiskAssessment } from "@/lib/server/risk";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
@@ -129,6 +129,7 @@ export const PATCH = handle(
     const row = await prisma.patient.findUnique({ where: { id } });
     if (!row) return Response.json({ error: "not found" }, { status: 404 });
 
+    invalidateSnapshots();
     await prisma.patient.update({
       where: { id },
       data: {
