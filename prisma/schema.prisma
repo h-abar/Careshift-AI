@@ -84,6 +84,34 @@ model Shift {
   label  String // e.g. "Morning Shift"
 }
 
+model Assignment {
+  patientId     String @id
+  dept          String
+  nurseId       String
+  physicianId   String
+  chargeNurseId String
+}
+
+model Notification {
+  id        String  @id
+  level     String  // critical | warning | info
+  key       String  // i18n → notif.*
+  patientId String?
+  min       Int     // minutes ago (demo clock)
+  read      Boolean @default(false)
+}
+
+model ShiftHandoff {
+  id           String @id
+  fromShiftEn  String
+  fromShiftAr  String
+  toShiftEn    String
+  toShiftAr    String
+  at           String
+  outgoingTeam String
+  incomingTeam String
+}
+
 model Handoff {
   id           String @id
   dept         String

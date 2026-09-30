@@ -50,6 +50,7 @@ export function PatientView({ patientId }: { patientId: string }) {
     sim,
     claim: linkedClaim,
     readiness,
+    riskHistory,
   } = data;
   const st = LEVEL_STYLES[risk.level];
 
@@ -249,6 +250,43 @@ export function PatientView({ patientId }: { patientId: string }) {
               {lang === "ar" ? p.noteAr : p.noteEn}
             </p>
           </div>
+          {/* Persisted RiskAssessment history */}
+          {riskHistory.length > 0 && (
+            <div className="mt-4 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                {t("why.history")}
+              </div>
+              <div className="space-y-1">
+                {riskHistory.map((r, i) => (
+                  <div
+                    key={r.assessedAt}
+                    className="flex items-center justify-between text-xs"
+                  >
+                    <span className="font-mono text-slate-400">
+                      {r.assessedAt.slice(5, 16).replace("T", " ")}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-slate-500">
+                        {t(`condition.${r.conditionKey}`)} · {r.confidence}%
+                      </span>
+                      <RiskBadge
+                        level={r.level as never}
+                        score={r.score}
+                      />
+                    </span>
+                  </div>
+                ))}
+                {riskHistory.length > 1 &&
+                  riskHistory[0].score !==
+                    riskHistory[riskHistory.length - 1].score && (
+                    <div className="pt-1 text-end font-mono text-[11px] text-slate-400">
+                      Δ {riskHistory[0].score - riskHistory[riskHistory.length - 1].score > 0 ? "+" : ""}
+                      {riskHistory[0].score - riskHistory[riskHistory.length - 1].score}
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* ── Intervention plan + what happens next ── */}

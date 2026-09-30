@@ -11,7 +11,8 @@ import bcrypt from "bcryptjs";
 import { patients } from "../lib/data/patients";
 import { users } from "../lib/data/users";
 import { claims } from "../lib/data/claims";
-import { handoffRecords } from "../lib/data/handoffs";
+import { handoffRecords, assignments, notifications } from "../lib/data/handoffs";
+import { handoffs as shiftHandoffs } from "../lib/data/shifts";
 import { journeys } from "../lib/data/journeys";
 
 const prisma = new PrismaClient();
@@ -46,6 +47,9 @@ async function main() {
   await prisma.riskAssessment.deleteMany();
   await prisma.insuranceClaim.deleteMany();
   await prisma.handoff.deleteMany();
+  await prisma.assignment.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.shiftHandoff.deleteMany();
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
   await prisma.patient.deleteMany();
@@ -134,6 +138,40 @@ async function main() {
     });
   }
 
+  await prisma.assignment.createMany({
+    data: assignments.map((a) => ({
+      patientId: a.patientId,
+      dept: a.dept,
+      nurseId: a.nurseId,
+      physicianId: a.physicianId,
+      chargeNurseId: a.chargeNurseId,
+    })),
+  });
+
+  await prisma.notification.createMany({
+    data: notifications.map((n) => ({
+      id: n.id,
+      level: n.level,
+      key: n.key,
+      patientId: n.patientId ?? null,
+      min: n.min,
+      read: n.read,
+    })),
+  });
+
+  await prisma.shiftHandoff.createMany({
+    data: shiftHandoffs.map((s) => ({
+      id: s.id,
+      fromShiftEn: s.fromShift.en,
+      fromShiftAr: s.fromShift.ar,
+      toShiftEn: s.toShift.en,
+      toShiftAr: s.toShift.ar,
+      at: s.at,
+      outgoingTeam: s.outgoingTeam,
+      incomingTeam: s.incomingTeam,
+    })),
+  });
+
   const counts = {
     roles: ROLES.length,
     users: await prisma.user.count(),
@@ -141,6 +179,8 @@ async function main() {
     claims: await prisma.insuranceClaim.count(),
     handoffs: await prisma.handoff.count(),
     shifts: SHIFTS.length,
+    assignments: await prisma.assignment.count(),
+    notifications: await prisma.notification.count(),
   };
   console.log("Seeded:", counts);
 }

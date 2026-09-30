@@ -162,6 +162,13 @@ export interface PatientDetail {
     earlyIntervention: { icuRiskPct: number; extraLosDays: number; exposureSar: number; docCompleteness: number };
   };
   journey: { t: string; kind: JourneyKind; key: string; riskScore?: number }[];
+  riskHistory: {
+    score: number;
+    level: string;
+    conditionKey: string;
+    confidence: number;
+    assessedAt: string;
+  }[];
   claim: (Claim & { updatedAt?: string }) | null;
   readiness: {
     score: number;

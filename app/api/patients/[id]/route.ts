@@ -25,6 +25,36 @@ export const GET = handle(
       select: { journeyJson: true },
     });
 
+    // Persist the (re)computed risk as a RiskAssessment row — deduplicated:
+    // a new row only when the score/level changed or 10 min elapsed.
+    const lastRun = await prisma.riskAssessment.findFirst({
+      where: { patientId: id },
+      orderBy: { assessedAt: "desc" },
+    });
+    if (
+      !lastRun ||
+      lastRun.score !== snap.risk.score ||
+      lastRun.level !== snap.risk.level ||
+      Date.now() - lastRun.assessedAt.getTime() > 10 * 60 * 1000
+    ) {
+      await prisma.riskAssessment.create({
+        data: {
+          patientId: id,
+          score: snap.risk.score,
+          level: snap.risk.level,
+          conditionKey: snap.risk.conditionKey,
+          factorsJson: JSON.stringify(snap.risk.factors),
+          windowHrs: snap.risk.windowHrs,
+          confidence: snap.risk.confidence,
+        },
+      });
+    }
+    const riskHistory = await prisma.riskAssessment.findMany({
+      where: { patientId: id },
+      orderBy: { assessedAt: "desc" },
+      take: 8,
+    });
+
     await audit(
       {
         userId: auth.user.id,
@@ -46,6 +76,13 @@ export const GET = handle(
         journeyRow?.journeyJson
           ? JSON.parse(journeyRow.journeyJson)
           : journeys[id] ?? [],
+      riskHistory: riskHistory.map((r) => ({
+        score: r.score,
+        level: r.level,
+        conditionKey: r.conditionKey,
+        confidence: r.confidence,
+        assessedAt: r.assessedAt.toISOString(),
+      })),
       claim: claim
         ? {
             ...claim,

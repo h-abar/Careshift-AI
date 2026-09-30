@@ -582,6 +582,7 @@ const en: Record<string, string> = {
   "why.title": "Why this patient?",
   "why.confidence": "Signal confidence",
   "why.note": "AI risk signal — prototype simulation, not a diagnosis",
+  "why.history": "Assessment history",
 
   // ── What happens next ──
   "whn.title": "What happens next?",

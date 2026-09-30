@@ -582,6 +582,7 @@ const ar: Record<string, string> = {
   "why.title": "لماذا هذا المريض؟",
   "why.confidence": "ثقة الإشارة",
   "why.note": "إشارة خطر بالذكاء الاصطناعي — محاكاة أولية وليست تشخيصًا",
+  "why.history": "سجل التقييمات",
 
   // ── What happens next ──
   "whn.title": "ماذا يحدث بعد ذلك؟",
