@@ -15,6 +15,13 @@ import { handoffRecords, assignments, notifications } from "../lib/data/handoffs
 import { handoffs as shiftHandoffs } from "../lib/data/shifts";
 import { journeys } from "../lib/data/journeys";
 
+if (process.env.NODE_ENV === "production") {
+  console.error(
+    "Refusing to seed — demo data/passwords are development-only and must never run in production.",
+  );
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 const ROLES = [

@@ -37,32 +37,51 @@ standalone claims product.
 
 ```bash
 npm install
-npm run db:push        # create prisma/dev.db from schema
-npm run db:seed        # load demo data (22 patients, 50 claims, 10 users…)
+npm run db:migrate     # prisma migrate dev — applies prisma/migrations + seeds
+# or, on an existing DB: npm run db:deploy && npm run db:seed
 ```
 
-### Environment variables (`.env`, git-ignored)
+### Environment variables (`.env`, git-ignored — names in `.env.example`)
 
 ```
-DATABASE_URL="file:./dev.db"          # Postgres: postgresql://user:pass@host:5432/careshift
-SESSION_SECRET="<random 32+ chars>"   # JWT signing key — change in production
+DATABASE_URL="file:./dev.db"          # see "Postgres profile" below
+SESSION_SECRET="<random 32+ chars>"   # REQUIRED in production — server
+                                      # throws at startup if missing/short
+API_ORIGIN="https://…"                # Capacitor server.url (optional)
 ```
+
+### Database
+
+- Dev DB: `prisma/dev.db` (git-ignored). Real migrations live in
+  `prisma/migrations/` — use `npm run db:migrate` (dev) / `npm run db:deploy`
+  (prod) rather than `db push`. `npm run db:reset` wipes + reseeds.
+- Seed: `npm run db:seed` loads the fictional demo set (22 patients,
+  50 claims, 10 users, handoffs/shifts/assignments/notifications). It is
+  **dev-only** — it refuses to run with `NODE_ENV=production`, and demo
+  passwords are documented here for development only.
+- **Postgres profile**: in `prisma/schema.prisma` set
+  `provider = "postgresql"` and point `DATABASE_URL` at e.g.
+  `postgresql://user:pass@host:5432/careshift`, then
+  `npm run db:deploy`. The schema avoids SQLite-only types (JSON is stored
+  as strings), so no model changes are needed.
+- Tests use their own `prisma/test.db`, reset + re-seeded per run.
 
 ## Run / verify
 
 ```bash
 npm run dev            # dev server
-npm test               # vitest — engines + server (RBAC/JWT/bcrypt)
+npm test               # vitest — engines + server units + route suite (48)
 npm run lint           # eslint
 npx tsc --noEmit       # typecheck
 npm run build          # production build (server output — NOT static export)
 npm start              # serve the production build
 ```
 
-## Demo accounts
+## Demo accounts (dev-only)
 
 Usernames = email prefix; password = `Demo@` + employee digits.
-All are seed-only — hashes live in the DB, **never** in client code.
+**Development only** — hashes live in the DB, never in client code, and
+the seed refuses to run in production.
 
 | User | Username | Password | Role | Sees |
 |---|---|---|---|---|
@@ -95,9 +114,11 @@ lib/server/
   audit.ts                   AuditLog writer (never throws into requests)
   json.ts                    ok()/handle() wrappers → typed errors
 lib/permissions.ts           single source of truth: RoleKey → PermKey map
-prisma/schema.prisma         User, Role, Patient, Shift, Handoff,
+prisma/schema.prisma         User, Role, Patient, Shift, ShiftHandoff,
+                             Handoff, Assignment, Notification,
                              RiskAssessment, InsuranceClaim, AuditLog,
                              Session, InterventionOverride
+prisma/migrations/           real migrations (init) — migrate deploy in prod
 lib/engines/*                pure rule engines: clinical-risk, insurance-
                              risk, interventions, claim-readiness,
                              care-value, simulator, sbar
@@ -113,12 +134,31 @@ lib/api.ts                   typed client hooks (useOrg, usePatientsTable,
   holding a JWT; every request re-validates the DB `Session` row, so
   logout/admin revocation kills sessions immediately. 8h expiry.
 - Authorization: menu-hiding is cosmetic only — enforcement is
-  `proxy.ts` (page + API gates) **and** `requirePerm()` inside each
-  handler. "View as" runs through `POST /api/auth/switch` which requires
-  `users_manage`, sets an `imp` claim, and writes `auth.switch` to audit.
-- Audit: `auth.login/.logout/.login_failed/.switch`, `patient.view`,
-  `handoff.accept/.create`, `claim.status`, `intervention.*` — browsable
-  at `/audit` (perm `audit_view`) with user/action filters.
+  `proxy.ts` (page + API gates on the JWT claim) **and** `requirePerm()`
+  inside each handler (re-checked against the live DB role — a stale JWT
+  can never leak data). Notable rules:
+  - Claim status changes need `claims_edit` (admin + insurance only) and
+    follow a legal transition map (`pending→review/approved/denied`,
+    `review→approved/denied`, `denied→review`; 400 otherwise).
+  - Escalating an intervention needs `intervention_escalate`; step IDs are
+    bound to their patient (400 on foreign `stepId`).
+  - A handoff can only be accepted by its assigned incoming user, or by a
+    `handoff_manage` holder (admin/charge nurse) on their behalf.
+- View-as: `POST /api/auth/switch` (admin-only, audited `auth.switch`)
+  impersonates through `Session.impersonatorId`; starting one while
+  already impersonating → 409. `POST /api/auth/switch/stop` restores the
+  admin and audits `auth.switch_end`. A persistent banner shows whom you
+  are viewing as with a "return to admin" button.
+- Login protection: 5 failed logins per username+IP within 15 min →
+  HTTP 429; the lockout transition is audited as `auth.locked`.
+- Audit: `auth.login/.logout/.login_failed/.locked/.switch/.switch_end`,
+  `patient.view`, `patients.list`, `claims.list`, `users.list`,
+  `audit.list`, `org.view`, `handoff.accept/.create`, `claim.status`,
+  `intervention.*`, `user.create/.update/.password_reset` — browsable at
+  `/audit` (perm `audit_view`) with user/action filters.
+- Risk persistence: every (re)computed patient risk is stored as a
+  `RiskAssessment` row (deduped per score/10-min window); the patient
+  view shows the assessment history.
 
 ### Future SSO
 
@@ -129,12 +169,14 @@ replace only the login route's credential check.
 ## API surface
 
 ```
-POST /api/auth/login|logout|switch     GET /api/auth/session
-GET  /api/snapshots (org KPIs)         GET /api/patients[/:id]
-GET  /api/handoff (shift context)      GET /api/handoffs[/:id]
-POST /api/handoffs/create              POST /api/handoffs/:id/accept
-POST /api/interventions/:stepId        GET  /api/claims   PATCH /api/claims/:id
-GET  /api/users[/:id]                  GET  /api/audit?userId=&action=&entityId=
+POST /api/auth/login|logout|switch     GET  /api/auth/session (public GET)
+POST /api/auth/switch/stop             GET  /api/snapshots (org KPIs)
+GET  /api/patients[/:id]               GET  /api/handoff (shift context)
+GET  /api/handoffs[/:id]               POST /api/handoffs/create
+POST /api/handoffs/:id/accept          POST /api/interventions/:stepId
+GET  /api/claims                       PATCH /api/claims/:id (claims_edit)
+GET|POST /api/users                    PATCH /api/users/:id
+POST /api/users/:id/reset-password     GET  /api/audit?userId=&action=&entityId=
 GET  /api/notifications
 ```
 
@@ -142,16 +184,15 @@ GET  /api/notifications
 
 The app is no longer a static export (server auth + DB are required).
 For an Android build, deploy the Next.js server (e.g. Vercel/VM), then
-point the WebView at it:
+point the WebView at it via `API_ORIGIN` before `npx cap sync` —
+`capacitor.config.ts` maps it to `server.url`:
 
-```ts
-// capacitor.config.ts
-server: { url: "https://<your-deployment>" }
+```bash
+API_ORIGIN="https://<your-deployment>" npx cap sync
 ```
 
-`webDir: "out"` + `output:"export"` can still be used only for a
-demo-only shell without login/DB. iPad: use the web app via Safari
-("Add to Home Screen") — APKs are Android-only.
+`webDir: "out"` alone is only a demo shell without login/DB. iPad: use
+the web app via Safari ("Add to Home Screen") — APKs are Android-only.
 
 ## Roadmap (not in MVP)
 
