@@ -22,7 +22,10 @@ export const PATCH = handle(
       return Response.json({ error: "forbidden" }, { status: 403 });
     }
 
-    await prisma.notification.update({ where: { id }, data: { read: true } });
+    await prisma.notification.update({
+      where: { id },
+      data: { read: true, dismissed: action === "dismiss" },
+    });
     await audit(
       {
         userId: auth.user.id,

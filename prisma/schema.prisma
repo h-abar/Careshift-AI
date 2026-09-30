@@ -103,6 +103,7 @@ model Notification {
   detail     String   @default("") // {detail} placeholder for i18n keys
   min        Int      @default(0) // minutes ago (legacy demo clock)
   read       Boolean  @default(false)
+  dismissed  Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   @@index([userId, read])

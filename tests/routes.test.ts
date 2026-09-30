@@ -1093,3 +1093,50 @@ describe("B2 risk reassessment", () => {
     );
   });
 });
+
+/* ── B5: dismiss + mark-all-read ── */
+
+import { POST as notifMarkAll } from "@/app/api/notifications/route";
+
+describe("B5 notification center", () => {
+  it("dismiss hides the row; mark-all marks everything", async () => {
+    const n = await prisma.notification.create({
+      data: {
+        id: "ntf-test-2", userId: "U-002", level: "info",
+        key: "notif.claimStatus", entityId: "CL-1", detail: "review",
+      },
+    });
+    await loginAs("nurse");
+    expect(
+      (await notifPatch(patch({ action: "dismiss" }), ctx({ id: n.id }))).status,
+    ).toBe(200);
+    const list = await (await notifGet()).json();
+    expect(
+      list.notifications.some((x: { id: string }) => x.id === n.id),
+    ).toBe(false);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "alert.dismiss", entityId: n.id },
+      }),
+    ).toBeTruthy();
+
+    const r = await notifMarkAll(post({}));
+    expect(r.status).toBe(200);
+    // Broadcasts (userId=null) are shared — only MY rows are marked.
+    const broadcastUnread = await prisma.notification.count({
+      where: { userId: null, read: false, dismissed: false },
+    });
+    const after = await (await notifGet()).json();
+    expect(after.unread).toBe(broadcastUnread);
+    expect(
+      await prisma.notification.count({
+        where: { userId: "U-002", read: false, dismissed: false },
+      }),
+    ).toBe(0);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "alert.read_all", userId: "U-002" },
+      }),
+    ).toBeTruthy();
+  });
+});

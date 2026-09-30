@@ -513,6 +513,7 @@ const en: Record<string, string> = {
   "notif.interventionEscalated": "{id} — intervention escalated to {detail}",
   "notif.claimStatus": "Claim {id} → {detail}",
   "ntf.read": "Mark read",
+  "ntf.dismiss": "Dismiss",
   "pt.reassess": "Reassess risk",
 
   // ── Audit ──

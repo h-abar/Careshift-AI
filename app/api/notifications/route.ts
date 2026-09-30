@@ -7,7 +7,10 @@ export const GET = handle(async () => {
   const auth = await requireAuth();
   // Per-user notifications + unit-wide broadcasts (userId = null).
   const rows = await prisma.notification.findMany({
-    where: { OR: [{ userId: auth.user.id }, { userId: null }] },
+    where: {
+      OR: [{ userId: auth.user.id }, { userId: null }],
+      dismissed: false,
+    },
     orderBy: { createdAt: "desc" },
     take: 50,
   });

@@ -57,6 +57,11 @@ export function NotificationCenter() {
       .then(() => refetch())
       .catch(() => {});
 
+  const dismiss = (id: string) =>
+    patchJson(`/api/notifications/${id}`, { action: "dismiss" })
+      .then(() => refetch())
+      .catch(() => {});
+
   const markAll = () =>
     postJson(`/api/notifications`, {})
       .then(() => refetch())
@@ -90,7 +95,7 @@ export function NotificationCenter() {
           </div>
           <ul className="max-h-80 overflow-y-auto">
             {items.map((n) => (
-              <li key={n.id}>
+              <li key={n.id} className="group relative">
                 <Link
                   href={linkFor(n)}
                   onClick={() => {
@@ -109,6 +114,13 @@ export function NotificationCenter() {
                     </span>
                   </span>
                 </Link>
+                <button
+                  onClick={() => dismiss(n.id)}
+                  aria-label={t("ntf.dismiss")}
+                  className="absolute end-2 top-2 rounded p-1 text-slate-300 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-500 group-hover:opacity-100"
+                >
+                  ✕
+                </button>
               </li>
             ))}
             {items.length === 0 && (
