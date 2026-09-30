@@ -8,7 +8,7 @@ const ar: Record<string, string> = {
   "nav.command": "مركز القيادة",
   "nav.handoff": "التسليم الذكي",
   "nav.interventions": "الحلقة المغلقة",
-  "nav.insurance": "ذكاء التأمين",
+  "nav.insurance": "مطالبات التأمين الصحي",
 
   // ── Common ──
   "common.patient": "المريض",
@@ -288,7 +288,7 @@ const ar: Record<string, string> = {
   "inv.completed": "المكتملة",
 
   // ── Insurance screen ──
-  "ins.title": "ذكاء التأمين",
+  "ins.title": "مطالبات التأمين الصحي",
   "ins.subtitle": "منع احتكاك المطالبات القابل للتجنب — لا مجرد توقّع الرفض",
   "ins.exposure": "التعرض الحالي",
   "ins.highRisk": "مرضى عالي الخطورة",
@@ -353,7 +353,7 @@ const ar: Record<string, string> = {
   "perm.intervention_escalate": "تصعيد التدخلات",
   "perm.journey_view": "مشاهدة رحلة المريض",
   "perm.evidence_view": "مشاهدة الأدلة",
-  "perm.insurance_view": "مشاهدة ذكاء التأمين",
+  "perm.insurance_view": "مشاهدة مطالبات التأمين الصحي",
   "perm.command_view": "مشاهدة مركز القيادة",
   "perm.reports_view": "مشاهدة التقارير",
   "perm.users_manage": "إدارة المستخدمين",

@@ -8,7 +8,7 @@ const en: Record<string, string> = {
   "nav.command": "Command Center",
   "nav.handoff": "Smart Handoff",
   "nav.interventions": "Closed-Loop",
-  "nav.insurance": "Insurance Intel",
+  "nav.insurance": "Health Claims",
 
   // ── Common ──
   "common.patient": "Patient",
@@ -288,7 +288,7 @@ const en: Record<string, string> = {
   "inv.completed": "Completed",
 
   // ── Insurance screen ──
-  "ins.title": "Insurance Intelligence",
+  "ins.title": "Health Insurance Claims",
   "ins.subtitle": "Prevent avoidable claim friction — not just predict denials",
   "ins.exposure": "Current Exposure",
   "ins.highRisk": "High-risk patients",
