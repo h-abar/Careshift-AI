@@ -70,12 +70,38 @@ API_ORIGIN="https://…"                # Capacitor server.url (optional)
 
 ```bash
 npm run dev            # dev server
-npm test               # vitest — engines + server units + route suite (48)
+npm test               # vitest — engines + server + route + i18n + proxy (97)
 npm run lint           # eslint
 npx tsc --noEmit       # typecheck
 npm run build          # production build (server output — NOT static export)
 npm start              # serve the production build
 ```
+
+### Browser E2E (Playwright)
+
+```bash
+npx playwright install chromium   # once — browser binaries
+npm run build                     # required first: suite runs the prod build
+npm run e2e                       # spins up next start on :3100 + fresh e2e.db
+```
+
+`e2e/global-setup.ts` recreates `prisma/e2e.db` from committed migrations
+(`migrate deploy`, not `db push`) and re-seeds it before every run — the
+dev database is never touched. The suite covers, per role
+(admin / physician / charge nurse / nurse / insurance reviewer):
+
+- login / logout / wrong-password / suspended-user / 5-attempt lockout
+- nav visibility + direct-URL redirect for forbidden pages (proxy.ts)
+- handoff create → per-patient review → sign-off → incoming accept
+- risk reassess → threshold notification → acknowledge
+- interventions permission split (nurse cannot escalate)
+- claim status change + document upload (e2e-uploads/, cleaned per run)
+- admin: create user, view-as start/stop, suspend (live session dies),
+  reset password, audit log verification
+- Arabic RTL ↔ English LTR switching + axe accessibility scan
+  (0 serious/critical violations)
+
+Requires Chromium via `npx playwright install` (first run only).
 
 ## Demo accounts (dev-only)
 

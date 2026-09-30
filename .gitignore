@@ -55,3 +55,8 @@ local.properties
 /prisma/*.db
 /prisma/*.db-journal
 /prisma/migrations/dev*
+
+# playwright e2e
+/test-results/
+/playwright-report/
+/e2e-uploads/

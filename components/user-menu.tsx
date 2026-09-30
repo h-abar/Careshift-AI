@@ -29,6 +29,7 @@ export function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
+        aria-label="user menu"
         className="flex items-center gap-2 rounded-lg border border-[#e2e9f2] bg-white px-2 py-1.5 hover:border-[#0e9bb5]/40 transition-colors"
       >
         <Avatar name={lang === "ar" ? user.nameAr : user.nameEn} size="h-8 w-8" />

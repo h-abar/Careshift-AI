@@ -439,7 +439,7 @@ const en: Record<string, string> = {
   "hf.next": "Next",
   "hf.back": "Back",
   "hf.createBtn": "Create handoff",
-  "hf.created": "Handoff created (demo)",
+  "hf.created": "Handoff created",
   "hf.selectDept": "Select department",
   "hf.selectShift": "Select shift",
   "hf.selectOutgoing": "Outgoing staff",

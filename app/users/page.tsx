@@ -224,6 +224,7 @@ export default function UsersPage() {
                 </td>
                 <td className="px-4 py-3">
                   <select
+                    aria-label={t("usr.role")}
                     value={u.role}
                     onChange={(e) => {
                       const v = e.target.value as RoleKey;
@@ -239,6 +240,7 @@ export default function UsersPage() {
                 </td>
                 <td className="px-4 py-3">
                   <select
+                    aria-label={t("usr.dept")}
                     value={u.dept}
                     onChange={(e) => patch(u.id, { dept: e.target.value })}
                     className="rounded-md border border-transparent bg-transparent px-1 py-0.5 text-xs text-slate-600 hover:border-[#e2e9f2]"

@@ -439,7 +439,7 @@ const ar: Record<string, string> = {
   "hf.next": "التالي",
   "hf.back": "السابق",
   "hf.createBtn": "إنشاء التسليم",
-  "hf.created": "تم إنشاء التسليم (عرض تجريبي)",
+  "hf.created": "تم إنشاء التسليم",
   "hf.selectDept": "اختر القسم",
   "hf.selectShift": "اختر الشيفت",
   "hf.selectOutgoing": "طاقم التسليم",
