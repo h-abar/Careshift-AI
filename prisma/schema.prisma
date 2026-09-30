@@ -93,12 +93,19 @@ model Assignment {
 }
 
 model Notification {
-  id        String  @id
-  level     String  // critical | warning | info
-  key       String  // i18n → notif.*
-  patientId String?
-  min       Int     // minutes ago (demo clock)
-  read      Boolean @default(false)
+  id         String   @id
+  userId     String?  // null = broadcast to the whole unit (seeded demo rows)
+  level      String   // critical | warning | info
+  key        String   // i18n → notif.*
+  patientId  String?
+  entityType String?  // handoff | intervention | claim | patient
+  entityId   String?
+  detail     String   @default("") // {detail} placeholder for i18n keys
+  min        Int      @default(0) // minutes ago (legacy demo clock)
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, read])
 }
 
 model ShiftHandoff {
@@ -124,6 +131,39 @@ model Handoff {
   reviewedJson String
   checklistJson String
   timelineJson String
+  // Phase-2 workflow columns
+  sbarJson        String?   // { [patientId]: {s,b,a,r} } — editable drafts
+  signedOffAt     DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  completedAt     DateTime?
+  patients        HandoffPatient[]
+  events          HandoffEvent[]
+}
+
+/** Per-patient row inside a handoff — SBAR snapshot + review state. */
+model HandoffPatient {
+  id        String  @id @default(cuid())
+  handoffId String
+  handoff   Handoff @relation(fields: [handoffId], references: [id], onDelete: Cascade)
+  patientId String
+  sbarJson  String  @default("{}") // {s,b,a,r} editable
+  reviewed  Boolean @default(false)
+
+  @@index([handoffId])
+}
+
+/** Persisted timeline — every workflow transition is a row. */
+model HandoffEvent {
+  id        String   @id @default(cuid())
+  handoffId String
+  handoff   Handoff  @relation(fields: [handoffId], references: [id], onDelete: Cascade)
+  actorId   String
+  action    String   // created|reviewed|sbar|signed_off|accepted|rejected|completed
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([handoffId])
 }
 
 model RiskAssessment {
@@ -152,8 +192,39 @@ model InsuranceClaim {
   icuDays     Int
   evidenceJson  String
   frictionJson  String
+  denialCode  String?  // canonical denial reason code → i18n deny.*
   updatedAt   DateTime @default(now())
   updatedBy   String?
+  documents   ClaimDocument[]
+  events      ClaimEvent[]
+}
+
+/** Uploaded evidence file metadata — bytes live under uploads/. */
+model ClaimDocument {
+  id         String   @id @default(cuid())
+  claimId    String
+  claim      InsuranceClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  storedAs   String   @unique
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  @@index([claimId])
+}
+
+/** Per-claim audit trail (status changes, appeals, uploads). */
+model ClaimEvent {
+  id        String   @id @default(cuid())
+  claimId   String
+  claim     InsuranceClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  actorId   String
+  action    String   // status|appeal|resubmit|upload
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([claimId])
 }
 
 model InterventionOverride {
@@ -162,8 +233,27 @@ model InterventionOverride {
   patient     Patient  @relation(fields: [patientId], references: [id])
   status      String
   escalatedTo String?
+  assigneeId  String?
+  dueAt       DateTime?
+  note        String   @default("")
+  startedAt   DateTime?
+  doneAt      DateTime?
+  resolvedAt  DateTime?
   updatedBy   String
   updatedAt   DateTime @default(now())
+}
+
+/** Patient journey timeline events — replaces lib/data/journeys (B7). */
+model JourneyEvent {
+  id        String   @id @default(cuid())
+  patientId String
+  ts        String   // clock label "09:20" kept for display
+  type      String   // risk | intervention | evidence | claim
+  key       String   // i18n key
+  score     Int?
+  createdAt DateTime @default(now())
+
+  @@index([patientId])
 }
 
 model AuditLog {

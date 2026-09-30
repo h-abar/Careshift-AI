@@ -158,10 +158,26 @@ export type HandoffStatus =
   | "draft"
   | "pending"
   | "in_progress"
+  | "signed_off"
   | "accepted"
+  | "rejected"
   | "partial"
   | "escalated"
   | "completed";
+
+export interface Sbar {
+  s: string;
+  b: string;
+  a: string;
+  r: string;
+}
+
+/** Per-patient handoff row — persisted, editable SBAR + review flag. */
+export interface HandoffPatientRow {
+  patientId: string;
+  reviewed: boolean;
+  sbar: { ar: Sbar; en: Sbar };
+}
 
 export interface HandoffEvent {
   t: string;
@@ -180,6 +196,11 @@ export interface HandoffRecord {
   reviewed: Record<string, boolean>; // patientId → reviewed by incoming
   checklist: string[]; // completed checklist item keys
   timeline: HandoffEvent[];
+  rejectionReason?: string;
+  signedOffAt?: string;
+  completedAt?: string;
+  patients?: HandoffPatientRow[];
+  events?: { actorId: string; action: string; detail: string; createdAt: string }[];
 }
 
 export interface NotificationItem {

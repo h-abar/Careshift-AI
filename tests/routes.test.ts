@@ -31,6 +31,9 @@ import { POST as switchPost } from "@/app/api/auth/switch/route";
 import { POST as switchStopPost } from "@/app/api/auth/switch/stop/route";
 import { POST as acceptPost } from "@/app/api/handoffs/[id]/accept/route";
 import { POST as handoffCreatePost } from "@/app/api/handoffs/create/route";
+import { POST as signoffPost } from "@/app/api/handoffs/[id]/signoff/route";
+import { POST as rejectPost } from "@/app/api/handoffs/[id]/reject/route";
+import { PATCH as handoffPatch, GET as handoffGet } from "@/app/api/handoffs/[id]/route";
 import { POST as interventionPost } from "@/app/api/interventions/[stepId]/route";
 import { GET as usersGet, POST as usersPost } from "@/app/api/users/route";
 import { PATCH as userPatch } from "@/app/api/users/[id]/route";
@@ -386,7 +389,27 @@ describe("claims_edit", () => {
 
 describe("handoff accept", () => {
   it("wrong incoming user → 403; assigned incoming → 200 + audit", async () => {
-    // HF-2026-0929 is in_progress, incomingId = U-002 (s.ahmed).
+    // HF-2026-0929: drive it to signed_off, then accept as the assignee.
+    const seeded = await prisma.handoff.findUnique({
+      where: { id: "HF-2026-0929" },
+    });
+    const seededIds = JSON.parse(seeded!.patientIdsJson) as string[];
+    await prisma.handoff.update({
+      where: { id: "HF-2026-0929" },
+      data: {
+        status: "pending",
+        reviewedJson: JSON.stringify(
+          Object.fromEntries(seededIds.map((p) => [p, true])),
+        ),
+        checklistJson: JSON.stringify([
+          "criticalReviewed", "pendingReviewed",
+          "escalationsReviewed", "recommendationsReviewed",
+        ]),
+      },
+    });
+    await loginAs("charge");
+    await signoffPost(post({}), ctx({ id: "HF-2026-0929" }));
+
     await loginAs("nurse2"); // U-007 — has handoff_accept perm, not the assignee
     const r1 = await acceptPost(post({}), ctx({ id: "HF-2026-0929" }));
     expect(r1.status).toBe(403);
@@ -402,11 +425,111 @@ describe("handoff accept", () => {
   it("charge nurse may accept on behalf (manager bypass)", async () => {
     await prisma.handoff.update({
       where: { id: "HF-2026-0929" },
-      data: { status: "pending" },
+      data: { status: "signed_off" },
     });
     await loginAs("charge");
     const r = await acceptPost(post({}), ctx({ id: "HF-2026-0929" }));
     expect(r.status).toBe(200);
+  });
+
+  it("B1 full flow: create → SBAR → review → signoff → reject; create → signoff → accept → completed", async () => {
+    // Charge nurse creates — per-patient rows get auto SBAR + notify incoming.
+    await loginAs("charge");
+    const created = await handoffCreatePost(
+      post({
+        dept: "icu", shift: "day",
+        outgoingId: "U-003", incomingId: "U-002",
+        patientIds: ["P-1042"],
+      }),
+    );
+    expect(created.status).toBe(200);
+    const { handoff } = await created.json();
+    expect(handoff.status).toBe("pending");
+    const hp = await prisma.handoffPatient.findFirst({
+      where: { handoffId: handoff.id },
+    });
+    expect(hp).toBeTruthy();
+    const sbar = JSON.parse(hp!.sbarJson);
+    expect(sbar.ar.s.length).toBeGreaterThan(5);
+    expect(sbar.en.s.length).toBeGreaterThan(5);
+    expect(
+      await prisma.notification.findFirst({
+        where: { userId: "U-002", entityId: handoff.id },
+      }),
+    ).toBeTruthy();
+
+    // Sign-off blocked until review + checklist are complete.
+    const early = await signoffPost(post({}), ctx({ id: handoff.id }));
+    expect(early.status).toBe(400);
+
+    // Outgoing edits SBAR + marks reviewed + completes checklist.
+    const pr = await handoffPatch(
+      patch({
+        reviewed: { "P-1042": true },
+        checklist: [
+          "criticalReviewed", "pendingReviewed",
+          "escalationsReviewed", "recommendationsReviewed",
+        ],
+        sbar: { patientId: "P-1042", lang: "en", s: "Edited S", bb: "B", a: "A", r: "R" },
+      }),
+      ctx({ id: handoff.id }),
+    );
+    expect(pr.status).toBe(200);
+    const detail = await handoffGet(get(), ctx({ id: handoff.id }));
+    const det = await detail.json();
+    expect(det.handoff.patients[0].sbar.en.s).toBe("Edited S");
+
+    // Incoming rejects WITHOUT sign-off → allowed from pending; reason required.
+    await loginAs("nurse");
+    const noReason = await rejectPost(post({}), ctx({ id: handoff.id }));
+    expect(noReason.status).toBe(400);
+    const rejected = await rejectPost(
+      post({ reason: "Missing recent labs" }),
+      ctx({ id: handoff.id }),
+    );
+    expect(rejected.status).toBe(200);
+    expect(
+      await prisma.notification.findFirst({
+        where: { userId: "U-003", entityId: handoff.id, key: "notif.handoffRejectedBy" },
+      }),
+    ).toBeTruthy();
+    // Terminal state — no sign-off on a rejected handoff.
+    expect((await signoffPost(post({}), ctx({ id: handoff.id }))).status).toBe(409);
+
+    // Second handoff completes the happy path.
+    await loginAs("charge");
+    const c2 = await handoffCreatePost(
+      post({
+        dept: "icu", shift: "day",
+        outgoingId: "U-003", incomingId: "U-002",
+        patientIds: ["P-1042"],
+      }),
+    );
+    const { handoff: h2 } = await c2.json();
+    await handoffPatch(
+      patch({
+        reviewed: { "P-1042": true },
+        checklist: [
+          "criticalReviewed", "pendingReviewed",
+          "escalationsReviewed", "recommendationsReviewed",
+        ],
+      }),
+      ctx({ id: h2.id }),
+    );
+    // Accept before sign-off → 409 (machine enforced).
+    await loginAs("nurse");
+    expect((await acceptPost(post({}), ctx({ id: h2.id }))).status).toBe(409);
+    await loginAs("charge");
+    expect((await signoffPost(post({}), ctx({ id: h2.id }))).status).toBe(200);
+    await loginAs("nurse");
+    const acc = await acceptPost(post({}), ctx({ id: h2.id }));
+    expect(acc.status).toBe(200);
+    const done = await prisma.handoff.findUnique({ where: { id: h2.id } });
+    expect(done!.status).toBe("completed");
+    expect(done!.completedAt).toBeTruthy();
+    // Persisted timeline events exist.
+    const evts = await prisma.handoffEvent.count({ where: { handoffId: h2.id } });
+    expect(evts).toBeGreaterThanOrEqual(4); // created+reviewed+checklist+signoff+accept
   });
 
   it("A6: outgoingId === incomingId → 400", async () => {
