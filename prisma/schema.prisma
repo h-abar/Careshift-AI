@@ -224,6 +224,8 @@ model ClaimDocument {
   sizeBytes  Int
   storedAs   String   @unique
   uploadedBy String
+  scanStatus String   @default("clean") // pending | clean | infected — only clean is downloadable
+  scanEngine String   @default("noop")
   createdAt  DateTime @default(now())
 
   @@index([claimId])

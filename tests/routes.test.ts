@@ -574,7 +574,7 @@ describe("B4 claims lifecycle", () => {
     );
     expect(
       (await claimUpload(uploadReq(big), ctx({ id: claim!.id }))).status,
-    ).toBe(400);
+    ).toBe(413);
 
     const pdf = new File([new Uint8Array([37, 80, 68, 70])], "lab.pdf", {
       type: "application/pdf",
@@ -590,14 +590,80 @@ describe("B4 claims lifecycle", () => {
     });
     expect(JSON.parse(row!.evidenceJson)).toContain("lab");
 
-    // Authenticated download → 200 + mime; anonymous → 401.
+    // Authenticated download → 200 + safe headers; anonymous → 401.
     const dl = await documentGet(get(), ctx({ docId: document.id }));
     expect(dl.status).toBe(200);
     expect(dl.headers.get("Content-Type")).toBe("application/pdf");
+    expect(dl.headers.get("Content-Disposition")).toContain("attachment");
+    expect(dl.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(dl.headers.get("Content-Security-Policy")).toContain(
+      "default-src 'none'",
+    );
     cookieStore.clear();
     expect(
       (await documentGet(get(), ctx({ docId: document.id }))).status,
     ).toBe(401);
+  });
+
+  it("magic bytes: spoofed type rejected; oversized Content-Length → 413 early", async () => {
+    const claim = await prisma.insuranceClaim.findFirst({
+      where: { status: "review" },
+    });
+    await loginAs("insurance");
+    // PDF bytes declared as PNG → mime_mismatch
+    const spoof = new File([new Uint8Array([37, 80, 68, 70])], "x.png", {
+      type: "image/png",
+    });
+    const sm = await claimUpload(uploadReq(spoof), ctx({ id: claim!.id }));
+    expect(sm.status).toBe(400);
+    expect((await sm.json()).code).toBe("mime_mismatch");
+
+    // Content-Length over the cap is rejected BEFORE buffering.
+    const fd = new FormData();
+    fd.append("file", new File(["x"], "x.png", { type: "image/png" }));
+    const early = new Request("http://test/api", {
+      method: "POST",
+      body: fd,
+      headers: { "content-length": String(6 * 1024 * 1024) },
+    });
+    expect((await claimUpload(early, ctx({ id: claim!.id }))).status).toBe(413);
+  });
+
+  it("AV scan: infected verdict rejects the file and removes it", async () => {
+    const { __setAvScannerForTests } = await import("@/lib/server/avscan");
+    const claim = await prisma.insuranceClaim.findFirst({
+      where: { status: "review" },
+    });
+    __setAvScannerForTests({
+      name: "test-av",
+      scan: async () => ({ clean: false, signature: "Eicar-Test", engine: "test-av" }),
+    });
+    try {
+      await loginAs("insurance");
+      const png = new File(
+        [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
+        "eicar.png",
+        { type: "image/png" },
+      );
+      const r = await claimUpload(uploadReq(png), ctx({ id: claim!.id }));
+      expect(r.status).toBe(422);
+      expect((await r.json()).code).toBe("av_infected");
+      // Row exists but is marked infected — never downloadable.
+      const doc = await prisma.claimDocument.findFirst({
+        where: { fileName: "eicar.png" },
+      });
+      expect(doc!.scanStatus).toBe("infected");
+      expect(
+        (await documentGet(get(), ctx({ docId: doc!.id }))).status,
+      ).toBe(404);
+      expect(
+        await prisma.auditLog.findFirst({
+          where: { action: "claim.upload_blocked" },
+        }),
+      ).toBeTruthy();
+    } finally {
+      __setAvScannerForTests(null);
+    }
   });
 
   it("GET claim detail → documents + events + readiness", async () => {

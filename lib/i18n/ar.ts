@@ -536,6 +536,7 @@ const ar: Record<string, string> = {
   "auditAction.claim.appeal": "استئناف مطالبة",
   "auditAction.claim.resubmit": "إعادة تقديم مطالبة",
   "auditAction.claim.upload": "رفع مستند مطالبة",
+  "auditAction.claim.upload_blocked": "حظر رفع مستند (فحص فيروسي)",
   "auditAction.handoff.reject": "رفض تسليم",
   "auditAction.handoff.signoff": "توقيع تسليم",
   "auditAction.handoff.update": "تحديث مراجعة تسليم",

@@ -536,6 +536,7 @@ const en: Record<string, string> = {
   "auditAction.claim.appeal": "Appealed claim",
   "auditAction.claim.resubmit": "Resubmitted claim",
   "auditAction.claim.upload": "Uploaded claim document",
+  "auditAction.claim.upload_blocked": "Blocked upload (AV)",
   "auditAction.handoff.reject": "Rejected handoff",
   "auditAction.handoff.signoff": "Signed off handoff",
   "auditAction.handoff.update": "Updated handoff review",

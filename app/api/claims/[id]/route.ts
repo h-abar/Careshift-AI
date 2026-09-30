@@ -24,7 +24,12 @@ export const GET = handle(
     const { id } = await ctx.params;
     const claim = await prisma.insuranceClaim.findUnique({
       where: { id },
-      include: { documents: { orderBy: { createdAt: "desc" } } },
+      include: {
+        documents: {
+          where: { scanStatus: { not: "infected" } },
+          orderBy: { createdAt: "desc" },
+        },
+      },
     });
     if (!claim) return Response.json({ error: "not found" }, { status: 404 });
 
