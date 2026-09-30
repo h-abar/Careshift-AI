@@ -234,7 +234,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                   <div className="rounded-lg bg-[#f8fafc] border border-[#eef2f7] p-2">
                     <div className="font-bold text-slate-400">{t("common.exposure")}</div>
                     <div className="mt-0.5 font-mono text-sm font-bold text-red-600">
-                      {fmtSar(insurance.exposureSar)}
+                      {fmtSar(insurance.exposureSar, lang)}
                     </div>
                   </div>
                 </div>

@@ -69,7 +69,7 @@ export default function PatientsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-end font-mono text-xs text-red-600">
-                    {fmtSarK(insurance.exposureSar)}
+                    {fmtSarK(insurance.exposureSar, lang)}
                   </td>
                 </tr>
               );
@@ -101,7 +101,7 @@ export default function PatientsPage() {
               <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
                 <span>{t("common.documentation")}: {insurance.docCompleteness}%</span>
                 <span className="font-mono text-red-600">
-                  {t("common.sar")} {fmtSarK(insurance.exposureSar)}
+                  {t("common.sar")} {fmtSarK(insurance.exposureSar, lang)}
                 </span>
               </div>
             </Card>

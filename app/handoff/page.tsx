@@ -160,7 +160,7 @@ export default function HandoffPage() {
                     {t("common.exposure")}
                   </div>
                   <div className="font-mono text-base font-bold text-red-600">
-                    {t("common.sar")} {fmtSar(insurance.exposureSar)}
+                    {t("common.sar")} {fmtSar(insurance.exposureSar, lang)}
                   </div>
                 </div>
                 <div className="rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-2.5">

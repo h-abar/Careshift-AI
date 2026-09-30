@@ -221,7 +221,7 @@ export default function InterventionsPage() {
                   </button>
                 )}
                 <span className="ms-auto text-[11px] text-slate-500">
-                  {t("common.exposure")}: {t("common.sar")} {fmtSar(insurance.exposureSar)}
+                  {t("common.exposure")}: {t("common.sar")} {fmtSar(insurance.exposureSar, lang)}
                 </span>
               </div>
             )}

@@ -428,7 +428,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                   </b>
                   <span className="text-slate-400">{t("pt.exposureLabel")}</span>
                   <b className="text-end text-slate-700">
-                    {t("common.sar")} {fmtSar(s.exposureSar)}
+                    {t("common.sar")} {fmtSar(s.exposureSar, lang)}
                   </b>
                   <span className="text-slate-400">{t("pt.docLabel")}</span>
                   <b className="text-end text-slate-700">{s.docCompleteness}%</b>
@@ -495,7 +495,7 @@ export function PatientView({ patientId }: { patientId: string }) {
               <span className="text-[10px]">({t("common.simulated")})</span>
             </div>
             <div className="mt-0.5 font-mono text-xl font-bold text-red-600">
-              {t("common.sar")} {fmtSar(ins.exposureSar)}
+              {t("common.sar")} {fmtSar(ins.exposureSar, lang)}
             </div>
             <div className="mt-0.5 text-[11px] font-semibold text-emerald-700">
               {t("imp.status")}: ✓ {t("imp.complete")}

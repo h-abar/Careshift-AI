@@ -168,21 +168,20 @@ export function Countdown({
   const [secs, setSecs] = useState(seedMin * 60);
   const { t } = useI18n();
   const fired = useRef(false);
+  const over = secs <= 0;
 
   useEffect(() => {
-    if (secs <= 0) return;
+    if (over) return;
     const id = setInterval(() => setSecs((s) => s - 1), 1000);
     return () => clearInterval(id);
-  }, [secs <= 0]);
+  }, [over]);
 
   useEffect(() => {
-    if (secs <= 0 && onExpire && !fired.current) {
+    if (over && onExpire && !fired.current) {
       fired.current = true;
       onExpire();
     }
-  }, [secs <= 0]);
-
-  const over = secs <= 0;
+  }, [over, onExpire]);
   return (
     <span
       className={`inline-flex items-center gap-1 font-mono text-sm font-bold tabular-nums ${

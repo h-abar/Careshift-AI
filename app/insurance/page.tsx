@@ -111,7 +111,7 @@ export default function InsurancePage() {
               <span className="text-[10px]">({t("common.simulated")})</span>
             </div>
             <div className="mt-1 text-2xl font-bold text-red-400">
-              {t("common.sar")} {fmtSarK(exposure.total)}
+              {t("common.sar")} {fmtSarK(exposure.total, lang)}
             </div>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function InsurancePage() {
                     </div>
                   </td>
                   <td className="text-end font-mono font-bold text-red-600">
-                    {fmtSar(c.exposureSar)}
+                    {fmtSar(c.exposureSar, lang)}
                   </td>
                 </tr>
               ))}

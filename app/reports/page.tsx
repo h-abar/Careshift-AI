@@ -57,7 +57,7 @@ export default function ReportsPage() {
         <KpiCard label={t("rpt.denials")} value={deniedCount} accent="text-[#0e9bb5]" />
         <KpiCard
           label={t("ins.avoided")}
-          value={fmtSarK(trend[trend.length - 1].avoided * 1000)}
+          value={fmtSarK(trend[trend.length - 1].avoided * 1000, lang)}
           unit={t("common.sar")}
           accent="text-emerald-600"
           sub={t("common.simulated")}

@@ -170,7 +170,7 @@ export default function DemoPage() {
                     </span>
                   ))}
                   <span className="flex items-center gap-1.5 font-semibold text-red-600">
-                    {t("common.sar")} {fmtSar(ins.exposureSar)}
+                    {t("common.sar")} {fmtSar(ins.exposureSar, lang)}
                   </span>
                 </div>
               )}

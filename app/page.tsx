@@ -40,7 +40,7 @@ export default function Home() {
 
 /* ── Oversight home (e.g. insurance reviewer) — aggregates only, no PHI ── */
 function OversightHome() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { data: s, loading, error, refetch } = useOrg();
   if (loading && !s) return <Skeleton rows={5} />;
   if (error && !s) return <ErrorState onRetry={refetch} />;
@@ -60,7 +60,7 @@ function OversightHome() {
         <KpiCard label={t("ins.claimsRisk")} value={s.financial.claimsAtRisk} accent="text-red-600" />
         <KpiCard
           label={t("ins.estExposure")}
-          value={fmtSarK(s.financial.exposureSar)}
+          value={fmtSarK(s.financial.exposureSar, lang)}
           unit={t("common.sar")}
           accent="text-red-600"
         />
@@ -81,7 +81,7 @@ function OversightHome() {
                 </span>
               </div>
               <span className="font-mono text-sm font-bold text-red-600">
-                {t("common.sar")} {fmtSarK(c.exposureSar)}
+                {t("common.sar")} {fmtSarK(c.exposureSar, lang)}
               </span>
             </div>
           ))}
@@ -280,7 +280,7 @@ function CommandCenter() {
             <div className="flex items-center justify-between border-t border-[#eef2f7] pt-3">
               <span className="text-xs text-slate-500">{t("cmd.exposure")}</span>
               <span className="font-mono text-lg font-bold text-red-600">
-                {t("common.sar")} {fmtSarK(s.financial.exposureSar)}
+                {t("common.sar")} {fmtSarK(s.financial.exposureSar, lang)}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -360,7 +360,7 @@ function MyWork() {
                     </span>
                   )}
                   <span className="font-mono">
-                    {t("common.sar")} {fmtSarK(insurance.exposureSar)}
+                    {t("common.sar")} {fmtSarK(insurance.exposureSar, lang)}
                   </span>
                 </div>
               </Link>
