@@ -257,7 +257,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                 {t("why.history")}
               </div>
               <div className="space-y-1">
-                {riskHistory.map((r, i) => (
+                {riskHistory.map((r) => (
                   <div
                     key={r.assessedAt}
                     className="flex items-center justify-between text-xs"

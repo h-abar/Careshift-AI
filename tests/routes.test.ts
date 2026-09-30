@@ -53,7 +53,9 @@ const patch = (body: unknown) =>
     body: JSON.stringify(body),
   });
 const get = () => new Request("http://test/api");
-const ctx = (params: Record<string, string>) => ({ params: Promise.resolve(params) });
+const ctx = <T extends Record<string, string>>(params: T) => ({
+  params: Promise.resolve(params),
+});
 
 const USERS = {
   admin: { u: "o.khalil", p: "Demo@8895" },       // U-008
