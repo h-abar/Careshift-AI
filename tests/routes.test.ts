@@ -895,6 +895,53 @@ describe("user admin", () => {
     expect(r2.status).toBe(409);
   });
 
+  it("B6: users list carries locked flag + real lastLoginMin; edit contact audited", async () => {
+    await loginAs("admin");
+    const list = await (await usersGet(get())).json();
+    const target = list.users.find((u: { id: string }) => u.id === "U-002");
+    expect(typeof target.locked).toBe("boolean");
+    expect(target.lastLoginMin === null || target.lastLoginMin >= 0).toBe(true);
+
+    const r = await userPatch(
+      patch({ email: "s.ahmed2@careshift.demo", phone: "+966500001", specialtyEn: "ICU RN" }),
+      ctx({ id: "U-002" }),
+    );
+    expect(r.status).toBe(200);
+    const row = await prisma.user.findUnique({ where: { id: "U-002" } });
+    expect(row!.email).toBe("s.ahmed2@careshift.demo");
+    const a = await prisma.auditLog.findFirst({
+      where: { action: "user.update", entityId: "U-002" },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(JSON.parse(a!.nextJson!).email).toBe("s.ahmed2@careshift.demo");
+    // invalid email → 400
+    expect(
+      (await userPatch(patch({ email: "nope" }), ctx({ id: "U-002" }))).status,
+    ).toBe(400);
+  });
+
+  it("B6: generated temp password shown once + works for login", async () => {
+    await loginAs("admin");
+    const r = await resetPwPost(post({}), ctx({ id: "U-002" }));
+    expect(r.status).toBe(200);
+    const { tempPassword } = await r.json();
+    expect(tempPassword.length).toBeGreaterThanOrEqual(8);
+    cookieStore.clear();
+    const lr = await login(USERS.nurse.u, tempPassword, "10.3.3.3");
+    expect(lr.status).toBe(200);
+    // Second reset returns a NEW one-time password.
+    await loginAs("admin");
+    const r2 = await resetPwPost(post({}), ctx({ id: "U-002" }));
+    const { tempPassword: p2 } = await r2.json();
+    expect(p2).not.toBe(tempPassword);
+    // Old temp no longer works.
+    cookieStore.clear();
+    expect((await login(USERS.nurse.u, tempPassword, "10.3.3.4")).status).toBe(401);
+    // Restore the seeded password for other tests.
+    await loginAs("admin");
+    await resetPwPost(post({ password: USERS.nurse.p }), ctx({ id: "U-002" }));
+  });
+
   it("self-suspend is blocked → 400", async () => {
     await loginAs("admin");
     const r = await userPatch(patch({ status: "suspended" }), ctx({ id: "U-008" }));

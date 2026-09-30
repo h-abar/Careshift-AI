@@ -64,11 +64,13 @@ export function UserProfile({ userId }: { userId: string }) {
             <div className="flex items-center justify-between text-sm">
               <dt className="text-slate-500">{t("usr.lastLogin")}</dt>
               <dd className="font-medium text-[#13304d]">
-                {u.lastLoginMin < 60
-                  ? `${u.lastLoginMin} ${t("usr.minAgo")}`
-                  : u.lastLoginMin < 1440
-                    ? `${Math.floor(u.lastLoginMin / 60)} ${t("usr.hrAgo")}`
-                    : `${Math.floor(u.lastLoginMin / 1440)} ${t("usr.dayAgo")}`}
+                {u.lastLoginMin === null
+                  ? t("usr.never")
+                  : u.lastLoginMin < 60
+                    ? `${u.lastLoginMin} ${t("usr.minAgo")}`
+                    : u.lastLoginMin < 1440
+                      ? `${Math.floor(u.lastLoginMin / 60)} ${t("usr.hrAgo")}`
+                      : `${Math.floor(u.lastLoginMin / 1440)} ${t("usr.dayAgo")}`}
               </dd>
             </div>
           </dl>

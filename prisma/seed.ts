@@ -82,6 +82,7 @@ async function main() {
         phone: u.phone,
         employeeId: u.employeeId,
         status: u.status,
+        lastLoginAt: new Date(Date.now() - u.lastLoginMin * 60000),
       },
     });
   }

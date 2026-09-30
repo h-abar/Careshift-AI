@@ -157,7 +157,7 @@ export interface User {
   phone: string;
   employeeId: string;
   status: "active" | "suspended";
-  lastLoginMin: number; // minutes ago
+  lastLoginMin: number | null; // minutes ago; null = never logged in
   createdAt: string;
 }
 

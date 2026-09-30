@@ -115,7 +115,7 @@ export const POST = handle(async (req: Request) => {
       phone: user.phone,
       employeeId: user.employeeId,
       status: user.status,
-      lastLoginMin: 0,
+      lastLoginMin: 0 as number | null,
       createdAt: user.createdAt.toISOString().slice(0, 10),
     },
   });

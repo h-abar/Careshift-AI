@@ -5,23 +5,25 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { patchJson, postJson, useUsers } from "@/lib/api";
-import { Avatar, Card, Loading, SectionTitle } from "@/components/ui";
+import { Avatar, Card, ConfirmDialog, Loading, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import type { RoleKey, User } from "@/lib/types";
 
-type U = Omit<User, "password">;
+type U = Omit<User, "password"> & { locked: boolean };
 
 const ROLES: RoleKey[] = [
   "admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin",
 ];
 const DEPTS = ["icu", "er", "medical", "surgical", "claims", "operations", "it"];
 
-const fmtLast = (min: number, t: (k: string) => string) =>
-  min < 60
-    ? `${min} ${t("usr.minAgo")}`
-    : min < 1440
-      ? `${Math.floor(min / 60)} ${t("usr.hrAgo")}`
-      : `${Math.floor(min / 1440)} ${t("usr.dayAgo")}`;
+const fmtLast = (min: number | null, t: (k: string) => string) =>
+  min === null
+    ? t("usr.never")
+    : min < 60
+      ? `${min} ${t("usr.minAgo")}`
+      : min < 1440
+        ? `${Math.floor(min / 60)} ${t("usr.hrAgo")}`
+        : `${Math.floor(min / 1440)} ${t("usr.dayAgo")}`;
 
 const EMPTY = {
   username: "", nameEn: "", nameAr: "", roleKey: "nurse" as RoleKey,
@@ -40,6 +42,16 @@ export default function UsersPage() {
   const [form, setForm] = useState(EMPTY);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState<
+    | { kind: "role"; u: U; role: RoleKey }
+    | { kind: "suspend" | "reactivate"; u: U }
+    | null
+  >(null);
+  const [editing, setEditing] = useState<U | null>(null);
+  const [editForm, setEditForm] = useState({
+    specialtyEn: "", specialtyAr: "", email: "", phone: "",
+  });
+  const [tempPw, setTempPw] = useState<string | null>(null);
 
   if (!can("users_manage"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
@@ -66,13 +78,40 @@ export default function UsersPage() {
   };
 
   const resetPw = async (u: U) => {
-    const pw = window.prompt(`${t("usr.resetPwPrompt")}`);
-    if (!pw) return;
     try {
-      await postJson(`/api/users/${u.id}/reset-password`, { password: pw });
+      const r = await postJson<{ tempPassword?: string }>(
+        `/api/users/${u.id}/reset-password`,
+        {},
+      );
+      if (r.tempPassword) setTempPw(r.tempPassword);
     } catch {
-      /* invalid / too short → server rejects */
+      /* server rejects → no password shown */
     }
+  };
+
+  const unlock = async (u: U) => {
+    try {
+      await postJson(`/api/users/${u.id}/unlock`, {});
+      refetch();
+    } catch {}
+  };
+
+  const userName = (u: U) => (lang === "ar" ? u.nameAr : u.nameEn);
+
+  const runConfirm = () => {
+    if (!confirm) return;
+    if (confirm.kind === "role") patch(confirm.u.id, { roleKey: confirm.role });
+    else
+      patch(confirm.u.id, {
+        status: confirm.kind === "suspend" ? "suspended" : "active",
+      });
+    setConfirm(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    await patch(editing.id, editForm);
+    setEditing(null);
   };
 
   const create = async () => {
@@ -165,7 +204,11 @@ export default function UsersPage() {
                 <td className="px-4 py-3">
                   <select
                     value={u.role}
-                    onChange={(e) => patch(u.id, { roleKey: e.target.value })}
+                    onChange={(e) => {
+                      const v = e.target.value as RoleKey;
+                      if (v !== u.role) setConfirm({ kind: "role", u, role: v });
+                      else e.target.value = u.role;
+                    }}
                     className="rounded-md border border-transparent bg-transparent px-1 py-0.5 text-xs text-slate-600 hover:border-[#e2e9f2]"
                   >
                     {ROLES.map((r) => (
@@ -192,6 +235,11 @@ export default function UsersPage() {
                   }`}>
                     {t(`ustatus.${u.status}`)}
                   </span>
+                  {u.locked && (
+                    <span className="ms-1.5 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">
+                      {t("usr.locked")}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-500">{fmtLast(u.lastLoginMin, t)}</td>
                 <td className="px-4 py-3">
@@ -203,15 +251,35 @@ export default function UsersPage() {
                       {t("usr.profile")} →
                     </Link>
                     <button
+                      onClick={() => {
+                        setEditing(u);
+                        setEditForm({
+                          specialtyEn: u.specialty.en,
+                          specialtyAr: u.specialty.ar,
+                          email: u.email,
+                          phone: u.phone,
+                        });
+                      }}
+                      className={actBtn}
+                    >
+                      {t("usr.edit")}
+                    </button>
+                    <button
                       onClick={() =>
-                        patch(u.id, {
-                          status: u.status === "active" ? "suspended" : "active",
+                        setConfirm({
+                          kind: u.status === "active" ? "suspend" : "reactivate",
+                          u,
                         })
                       }
                       className={`${actBtn} ${u.status === "active" ? "!text-red-500 hover:!border-red-300" : "!text-emerald-600 hover:!border-emerald-300"}`}
                     >
                       {u.status === "active" ? t("usr.suspend") : t("usr.reactivate")}
                     </button>
+                    {u.locked && (
+                      <button onClick={() => unlock(u)} className={actBtn}>
+                        {t("usr.unlock")}
+                      </button>
+                    )}
                     <button onClick={() => resetPw(u)} className={actBtn}>
                       {t("usr.resetPw")}
                     </button>
@@ -334,6 +402,110 @@ export default function UsersPage() {
                 className="rounded-lg bg-[#0e9bb5] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
               >
                 {t("usr.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation for role change / suspend / reactivate */}
+      {confirm && (
+        <ConfirmDialog
+          title={
+            confirm.kind === "role"
+              ? t("usr.confirmRole")
+                  .replace("{name}", userName(confirm.u))
+                  .replace("{role}", t(`userRole.${confirm.role}`))
+              : t(
+                  confirm.kind === "suspend"
+                    ? "usr.confirmSuspend"
+                    : "usr.confirmReactivate",
+                ).replace("{name}", userName(confirm.u))
+          }
+          danger={confirm.kind !== "reactivate"}
+          confirmLabel={t("common.confirm")}
+          cancelLabel={t("usr.cancel")}
+          onConfirm={runConfirm}
+          onCancel={() => {
+            setConfirm(null);
+            refetch(); // restore the select to the persisted value
+          }}
+        />
+      )}
+
+      {/* Edit specialty / contact */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 className="mb-4 text-base font-bold text-[#13304d]">
+              {t("usr.edit")} — {userName(editing)}
+            </h3>
+            <div className="grid gap-3">
+              {(
+                [
+                  ["specialtyEn", t("usr.specialtyEn")],
+                  ["specialtyAr", t("usr.specialtyAr")],
+                  ["email", t("usr.email")],
+                  ["phone", t("usr.phone")],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="block">
+                  <span className="mb-1 block text-[11px] font-semibold text-slate-500">
+                    {label}
+                  </span>
+                  <input
+                    value={editForm[k]}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, [k]: e.target.value })
+                    }
+                    className="w-full rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-2 text-sm outline-none focus:border-[#0e9bb5]/50"
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setEditing(null)}
+                className="rounded-lg border border-[#e2e9f2] px-4 py-2 text-sm font-semibold text-slate-600"
+              >
+                {t("usr.cancel")}
+              </button>
+              <button
+                onClick={saveEdit}
+                className="rounded-lg bg-[#0e9bb5] px-4 py-2 text-sm font-bold text-white"
+              >
+                {t("usr.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* One-time temporary password */}
+      {tempPw && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-[#13304d]">
+              {t("usr.tempPw")}
+            </h3>
+            <p className="mt-2 rounded-lg bg-[#f8fafc] px-3 py-2 font-mono text-sm text-[#13304d] select-all">
+              {tempPw}
+            </p>
+            <p className="mt-2 text-[11px] text-amber-600">
+              {t("usr.tempPwNote")}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => void navigator.clipboard?.writeText(tempPw)}
+                className="rounded-lg border border-[#e2e9f2] px-4 py-2 text-sm font-semibold text-slate-600"
+              >
+                {t("usr.copy")}
+              </button>
+              <button
+                onClick={() => setTempPw(null)}
+                className="rounded-lg bg-[#0e9bb5] px-4 py-2 text-sm font-bold text-white"
+              >
+                {t("usr.cancel")}
               </button>
             </div>
           </div>

@@ -226,6 +226,60 @@ export function Loading() {
   );
 }
 
+/** Confirmation dialog for destructive / irreversible actions. */
+export function ConfirmDialog({
+  title,
+  body,
+  confirmLabel,
+  cancelLabel,
+  danger = false,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  body?: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-base font-bold text-[#13304d]">{title}</h3>
+        {body && <p className="mt-2 text-sm text-slate-500">{body}</p>}
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-[#e2e9f2] px-4 py-2 text-sm font-semibold text-slate-600"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            onClick={onConfirm}
+            autoFocus
+            className={`rounded-lg px-4 py-2 text-sm font-bold text-white ${
+              danger ? "bg-red-500 hover:bg-red-600" : "bg-[#0e9bb5] hover:bg-[#1b5fad]"
+            }`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Logo({ size = "h-9 w-9", className = "" }: { size?: string; className?: string }) {
   return (
     <span className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-sm ${size} ${className}`}>

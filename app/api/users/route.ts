@@ -3,6 +3,7 @@ import { dbUsers } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
 import { audit, auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
+import { LOCKOUT_MAX_FAILS, LOCKOUT_WINDOW_MS } from "@/lib/server/lockout";
 import bcrypt from "bcryptjs";
 
 const ROLES = [
@@ -11,12 +12,32 @@ const ROLES = [
 
 export const GET = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage");
-  const users = await dbUsers();
+  const [users, lockedNames] = await Promise.all([
+    dbUsers(),
+    prisma.loginAttempt
+      .groupBy({
+        by: ["username"],
+        where: {
+          success: false,
+          createdAt: { gt: new Date(Date.now() - LOCKOUT_WINDOW_MS) },
+        },
+        _count: true,
+      })
+      .then((rows) =>
+        new Set(
+          rows
+            .filter((r) => r._count >= LOCKOUT_MAX_FAILS)
+            .map((r) => r.username),
+        ),
+      ),
+  ]);
   await auditOnce(
     auth.user.id, "users.list", "user", "list",
     auditDedupeMin(), auth.sid, req,
   );
-  return ok({ users });
+  return ok({
+    users: users.map((u) => ({ ...u, locked: lockedNames.has(u.username) })),
+  });
 });
 
 /** User-admin: create an account (bcrypt-hashed password, audited). */

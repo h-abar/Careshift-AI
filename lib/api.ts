@@ -138,7 +138,9 @@ export const useHandoff = (id: string) =>
     snaps: PatientSnapshot[];
   }>(`/api/handoffs/${id}`, [id]);
 export const useUsers = () =>
-  useApi<{ users: Omit<User, "password">[] }>("/api/users");
+  useApi<{
+    users: (Omit<User, "password"> & { locked: boolean })[];
+  }>("/api/users");
 export const useUser = (id: string) =>
   useApi<{ user: Omit<User, "password"> }>(`/api/users/${id}`, [id]);
 export const useClaims = () =>

@@ -30,12 +30,19 @@ export const PATCH = handle(
       roleKey?: string;
       dept?: string;
       status?: string;
+      specialtyEn?: string;
+      specialtyAr?: string;
+      email?: string;
+      phone?: string;
     };
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return Response.json({ error: "not found" }, { status: 404 });
     if (b.roleKey !== undefined && !ROLES.has(b.roleKey)) {
       return Response.json({ error: "invalid role" }, { status: 400 });
+    }
+    if (b.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) {
+      return Response.json({ error: "invalid email" }, { status: 400 });
     }
     if (b.status !== undefined && !STATUSES.has(b.status)) {
       return Response.json({ error: "invalid status" }, { status: 400 });
@@ -85,8 +92,20 @@ export const PATCH = handle(
         roleKey: b.roleKey ?? undefined,
         dept: b.dept ?? undefined,
         status: b.status ?? undefined,
+        specialtyEn: b.specialtyEn ?? undefined,
+        specialtyAr: b.specialtyAr ?? undefined,
+        email: b.email ?? undefined,
+        phone: b.phone ?? undefined,
       },
+    }).catch((e) => {
+      if (String(e).includes("Unique")) {
+        return null; // email collision → 409 below
+      }
+      throw e;
     });
+    if (!updated) {
+      return Response.json({ error: "email already in use" }, { status: 409 });
+    }
 
     // Suspension or role change kills all of the user's live sessions so
     // the new permissions/status apply immediately (getAuth would 401 a
@@ -118,10 +137,14 @@ export const PATCH = handle(
         prev: {
           role: user.roleKey, dept: user.dept, status: user.status,
           nameEn: user.nameEn, nameAr: user.nameAr,
+          specialtyEn: user.specialtyEn, specialtyAr: user.specialtyAr,
+          email: user.email, phone: user.phone,
         },
         next: {
           role: updated.roleKey, dept: updated.dept, status: updated.status,
           nameEn: updated.nameEn, nameAr: updated.nameAr,
+          specialtyEn: updated.specialtyEn, specialtyAr: updated.specialtyAr,
+          email: updated.email, phone: updated.phone,
         },
         sessionId: auth.sid,
       },
