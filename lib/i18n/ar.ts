@@ -493,6 +493,7 @@ const ar: Record<string, string> = {
   "notif.interventionEscalated": "{id} — صُعِّد التدخل إلى {detail}",
   "notif.claimStatus": "المطالبة {id} → {detail}",
   "ntf.read": "تحديد كمقروء",
+  "pt.reassess": "إعادة تقييم الخطر",
 
   // ── Audit ──
   "audit.title": "سجل التدقيق",

@@ -206,9 +206,13 @@ export interface HandoffRecord {
 export interface NotificationItem {
   id: string;
   level: "critical" | "warning" | "info";
-  key: string; // i18n → notif.*
+  key: string; // i18n → notif.* (may contain {id}/{detail} placeholders)
+  detail?: string;
   patientId?: string;
-  min: number; // minutes ago
+  entityType?: string;
+  entityId?: string;
+  min: number; // minutes ago (legacy rows)
+  createdAt?: string;
   read: boolean;
 }
 

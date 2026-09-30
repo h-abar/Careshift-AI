@@ -166,7 +166,9 @@ export const useAudit = () =>
     }[];
   }>("/api/audit");
 export const useNotifications = () =>
-  useApi<{ notifications: NotificationItem[] }>("/api/notifications");
+  useApi<{ notifications: NotificationItem[]; unread: number }>(
+    "/api/notifications",
+  );
 
 export interface PatientDetail {
   patient: PatientSnapshot["patient"];

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
-import { usePatientDetail } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { postJson, usePatientDetail } from "@/lib/api";
 import { fmtSar } from "@/lib/format";
 import {
   Card,
@@ -37,7 +39,9 @@ const KIND_ICON: Record<JourneyKind, string> = {
 
 export function PatientView({ patientId }: { patientId: string }) {
   const { t, lang } = useI18n();
-  const { data, error } = usePatientDetail(patientId);
+  const { data, error, refetch } = usePatientDetail(patientId);
+  const { can } = useAuth();
+  const [reassessing, setReassessing] = useState(false);
   if (error)
     return <p className="py-20 text-center text-slate-400">Patient not found.</p>;
   if (!data) return <Loading />;
@@ -102,7 +106,24 @@ export function PatientView({ patientId }: { patientId: string }) {
             {t(`dx.${p.dxKey}`)} · {t("common.attending")}: {p.attending}
           </p>
         </div>
-        <RiskBadge level={risk.level} score={risk.score} />
+        <div className="flex items-center gap-3">
+          {can("risk_view") && (
+            <button
+              onClick={() => {
+                setReassessing(true);
+                postJson(`/api/patients/${p.id}/reassess`, {})
+                  .then(() => refetch())
+                  .catch(() => {})
+                  .finally(() => setReassessing(false));
+              }}
+              disabled={reassessing}
+              className="rounded-lg border border-[#0e9bb5]/40 px-3 py-1.5 text-xs font-semibold text-[#0e9bb5] hover:bg-[#0e9bb5]/5 disabled:opacity-50"
+            >
+              {reassessing ? "…" : t("pt.reassess")}
+            </button>
+          )}
+          <RiskBadge level={risk.level} score={risk.score} />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -250,12 +271,32 @@ export function PatientView({ patientId }: { patientId: string }) {
               {lang === "ar" ? p.noteAr : p.noteEn}
             </p>
           </div>
-          {/* Persisted RiskAssessment history */}
+          {/* Persisted RiskAssessment history — chart + rows */}
           {riskHistory.length > 0 && (
             <div className="mt-4 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
               <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
                 {t("why.history")}
               </div>
+              {riskHistory.length > 1 && (
+                <div className="mb-2 h-24">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={[...riskHistory].reverse().map((r) => ({
+                        t: r.assessedAt.slice(11, 16),
+                        score: r.score,
+                      }))}
+                    >
+                      <CartesianGrid stroke="#eef2f7" />
+                      <XAxis dataKey="t" stroke="#94a3b8" fontSize={10} />
+                      <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={10} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: 8, border: "1px solid #e2e9f2", fontSize: 11 }}
+                      />
+                      <Line type="monotone" dataKey="score" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               <div className="space-y-1">
                 {riskHistory.map((r) => (
                   <div

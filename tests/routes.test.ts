@@ -763,3 +763,103 @@ describe("A2 suspended-user session revocation", () => {
     await userPatch(patch({ roleKey: "nurse" }), ctx({ id: nurse!.id }));
   });
 });
+
+/* ── B2: risk reassessment + threshold alerts ── */
+
+import { POST as reassessPost } from "@/app/api/patients/[id]/reassess/route";
+import { PATCH as patientPatch } from "@/app/api/patients/[id]/route";
+import { PATCH as notifPatch } from "@/app/api/notifications/[id]/route";
+import { GET as notifGet } from "@/app/api/notifications/route";
+
+describe("B2 risk reassessment", () => {
+  it("insurance (no risk_view) → 403; nurse → 200 + RiskAssessment row", async () => {
+    await loginAs("insurance");
+    expect(
+      (await reassessPost(post({}), ctx({ id: "P-1042" }))).status,
+    ).toBe(403);
+    await loginAs("nurse");
+    const r = await reassessPost(post({}), ctx({ id: "P-1042" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.risk.score).toBeGreaterThan(0);
+    expect(body.riskHistory.length).toBeGreaterThan(0);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "risk.reassess", entityId: "P-1042" },
+      }),
+    ).toBeTruthy();
+  });
+
+  it("threshold crossing alerts assigned nurse + physician", async () => {
+    // Force a "low" baseline so the next (high) run crosses UP.
+    await prisma.riskAssessment.create({
+      data: {
+        patientId: "P-1042", score: 10, level: "low",
+        conditionKey: "routine", factorsJson: "[]",
+        windowHrs: 24, confidence: 50,
+      },
+    });
+    await loginAs("physician");
+    const r = await reassessPost(post({}), ctx({ id: "P-1042" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.crossedUp).toBe(true);
+    // U-002 = assigned nurse, U-001 = assigned physician for P-1042.
+    for (const uid of ["U-002", "U-001"]) {
+      const n = await prisma.notification.findFirst({
+        where: { userId: uid, patientId: "P-1042", key: "notif.riskAlert" },
+      });
+      expect(n).toBeTruthy();
+    }
+  });
+
+  it("vitals update persists + reassesses (charge only)", async () => {
+    const vitals = [
+      { t: "12:00", hr: 130, sbp: 80, rr: 32, temp: 39.4, spo2: 88, glucose: 480 },
+    ];
+    await loginAs("nurse"); // no patients_edit
+    expect(
+      (await patientPatch(patch({ vitals }), ctx({ id: "P-1042" }))).status,
+    ).toBe(403);
+    await loginAs("charge");
+    const r = await patientPatch(patch({ vitals }), ctx({ id: "P-1042" }));
+    expect(r.status).toBe(200);
+    const row = await prisma.patient.findUnique({ where: { id: "P-1042" } });
+    expect(JSON.parse(row!.vitalsJson)[0].glucose).toBe(480);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "patient.update", entityId: "P-1042" },
+      }),
+    ).toBeTruthy();
+  });
+
+  it("alert acknowledge is audited + only own notifications", async () => {
+    const n = await prisma.notification.create({
+      data: {
+        id: "ntf-test-1", userId: "U-002", level: "warning",
+        key: "notif.riskAlert", patientId: "P-1042", detail: "90",
+      },
+    });
+    await loginAs("nurse2"); // U-007 — not the owner
+    expect(
+      (await notifPatch(patch({ action: "ack" }), ctx({ id: n.id }))).status,
+    ).toBe(403);
+    await loginAs("nurse"); // U-002 owner
+    const r = await notifPatch(patch({ action: "ack" }), ctx({ id: n.id }));
+    expect(r.status).toBe(200);
+    expect(
+      (await prisma.notification.findUnique({ where: { id: n.id } }))!.read,
+    ).toBe(true);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "alert.ack", entityId: n.id },
+      }),
+    ).toBeTruthy();
+    // GET returns the row to its owner; unread mirrors unread rows.
+    const list = await (await notifGet()).json();
+    expect(list.notifications.some((x: { id: string }) => x.id === n.id)).toBe(true);
+    expect(list.unread).toBe(
+      list.notifications.filter((x: { read: boolean }) => !x.read).length,
+    );
+  });
+});

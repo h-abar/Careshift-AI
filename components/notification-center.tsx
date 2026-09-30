@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
-import { useNotifications } from "@/lib/api";
+import { patchJson, postJson, useNotifications } from "@/lib/api";
 import { Icon } from "@/components/icons";
+import type { NotificationItem } from "@/lib/types";
 
 const DOT: Record<string, string> = {
   critical: "bg-red-500",
@@ -12,15 +13,30 @@ const DOT: Record<string, string> = {
   info: "bg-sky-400",
 };
 
+function linkFor(n: NotificationItem): string {
+  if (n.entityType === "handoff" && n.entityId) return `/handoffs/${n.entityId}`;
+  if (n.entityType === "claim") return "/insurance";
+  if (n.entityType === "intervention") return "/interventions";
+  if (n.patientId) return `/patient/${n.patientId}`;
+  return "/";
+}
+
+function minutesAgo(n: NotificationItem): number {
+  if (n.createdAt) {
+    return Math.max(
+      0,
+      Math.round((Date.now() - new Date(n.createdAt).getTime()) / 60000),
+    );
+  }
+  return n.min;
+}
+
 export function NotificationCenter() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const { data } = useNotifications();
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
-  const items = (data?.notifications ?? []).map((n) => ({
-    ...n,
-    read: n.read || readIds.has(n.id),
-  }));
+  const { data, refetch } = useNotifications();
+  const items = data?.notifications ?? [];
+  const unread = items.filter((n) => !n.read).length;
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +47,20 @@ export function NotificationCenter() {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const unread = items.filter((n) => !n.read).length;
+  const text = (n: NotificationItem) =>
+    t(n.key)
+      .replace("{id}", n.entityId ?? n.patientId ?? "")
+      .replace("{detail}", n.detail ?? "");
+
+  const ack = (id: string) =>
+    patchJson(`/api/notifications/${id}`, { action: "ack" })
+      .then(() => refetch())
+      .catch(() => {});
+
+  const markAll = () =>
+    postJson(`/api/notifications`, {})
+      .then(() => refetch())
+      .catch(() => {});
 
   return (
     <div className="relative" ref={ref}>
@@ -53,9 +82,7 @@ export function NotificationCenter() {
           <div className="flex items-center justify-between border-b border-[#eef2f7] px-4 py-2.5">
             <span className="text-sm font-bold text-[#13304d]">{t("ntf.title")}</span>
             <button
-              onClick={() =>
-                setReadIds(new Set(items.map((n) => n.id)))
-              }
+              onClick={markAll}
               className="text-[11px] font-medium text-[#0e9bb5] hover:underline"
             >
               {t("ntf.markAll")}
@@ -65,17 +92,20 @@ export function NotificationCenter() {
             {items.map((n) => (
               <li key={n.id}>
                 <Link
-                  href={n.patientId ? `/patient/${n.patientId}` : "/handoffs"}
-                  onClick={() => setOpen(false)}
+                  href={linkFor(n)}
+                  onClick={() => {
+                    if (!n.read) ack(n.id);
+                    setOpen(false);
+                  }}
                   className={`flex items-start gap-3 px-4 py-3 hover:bg-[#f8fafc] ${!n.read ? "bg-[#0e9bb5]/[0.04]" : ""}`}
                 >
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT[n.level]}`} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm text-slate-700">
-                      {t(n.key)}
+                      {text(n)}
                     </span>
                     <span className="text-[11px] text-slate-400">
-                      {n.min} {t("usr.minAgo")}
+                      {minutesAgo(n)} {t("usr.minAgo")}
                     </span>
                   </span>
                 </Link>

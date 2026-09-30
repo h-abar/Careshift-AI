@@ -1,11 +1,13 @@
 import { requirePerm } from "@/lib/server/session";
-import { dbSnapshots } from "@/lib/server/data";
+import { dbPatient, dbSnapshots } from "@/lib/server/data";
+import { runRiskAssessment } from "@/lib/server/risk";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 import { simulateWhatIf } from "@/lib/engines/simulator";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { journeys } from "@/lib/data/journeys";
+import type { LabResult, VitalPoint } from "@/lib/types";
 
 /** Full patient bundle for the Digital Journey screen. Records the view. */
 export const GET = handle(
@@ -104,5 +106,74 @@ export const GET = handle(
           })
         : null,
     });
+  },
+);
+
+const isVitalPoint = (v: unknown): v is VitalPoint =>
+  typeof v === "object" && v !== null &&
+  typeof (v as VitalPoint).t === "string" &&
+  ["hr", "sbp", "rr", "temp", "spo2"].every(
+    (k) => typeof (v as Record<string, unknown>)[k] === "number",
+  );
+const isLab = (v: unknown): v is LabResult =>
+  typeof v === "object" && v !== null &&
+  typeof (v as LabResult).key === "string" &&
+  typeof (v as LabResult).value === "string" &&
+  ["high", "low", "normal"].includes((v as LabResult).flag);
+
+/**
+ * Vitals/labs update — persisted, then risk is REASSESSED immediately so
+ * threshold crossings alert the assigned nurse + physician.
+ */
+export const PATCH = handle(
+  async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
+    const auth = await requirePerm("patients_edit");
+    const { id } = await ctx.params;
+    const b = (await req.json().catch(() => ({}))) as {
+      vitals?: unknown;
+      labs?: unknown;
+    };
+    if (b.vitals !== undefined && (!Array.isArray(b.vitals) || !b.vitals.every(isVitalPoint))) {
+      return Response.json({ error: "invalid vitals" }, { status: 400 });
+    }
+    if (b.labs !== undefined && (!Array.isArray(b.labs) || !b.labs.every(isLab))) {
+      return Response.json({ error: "invalid labs" }, { status: 400 });
+    }
+    if (b.vitals === undefined && b.labs === undefined) {
+      return Response.json({ error: "nothing to update" }, { status: 400 });
+    }
+
+    const row = await prisma.patient.findUnique({ where: { id } });
+    if (!row) return Response.json({ error: "not found" }, { status: 404 });
+
+    await prisma.patient.update({
+      where: { id },
+      data: {
+        vitalsJson: b.vitals ? JSON.stringify(b.vitals) : undefined,
+        labsJson: b.labs ? JSON.stringify(b.labs) : undefined,
+      },
+    });
+
+    const patient = await dbPatient(id);
+    const { risk, crossedUp } = await runRiskAssessment(patient!);
+    await audit(
+      {
+        userId: auth.user.id,
+        action: "patient.update",
+        entityType: "patient",
+        entityId: id,
+        prev: { vitals: row.vitalsJson.length, labs: row.labsJson.length },
+        next: {
+          vitals: b.vitals ? (b.vitals as VitalPoint[]).length : undefined,
+          labs: b.labs ? (b.labs as LabResult[]).length : undefined,
+          newScore: risk.score,
+          newLevel: risk.level,
+          crossedUp,
+        },
+        sessionId: auth.sid,
+      },
+      req,
+    );
+    return ok({ risk, crossedUp });
   },
 );
