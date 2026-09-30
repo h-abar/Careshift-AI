@@ -1,7 +1,8 @@
 import { requirePerm } from "@/lib/server/session";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { resetPwSchema } from "@/lib/schemas";
 import bcrypt from "bcryptjs";
 
 /**
@@ -13,12 +14,9 @@ export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("users_manage");
     const { id } = await ctx.params;
-    const { password } = (await req.json().catch(() => ({}))) as {
-      password?: string;
-    };
-    if (password !== undefined && password.length < 8) {
-      return Response.json({ error: "password too short" }, { status: 400 });
-    }
+    const { data, error } = await parseBody(req, resetPwSchema);
+    if (error) return error;
+    const { password } = data;
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return Response.json({ error: "not found" }, { status: 404 });

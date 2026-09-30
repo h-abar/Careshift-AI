@@ -1141,6 +1141,45 @@ describe("B2 risk reassessment", () => {
   });
 });
 
+/* ── C1: zod validation — unknown fields + consistent error shape ── */
+
+describe("C1 shared validation", () => {
+  it("unknown fields rejected with {error, code, fields} shape", async () => {
+    await loginAs("insurance");
+    const claim = await prisma.insuranceClaim.findFirst({
+      where: { status: "pending" },
+    });
+    const r = await claimPatch(
+      patch({ status: "review", bogus: "field" }),
+      ctx({ id: claim!.id }),
+    );
+    expect(r.status).toBe(400);
+    const body = await r.json();
+    expect(body.code).toBe("validation");
+    expect(body.fields).toBeTruthy();
+    // Unrecognized key reported.
+    expect(JSON.stringify(body.fields)).toContain("bogus");
+  });
+
+  it("bad JSON body → 400 bad_json; schema violation → 400 with fields", async () => {
+    await loginAs("admin");
+    const badJson = new Request("http://test/api", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{not json",
+    });
+    const r1 = await usersPost(badJson);
+    expect(r1.status).toBe(400);
+    expect((await r1.json()).code).toBe("bad_json");
+
+    const r2 = await usersPost(post({ username: "x" }));
+    expect(r2.status).toBe(400);
+    const b2 = await r2.json();
+    expect(b2.code).toBe("validation");
+    expect(Object.keys(b2.fields).length).toBeGreaterThan(1);
+  });
+});
+
 /* ── B7: computed savings trend + live journey events ── */
 
 import { dbSavingsTrend } from "@/lib/server/data";

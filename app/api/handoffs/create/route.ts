@@ -4,7 +4,8 @@ import { dbPatients } from "@/lib/server/data";
 import { genSbar, handoffEvent } from "@/lib/server/handoffs";
 import { notify } from "@/lib/server/notify";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { handoffCreateSchema } from "@/lib/schemas";
 
 /**
  * Charge nurse creates a handoff. Per-patient rows are materialized
@@ -13,19 +14,8 @@ import { handle, ok } from "@/lib/server/json";
  */
 export const POST = handle(async (req: Request) => {
   const auth = await requirePerm("handoff_manage");
-  const body = (await req.json()) as {
-    dept?: string;
-    shift?: "day" | "night";
-    outgoingId?: string;
-    incomingId?: string;
-    patientIds?: string[];
-  };
-  if (
-    !body.dept || !body.shift || !body.outgoingId || !body.incomingId ||
-    !body.patientIds?.length
-  ) {
-    return Response.json({ error: "incomplete" }, { status: 400 });
-  }
+  const { data: body, error } = await parseBody(req, handoffCreateSchema);
+  if (error) return error;
   if (body.outgoingId === body.incomingId) {
     return Response.json(
       { error: "outgoing and incoming must differ" },

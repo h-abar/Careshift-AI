@@ -4,17 +4,14 @@ import { prisma } from "@/lib/server/prisma";
 import { signSession, SESSION_COOKIE, sessionTtlMs } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
 import { clientIp, isLocked, recordAttempt } from "@/lib/server/lockout";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { loginSchema } from "@/lib/schemas";
 import type { User } from "@/lib/types";
 
 export const POST = handle(async (req: Request) => {
-  const { username, password } = (await req.json().catch(() => ({}))) as {
-    username?: string;
-    password?: string;
-  };
-  if (!username || !password) {
-    return Response.json({ error: "missing credentials" }, { status: 400 });
-  }
+  const { data, error } = await parseBody(req, loginSchema);
+  if (error) return error;
+  const { username, password } = data;
   const name = username.trim().toLowerCase();
   const ip = clientIp(req);
 

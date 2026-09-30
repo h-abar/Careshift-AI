@@ -4,19 +4,17 @@ import { handoffEvent } from "@/lib/server/handoffs";
 import { notify } from "@/lib/server/notify";
 import { audit } from "@/lib/server/audit";
 import { can } from "@/lib/permissions";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { rejectSchema } from "@/lib/schemas";
 
 /** Incoming staff rejects the handoff — a reason is mandatory. */
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("handoff_accept");
     const { id } = await ctx.params;
-    const { reason } = (await req.json().catch(() => ({}))) as {
-      reason?: string;
-    };
-    if (!reason?.trim()) {
-      return Response.json({ error: "rejection reason required" }, { status: 400 });
-    }
+    const { data, error } = await parseBody(req, rejectSchema);
+    if (error) return error;
+    const { reason } = data;
 
     const h = await prisma.handoff.findUnique({ where: { id } });
     if (!h) return Response.json({ error: "not found" }, { status: 404 });

@@ -9,7 +9,8 @@ import {
 } from "@/lib/server/session";
 import { can } from "@/lib/permissions";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { switchSchema } from "@/lib/schemas";
 import { dbUser } from "@/lib/server/data";
 import type { User } from "@/lib/types";
 
@@ -27,8 +28,9 @@ export const POST = handle(async (req: Request) => {
     // admins only — a nurse can never start a view-as session
     throw new ApiError(403, "forbidden");
   }
-  const { userId } = (await req.json()) as { userId?: string };
-  if (!userId) return Response.json({ error: "userId required" }, { status: 400 });
+  const { data, error } = await parseBody(req, switchSchema);
+  if (error) return error;
+  const { userId } = data;
 
   const target = await prisma.user.findUnique({ where: { id: userId } });
   if (!target || target.status !== "active") {

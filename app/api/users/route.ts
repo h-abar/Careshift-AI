@@ -2,13 +2,10 @@ import { requirePerm } from "@/lib/server/session";
 import { dbUsers } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
 import { audit, auditOnce, auditDedupeMin } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { userCreateSchema } from "@/lib/schemas";
 import { LOCKOUT_MAX_FAILS, LOCKOUT_WINDOW_MS } from "@/lib/server/lockout";
 import bcrypt from "bcryptjs";
-
-const ROLES = [
-  "admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin",
-] as const;
 
 export const GET = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage");
@@ -43,26 +40,8 @@ export const GET = handle(async (req: Request) => {
 /** User-admin: create an account (bcrypt-hashed password, audited). */
 export const POST = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage");
-  const b = (await req.json().catch(() => ({}))) as {
-    username?: string;
-    nameEn?: string;
-    nameAr?: string;
-    roleKey?: string;
-    dept?: string;
-    employeeId?: string;
-    email?: string;
-    phone?: string;
-    password?: string;
-  };
-  if (
-    !b.username || !b.nameEn || !b.nameAr || !b.roleKey || !b.dept ||
-    !b.employeeId || !b.password || b.password.length < 8
-  ) {
-    return Response.json({ error: "incomplete or weak password" }, { status: 400 });
-  }
-  if (!ROLES.includes(b.roleKey as (typeof ROLES)[number])) {
-    return Response.json({ error: "invalid role" }, { status: 400 });
-  }
+  const { data: b, error } = await parseBody(req, userCreateSchema);
+  if (error) return error;
 
   const username = b.username.trim().toLowerCase();
   const clash = await prisma.user.findFirst({

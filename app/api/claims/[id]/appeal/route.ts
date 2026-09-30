@@ -2,7 +2,8 @@ import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
 import { claimEvent, notifyClaimWatchers } from "@/lib/server/claims";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { appealSchema } from "@/lib/schemas";
 
 /**
  * Appeal a denied claim — requires a reason, returns the claim to "review".
@@ -12,15 +13,9 @@ export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("claims_edit");
     const { id } = await ctx.params;
-    const { reason } = (await req.json().catch(() => ({}))) as {
-      reason?: string;
-    };
-    if (!reason?.trim()) {
-      return Response.json(
-        { error: "appeal reason is required", code: "reason_required" },
-        { status: 400 },
-      );
-    }
+    const { data, error } = await parseBody(req, appealSchema);
+    if (error) return error;
+    const { reason } = data;
 
     const claim = await prisma.insuranceClaim.findUnique({ where: { id } });
     if (!claim) return Response.json({ error: "not found" }, { status: 404 });

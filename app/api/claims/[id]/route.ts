@@ -4,7 +4,8 @@ import { audit } from "@/lib/server/audit";
 import { claimEvent, notifyClaimWatchers } from "@/lib/server/claims";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { isDenialCode } from "@/lib/denial";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { claimPatchSchema } from "@/lib/schemas";
 import { dbClaims } from "@/lib/server/data";
 import type { ClaimStatus } from "@/lib/types";
 
@@ -55,10 +56,9 @@ export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("claims_edit");
     const { id } = await ctx.params;
-    const { status, denialCode } = (await req.json().catch(() => ({}))) as {
-      status?: ClaimStatus;
-      denialCode?: string;
-    };
+    const { data, error } = await parseBody(req, claimPatchSchema);
+    if (error) return error;
+    const { status, denialCode } = data;
 
     const claim = await prisma.insuranceClaim.findUnique({ where: { id } });
     if (!claim) return Response.json({ error: "not found" }, { status: 404 });

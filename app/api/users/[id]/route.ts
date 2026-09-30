@@ -2,12 +2,8 @@ import { requirePerm } from "@/lib/server/session";
 import { dbUser } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
-
-const ROLES = new Set([
-  "admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin",
-]);
-const STATUSES = new Set(["active", "suspended"]);
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { userPatchSchema } from "@/lib/schemas";
 
 export const GET = handle(
   async (_req: Request, ctx: { params: Promise<{ id: string }> }) => {
@@ -24,29 +20,11 @@ export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("users_manage");
     const { id } = await ctx.params;
-    const b = (await req.json().catch(() => ({}))) as {
-      nameEn?: string;
-      nameAr?: string;
-      roleKey?: string;
-      dept?: string;
-      status?: string;
-      specialtyEn?: string;
-      specialtyAr?: string;
-      email?: string;
-      phone?: string;
-    };
+    const { data: b, error } = await parseBody(req, userPatchSchema);
+    if (error) return error;
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return Response.json({ error: "not found" }, { status: 404 });
-    if (b.roleKey !== undefined && !ROLES.has(b.roleKey)) {
-      return Response.json({ error: "invalid role" }, { status: 400 });
-    }
-    if (b.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) {
-      return Response.json({ error: "invalid email" }, { status: 400 });
-    }
-    if (b.status !== undefined && !STATUSES.has(b.status)) {
-      return Response.json({ error: "invalid status" }, { status: 400 });
-    }
     // An admin cannot suspend the account they are logged in with.
     if (b.status === "suspended" && id === auth.user.id) {
       return Response.json({ error: "cannot suspend self" }, { status: 400 });

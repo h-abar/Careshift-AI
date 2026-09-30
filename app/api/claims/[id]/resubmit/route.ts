@@ -2,7 +2,8 @@ import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
 import { claimEvent, notifyClaimWatchers } from "@/lib/server/claims";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { resubmitSchema } from "@/lib/schemas";
 
 /**
  * Resubmit a denied claim after fixing the deficiency — a note describing
@@ -12,13 +13,9 @@ export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("claims_edit");
     const { id } = await ctx.params;
-    const { note } = (await req.json().catch(() => ({}))) as { note?: string };
-    if (!note?.trim()) {
-      return Response.json(
-        { error: "resubmission note is required", code: "note_required" },
-        { status: 400 },
-      );
-    }
+    const { data, error } = await parseBody(req, resubmitSchema);
+    if (error) return error;
+    const { note } = data;
 
     const claim = await prisma.insuranceClaim.findUnique({ where: { id } });
     if (!claim) return Response.json({ error: "not found" }, { status: 404 });

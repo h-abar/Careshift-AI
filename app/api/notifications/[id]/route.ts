@@ -1,7 +1,8 @@
 import { requireAuth } from "@/lib/server/session";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { notifPatchSchema } from "@/lib/schemas";
 
 /**
  * Acknowledge / dismiss a notification. Only MY notifications (or unit
@@ -11,10 +12,9 @@ export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requireAuth();
     const { id } = await ctx.params;
-    const b = (await req.json().catch(() => ({}))) as {
-      action?: "ack" | "dismiss";
-    };
-    const action = b.action === "dismiss" ? "dismiss" : "ack";
+    const { data, error } = await parseBody(req, notifPatchSchema);
+    if (error) return error;
+    const action = data.action;
 
     const n = await prisma.notification.findUnique({ where: { id } });
     if (!n) return Response.json({ error: "not found" }, { status: 404 });

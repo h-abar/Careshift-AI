@@ -6,8 +6,8 @@ import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { notify } from "@/lib/server/notify";
 import { appendJourney } from "@/lib/server/journey";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
-import type { InterventionStatus, Role } from "@/lib/types";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { interventionSchema } from "@/lib/schemas";
 
 /**
  * Intervention lifecycle (server-enforced state machine):
@@ -30,17 +30,8 @@ const ESCALATION_ROLES = new Set(["nurse", "charge_nurse", "physician"]);
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ stepId: string }> }) => {
     const { stepId } = await ctx.params;
-    const body = (await req.json().catch(() => ({}))) as {
-      patientId?: string;
-      status?: InterventionStatus;
-      escalatedTo?: Role;
-      assigneeId?: string;
-      dueAt?: string;
-      note?: string;
-    };
-    if (!body.patientId || !body.status) {
-      return Response.json({ error: "patientId + status required" }, { status: 400 });
-    }
+    const { data: body, error } = await parseBody(req, interventionSchema);
+    if (error) return error;
     if (body.status === "escalated" && (!body.escalatedTo || !ESCALATION_ROLES.has(body.escalatedTo))) {
       return Response.json({ error: "escalatedTo role required" }, { status: 400 });
     }

@@ -3,7 +3,8 @@ import { dbPatient, dbSnapshots } from "@/lib/server/data";
 import { runRiskAssessment } from "@/lib/server/risk";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { patientPatchSchema } from "@/lib/schemas";
 import { simulateWhatIf } from "@/lib/engines/simulator";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import type { LabResult, VitalPoint } from "@/lib/types";
@@ -111,18 +112,6 @@ export const GET = handle(
   },
 );
 
-const isVitalPoint = (v: unknown): v is VitalPoint =>
-  typeof v === "object" && v !== null &&
-  typeof (v as VitalPoint).t === "string" &&
-  ["hr", "sbp", "rr", "temp", "spo2"].every(
-    (k) => typeof (v as Record<string, unknown>)[k] === "number",
-  );
-const isLab = (v: unknown): v is LabResult =>
-  typeof v === "object" && v !== null &&
-  typeof (v as LabResult).key === "string" &&
-  typeof (v as LabResult).value === "string" &&
-  ["high", "low", "normal"].includes((v as LabResult).flag);
-
 /**
  * Vitals/labs update — persisted, then risk is REASSESSED immediately so
  * threshold crossings alert the assigned nurse + physician.
@@ -131,16 +120,8 @@ export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("patients_edit");
     const { id } = await ctx.params;
-    const b = (await req.json().catch(() => ({}))) as {
-      vitals?: unknown;
-      labs?: unknown;
-    };
-    if (b.vitals !== undefined && (!Array.isArray(b.vitals) || !b.vitals.every(isVitalPoint))) {
-      return Response.json({ error: "invalid vitals" }, { status: 400 });
-    }
-    if (b.labs !== undefined && (!Array.isArray(b.labs) || !b.labs.every(isLab))) {
-      return Response.json({ error: "invalid labs" }, { status: 400 });
-    }
+    const { data: b, error } = await parseBody(req, patientPatchSchema);
+    if (error) return error;
     if (b.vitals === undefined && b.labs === undefined) {
       return Response.json({ error: "nothing to update" }, { status: 400 });
     }

@@ -4,7 +4,8 @@ import { dbSnapshots, dbUsers } from "@/lib/server/data";
 import { REQUIRED_CHECKLIST, handoffEvent } from "@/lib/server/handoffs";
 import { audit } from "@/lib/server/audit";
 import { can } from "@/lib/permissions";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { handoffPatchSchema } from "@/lib/schemas";
 
 const J = <T>(s: string | null | undefined, fb: T): T =>
   s ? (JSON.parse(s) as T) : fb;
@@ -75,11 +76,8 @@ export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("handoff_view");
     const { id } = await ctx.params;
-    const b = (await req.json().catch(() => ({}))) as {
-      reviewed?: Record<string, boolean>;
-      checklist?: string[];
-      sbar?: { patientId: string; lang: "ar" | "en"; s: string; bb: string; a: string; r: string };
-    };
+    const { data: b, error } = await parseBody(req, handoffPatchSchema);
+    if (error) return error;
 
     const h = await prisma.handoff.findUnique({ where: { id } });
     if (!h) return Response.json({ error: "not found" }, { status: 404 });
