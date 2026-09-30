@@ -38,7 +38,7 @@ const MOBILE_NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, toggle } = useI18n();
-  const { user, impersonator, stopSwitch, can } = useAuth();
+  const { user, impersonator, stopSwitch, consent, can } = useAuth();
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
 
@@ -143,6 +143,31 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <div className="flex flex-1 flex-col overflow-y-auto pb-2 pt-2">{sidebarBody}</div>
           </aside>
+        </div>
+      )}
+
+      {/* ── PDPL demo-data consent — blocks the workspace until acknowledged ── */}
+      {!user.consentAt && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="consent-title"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#13304d]/50 p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 id="consent-title" className="text-base font-bold text-[#13304d]">
+              {t("consent.title")}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {t("consent.body")}
+            </p>
+            <button
+              onClick={consent}
+              className="mt-5 w-full rounded-xl bg-[#0b7a8d] py-2.5 text-sm font-bold text-white hover:bg-[#075e6e]"
+            >
+              {t("consent.accept")}
+            </button>
+          </div>
         </div>
       )}
 

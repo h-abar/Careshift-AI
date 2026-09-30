@@ -4,6 +4,10 @@ const en: Record<string, string> = {
   "app.tagline": "Predict. Intervene. Prove.",
   "app.disclaimer":
     "Prototype — simulated data. AI does not make clinical decisions; it makes critical information impossible to miss.",
+  "consent.title": "Simulated data — not a diagnosis",
+  "consent.body":
+    "This environment contains synthetic demo data only. Careshift AI highlights risk and evidence; it does not make clinical decisions and is not a medical device. By continuing you acknowledge this.",
+  "consent.accept": "I understand — continue",
   "nav.command": "Command Center",
   "nav.handoff": "Smart Handoff",
   "nav.interventions": "Closed-Loop",
@@ -542,6 +546,10 @@ const en: Record<string, string> = {
   "auditAction.handoff.update": "Updated handoff review",
   "auditAction.patient.update": "Updated patient record",
   "auditAction.risk.reassess": "Reassessed risk",
+  "auditAction.user.consent": "Acknowledged demo-data consent",
+  "auditAction.audit.export": "Exported audit log",
+  "auditAction.admin.access_review": "Exported access review",
+  "auditAction.system.purge": "Ran retention purge",
   "auditAction.user.last_admin_blocked": "Blocked last-admin change",
   "auditAction.user.sessions_revoked": "Revoked user sessions",
   "audit.ip": "IP",

@@ -4,6 +4,10 @@ const ar: Record<string, string> = {
   "app.tagline": "تنبّأ. تدخّل. أثبت.",
   "app.disclaimer":
     "نموذج أولي — بيانات محاكاة. الذكاء الاصطناعي لا يتخذ القرار السريري؛ بل يجعل المعلومات الحرجة مستحيلة الإغفال.",
+  "consent.title": "بيانات محاكاة — ليست تشخيصًا",
+  "consent.body":
+    "هذه البيئة تحتوي بيانات تجريبية اصطناعية فقط. كيرشيفت AI يبرز المخاطر والأدلة ولا يتخذ قرارات سريرية وليس جهازًا طبيًا. بالمتابعة أنت تقرّ بذلك.",
+  "consent.accept": "فهمت — متابعة",
   "nav.command": "مركز القيادة",
   "nav.handoff": "التسليم الذكي",
   "nav.interventions": "الحلقة المغلقة",
@@ -542,6 +546,10 @@ const ar: Record<string, string> = {
   "auditAction.handoff.update": "تحديث مراجعة تسليم",
   "auditAction.patient.update": "تحديث سجل مريض",
   "auditAction.risk.reassess": "إعادة تقييم الخطر",
+  "auditAction.user.consent": "إقرار بإشعار البيانات التجريبية",
+  "auditAction.audit.export": "تصدير سجل التدقيق",
+  "auditAction.admin.access_review": "تصدير مراجعة الصلاحيات",
+  "auditAction.system.purge": "تشغيل تنقية البيانات المنتهية",
   "auditAction.user.last_admin_blocked": "منع تعديل آخر مدير",
   "auditAction.user.sessions_revoked": "إبطال جلسات مستخدم",
   "audit.ip": "IP",

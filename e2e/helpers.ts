@@ -22,6 +22,14 @@ export async function loginAs(page: Page, who: keyof typeof CREDS) {
   await login(page, CREDS[who].u, CREDS[who].p);
   // signed-in shell = the user menu button appears
   await expect(page.getByLabel("user menu")).toBeVisible({ timeout: 15_000 });
+  // PDPL demo-data consent shows once per account until acknowledged.
+  const consent = page.getByRole("dialog", { name: /simulated data|بيانات محاكاة/i });
+  if (await consent.isVisible().catch(() => false)) {
+    await consent
+      .getByRole("button", { name: /understand|متابعة/i })
+      .click();
+    await expect(consent).not.toBeVisible();
+  }
 }
 
 /** Same-origin API call in the page context (sends the httpOnly session cookie). */

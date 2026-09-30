@@ -32,6 +32,7 @@ model User {
   phone      String
   employeeId String    @unique
   status     String    // active | suspended
+  consentAt  DateTime? // PDPL: demo-data disclaimer acknowledged
   lastLoginAt DateTime?
   createdAt  DateTime  @default(now())
   role       Role      @relation(fields: [roleKey], references: [key])

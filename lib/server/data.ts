@@ -42,7 +42,7 @@ export function toUser(r: {
   id: string; username: string; nameEn: string; nameAr: string;
   roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
   email: string; phone: string; employeeId: string; status: string;
-  lastLoginAt: Date | null; createdAt: Date;
+  consentAt: Date | null; lastLoginAt: Date | null; createdAt: Date;
 }): Omit<User, "password"> {
   return {
     id: r.id, username: r.username, nameEn: r.nameEn, nameAr: r.nameAr,
@@ -50,6 +50,7 @@ export function toUser(r: {
     specialty: { en: r.specialtyEn, ar: r.specialtyAr },
     email: r.email, phone: r.phone, employeeId: r.employeeId,
     status: r.status as "active" | "suspended",
+    consentAt: r.consentAt?.toISOString() ?? null,
     lastLoginMin: r.lastLoginAt
       ? Math.max(0, Math.round((Date.now() - r.lastLoginAt.getTime()) / 60000))
       : null,

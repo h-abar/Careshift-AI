@@ -157,6 +157,8 @@ export interface User {
   phone: string;
   employeeId: string;
   status: "active" | "suspended";
+  /** ISO timestamp of demo-data consent acknowledgement; null = pending. */
+  consentAt: string | null;
   lastLoginMin: number | null; // minutes ago; null = never logged in
   createdAt: string;
 }

@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:purge": "tsx scripts/purge.ts",
     "db:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset --force",
     "e2e": "playwright test",

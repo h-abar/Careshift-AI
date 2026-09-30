@@ -35,6 +35,8 @@ interface Auth {
   switchUser: (id: string) => Promise<boolean>;
   /** Ends impersonation — restores the original admin session. */
   stopSwitch: () => Promise<boolean>;
+  /** PDPL demo-data disclaimer — records consentAt on the user. */
+  consent: () => Promise<boolean>;
   can: (perm: PermKey) => boolean;
 }
 
@@ -47,6 +49,7 @@ const Ctx = createContext<Auth>({
   logout: async () => {},
   switchUser: async () => false,
   stopSwitch: async () => false,
+  consent: async () => false,
   can: () => false,
 });
 
@@ -125,6 +128,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const consent = useCallback(async () => {
+    try {
+      const d = await postJson<{ consentAt: string }>("/api/consent", {});
+      setUser((u) => (u ? { ...u, consentAt: d.consentAt } : u));
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const value = useMemo<Auth>(
     () => ({
       user,
@@ -135,9 +148,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       switchUser,
       stopSwitch,
+      consent,
       can: (p) => (user ? can(user.role, p) : false),
     }),
-    [user, impersonator, loading, login, logout, switchUser, stopSwitch],
+    [user, impersonator, loading, login, logout, switchUser, stopSwitch, consent],
   );
 
   if (loading) return null;

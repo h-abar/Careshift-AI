@@ -46,6 +46,10 @@ import { PATCH as userPatch } from "@/app/api/users/[id]/route";
 import { POST as resetPwPost } from "@/app/api/users/[id]/reset-password/route";
 import { POST as unlockPost } from "@/app/api/users/[id]/unlock/route";
 import { GET as auditGet } from "@/app/api/audit/route";
+import { GET as auditExportGet } from "@/app/api/audit/export/route";
+import { GET as accessReviewGet } from "@/app/api/admin/access-review/route";
+import { POST as consentPost } from "@/app/api/consent/route";
+import { purgeExpired } from "@/lib/server/retention";
 import { prisma } from "@/lib/server/prisma";
 import { signSession } from "@/lib/server/session";
 import { __setCaptchaVerifierForTests } from "@/lib/server/captcha";
@@ -1705,5 +1709,97 @@ describe("4 rate limiting", () => {
     } finally {
       process.env.RL_REASSESS = old;
     }
+  });
+});
+
+/* ── 7: PDPL/NCA controls — consent, audit export, access review, purge ── */
+
+describe("7: compliance controls", () => {
+  it("POST /api/consent records consentAt once and audits it", async () => {
+    await loginAs("nurse");
+    const r1 = await consentPost(post({}));
+    expect(r1.status).toBe(200);
+    const u = await prisma.user.findUnique({ where: { id: "U-002" } });
+    expect(u?.consentAt).toBeTruthy();
+    const row = await prisma.auditLog.findFirst({
+      where: { userId: "U-002", action: "user.consent" },
+    });
+    expect(row).toBeTruthy();
+    // second call is idempotent — no duplicate audit row
+    await consentPost(post({}));
+    expect(
+      await prisma.auditLog.count({
+        where: { userId: "U-002", action: "user.consent" },
+      }),
+    ).toBe(1);
+  });
+
+  it("GET /api/audit/export returns CSV for admin, 403 otherwise, and is itself audited", async () => {
+    await loginAs("nurse");
+    expect((await auditExportGet(new Request("http://test/api"))).status).toBe(403);
+
+    await loginAs("admin");
+    const res = await auditExportGet(
+      new Request("http://test/api?format=csv&userId=U-002"),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/csv");
+    const csv = await res.text();
+    expect(csv.split("\n")[0]).toContain("createdAt,userId,action");
+    expect(csv).toContain("user.consent");
+    const json = await auditExportGet(
+      new Request("http://test/api?format=json"),
+    );
+    const body = await json.json();
+    expect(Array.isArray(body.rows)).toBe(true);
+    const auditRow = await prisma.auditLog.findFirst({
+      where: { userId: "U-008", action: "audit.export" },
+    });
+    expect(auditRow).toBeTruthy();
+  });
+
+  it("GET /api/admin/access-review lists accounts with dormant flag; non-admin 403", async () => {
+    await loginAs("nurse");
+    expect(
+      (await accessReviewGet(new Request("http://test/api"))).status,
+    ).toBe(403);
+
+    await loginAs("admin");
+    const res = await accessReviewGet(
+      new Request("http://test/api?format=json"),
+    );
+    const body = await res.json();
+    expect(body.accounts.length).toBeGreaterThanOrEqual(10);
+    const admin = body.accounts.find((a: { username: string }) => a.username === "o.khalil");
+    expect(admin.role).toBe("admin");
+    expect(admin.permissions).toContain("audit_view");
+    expect(
+      await prisma.auditLog.count({
+        where: { userId: "U-008", action: "admin.access_review" },
+      }),
+    ).toBe(1);
+  });
+
+  it("purgeExpired removes rows past retention and audits the run", async () => {
+    const old = new Date(Date.now() - 800 * 86_400_000);
+    await prisma.loginAttempt.create({
+      data: { username: "purge-test", ip: "1.1.1.1", success: false, createdAt: old },
+    });
+    await prisma.auditLog.create({
+      data: {
+        userId: "purge-test", action: "x", entityType: "x", entityId: "x",
+        createdAt: old,
+      },
+    });
+    const result = await purgeExpired();
+    expect(result.loginAttempt).toBeGreaterThanOrEqual(1);
+    expect(result.auditLog).toBeGreaterThanOrEqual(1);
+    expect(
+      await prisma.loginAttempt.count({ where: { username: "purge-test" } }),
+    ).toBe(0);
+    const purgeAudit = await prisma.auditLog.findFirst({
+      where: { action: "system.purge" },
+    });
+    expect(purgeAudit).toBeTruthy();
   });
 });
