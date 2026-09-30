@@ -355,7 +355,7 @@ describe("interventions", () => {
     expect(esc.status).toBe(200);
     expect(
       await prisma.notification.findFirst({
-        where: { userId: "U-001", entityId: step, key: "notif.interventionEscalated" },
+        where: { receipts: { some: { userId: "U-001" } }, entityId: step, key: "notif.interventionEscalated" },
       }),
     ).toBeTruthy();
     expect(
@@ -684,7 +684,7 @@ describe("handoff accept", () => {
     expect(sbar.en.s.length).toBeGreaterThan(5);
     expect(
       await prisma.notification.findFirst({
-        where: { userId: "U-002", entityId: handoff.id },
+        where: { receipts: { some: { userId: "U-002" } }, entityId: handoff.id },
       }),
     ).toBeTruthy();
 
@@ -720,7 +720,7 @@ describe("handoff accept", () => {
     expect(rejected.status).toBe(200);
     expect(
       await prisma.notification.findFirst({
-        where: { userId: "U-003", entityId: handoff.id, key: "notif.handoffRejectedBy" },
+        where: { receipts: { some: { userId: "U-003" } }, entityId: handoff.id, key: "notif.handoffRejectedBy" },
       }),
     ).toBeTruthy();
     // Terminal state — no sign-off on a rejected handoff.
@@ -1084,7 +1084,7 @@ describe("B2 risk reassessment", () => {
     // U-002 = assigned nurse, U-001 = assigned physician for P-1042.
     for (const uid of ["U-002", "U-001"]) {
       const n = await prisma.notification.findFirst({
-        where: { userId: uid, patientId: "P-1042", key: "notif.riskAlert" },
+        where: { receipts: { some: { userId: uid } }, patientId: "P-1042", key: "notif.riskAlert" },
       });
       expect(n).toBeTruthy();
     }
@@ -1113,20 +1113,23 @@ describe("B2 risk reassessment", () => {
   it("alert acknowledge is audited + only own notifications", async () => {
     const n = await prisma.notification.create({
       data: {
-        id: "ntf-test-1", userId: "U-002", level: "warning",
+        id: "ntf-test-1", level: "warning",
         key: "notif.riskAlert", patientId: "P-1042", detail: "90",
+        receipts: { create: { id: "ntf-test-1-r1", userId: "U-002" } },
       },
     });
-    await loginAs("nurse2"); // U-007 — not the owner
+    await loginAs("nurse2"); // U-007 — not a recipient
     expect(
       (await notifPatch(patch({ action: "ack" }), ctx({ id: n.id }))).status,
     ).toBe(403);
-    await loginAs("nurse"); // U-002 owner
+    await loginAs("nurse"); // U-002 recipient
     const r = await notifPatch(patch({ action: "ack" }), ctx({ id: n.id }));
     expect(r.status).toBe(200);
     expect(
-      (await prisma.notification.findUnique({ where: { id: n.id } }))!.read,
-    ).toBe(true);
+      (await prisma.notificationReceipt.findUnique({
+        where: { notificationId_userId: { notificationId: n.id, userId: "U-002" } },
+      }))!.readAt,
+    ).not.toBeNull();
     expect(
       await prisma.auditLog.findFirst({
         where: { action: "alert.ack", entityId: n.id },
@@ -1183,6 +1186,7 @@ describe("C1 shared validation", () => {
 /* ── B7: computed savings trend + live journey events ── */
 
 import { dbSavingsTrend } from "@/lib/server/data";
+import { notifyPerm } from "@/lib/server/notify";
 
 describe("B7 computed static-data replacements", () => {
   it("savingsTrend is computed from claim rows (6 months, real sums)", async () => {
@@ -1239,8 +1243,14 @@ describe("B5 notification center", () => {
   it("dismiss hides the row; mark-all marks everything", async () => {
     const n = await prisma.notification.create({
       data: {
-        id: "ntf-test-2", userId: "U-002", level: "info",
+        id: "ntf-test-2", level: "info",
         key: "notif.claimStatus", entityId: "CL-1", detail: "review",
+        receipts: {
+          create: [
+            { id: "ntf-test-2-r1", userId: "U-002" },
+            { id: "ntf-test-2-r2", userId: "U-007" },
+          ],
+        },
       },
     });
     await loginAs("nurse");
@@ -1257,17 +1267,20 @@ describe("B5 notification center", () => {
       }),
     ).toBeTruthy();
 
+    // U-002's dismiss must not touch U-007's receipt for the same row.
+    const other = await prisma.notificationReceipt.findUnique({
+      where: { notificationId_userId: { notificationId: n.id, userId: "U-007" } },
+    });
+    expect(other!.readAt).toBeNull();
+    expect(other!.dismissedAt).toBeNull();
+
     const r = await notifMarkAll(post({}));
     expect(r.status).toBe(200);
-    // Broadcasts (userId=null) are shared — only MY rows are marked.
-    const broadcastUnread = await prisma.notification.count({
-      where: { userId: null, read: false, dismissed: false },
-    });
     const after = await (await notifGet()).json();
-    expect(after.unread).toBe(broadcastUnread);
+    expect(after.unread).toBe(0);
     expect(
-      await prisma.notification.count({
-        where: { userId: "U-002", read: false, dismissed: false },
+      await prisma.notificationReceipt.count({
+        where: { userId: "U-002", readAt: null, dismissedAt: null },
       }),
     ).toBe(0);
     expect(
@@ -1275,6 +1288,62 @@ describe("B5 notification center", () => {
         where: { action: "alert.read_all", userId: "U-002" },
       }),
     ).toBeTruthy();
+  });
+
+  it("patient-linked notifications never reach roles without patients_view", async () => {
+    // A patient-linked audience send resolves to patients_view holders only —
+    // the insurance reviewer (insurance_view, no patients_view) gets nothing.
+    const n = await notifyPerm("patients_view", "notif.riskAlert", "critical", {
+      patientId: "P-1042",
+      entityType: "patient",
+      entityId: "P-1042",
+      detail: "99",
+    });
+    expect(n).toBeTruthy();
+    const receipts = await prisma.notificationReceipt.findMany({
+      where: { notificationId: n!.id },
+    });
+    const ins = await prisma.user.findFirst({ where: { roleKey: "insurance" } });
+    expect(ins).toBeTruthy();
+    expect(receipts.some((r) => r.userId === ins!.id)).toBe(false);
+    expect(receipts.some((r) => r.userId === "U-002")).toBe(true);
+
+    // And the insurance user's notification list has no patient-linked rows.
+    await loginAs("insurance");
+    const list = await (await notifGet()).json();
+    expect(
+      list.notifications.some(
+        (x: { patientId?: string }) => x.patientId !== undefined,
+      ),
+    ).toBe(false);
+  });
+
+  it("dismissing as user A does not affect user B", async () => {
+    const n = await prisma.notification.create({
+      data: {
+        id: "ntf-test-3", level: "info", key: "notif.claimStatus",
+        receipts: {
+          create: [
+            { id: "ntf-test-3-rA", userId: "U-002" },
+            { id: "ntf-test-3-rB", userId: "U-001" },
+          ],
+        },
+      },
+    });
+    await loginAs("nurse"); // U-002
+    expect(
+      (await notifPatch(patch({ action: "dismiss" }), ctx({ id: n.id }))).status,
+    ).toBe(200);
+    const b = await prisma.notificationReceipt.findUnique({
+      where: { notificationId_userId: { notificationId: n.id, userId: "U-001" } },
+    });
+    expect(b!.dismissedAt).toBeNull();
+    // B still sees it in their list.
+    await loginAs("physician"); // U-001
+    const list = await (await notifGet()).json();
+    expect(list.notifications.some((x: { id: string }) => x.id === n.id)).toBe(
+      true,
+    );
   });
 });
 

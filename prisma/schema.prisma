@@ -94,19 +94,33 @@ model Assignment {
 
 model Notification {
   id         String   @id
-  userId     String?  // null = broadcast to the whole unit (seeded demo rows)
   level      String   // critical | warning | info
   key        String   // i18n → notif.*
-  patientId  String?
+  patientId  String?  // patient-linked rows are only delivered to patients_view holders
   entityType String?  // handoff | intervention | claim | patient
   entityId   String?
   detail     String   @default("") // {detail} placeholder for i18n keys
   min        Int      @default(0) // minutes ago (legacy demo clock)
-  read       Boolean  @default(false)
-  dismissed  Boolean  @default(false)
   createdAt  DateTime @default(now())
 
-  @@index([userId, read])
+  receipts   NotificationReceipt[]
+}
+
+/**
+ * Per-user delivery + read/dismiss state. One row per recipient — read or
+ * dismissed is scoped to the individual user, never shared.
+ */
+model NotificationReceipt {
+  id             String       @id
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  readAt         DateTime?
+  dismissedAt    DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
 }
 
 model ShiftHandoff {

@@ -5,8 +5,9 @@ import { handle, ok, parseBody } from "@/lib/server/json";
 import { notifPatchSchema } from "@/lib/schemas";
 
 /**
- * Acknowledge / dismiss a notification. Only MY notifications (or unit
- * broadcasts) may be touched — audited as alert.ack / alert.dismiss.
+ * Acknowledge / dismiss a notification — writes MY receipt only, so one
+ * user can never hide an alert for anyone else. Audited as
+ * alert.ack / alert.dismiss.
  */
 export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
@@ -18,13 +19,20 @@ export const PATCH = handle(
 
     const n = await prisma.notification.findUnique({ where: { id } });
     if (!n) return Response.json({ error: "not found" }, { status: 404 });
-    if (n.userId !== null && n.userId !== auth.user.id) {
+    // Only recipients may touch a notification.
+    const mine = await prisma.notificationReceipt.findUnique({
+      where: { notificationId_userId: { notificationId: id, userId: auth.user.id } },
+    });
+    if (!mine) {
       return Response.json({ error: "forbidden" }, { status: 403 });
     }
 
-    await prisma.notification.update({
-      where: { id },
-      data: { read: true, dismissed: action === "dismiss" },
+    await prisma.notificationReceipt.update({
+      where: { id: mine.id },
+      data: {
+        readAt: mine.readAt ?? new Date(),
+        dismissedAt: action === "dismiss" ? new Date() : mine.dismissedAt,
+      },
     });
     await audit(
       {

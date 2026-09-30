@@ -55,6 +55,7 @@ async function main() {
   await prisma.insuranceClaim.deleteMany();
   await prisma.handoff.deleteMany();
   await prisma.assignment.deleteMany();
+  await prisma.notificationReceipt.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.shiftHandoff.deleteMany();
   await prisma.session.deleteMany();
@@ -160,16 +161,28 @@ async function main() {
     })),
   });
 
-  await prisma.notification.createMany({
-    data: notifications.map((n) => ({
-      id: n.id,
-      level: n.level,
-      key: n.key,
-      patientId: n.patientId ?? null,
-      min: n.min,
-      read: n.read,
-    })),
-  });
+  // Seeded notifications are delivered per-user via receipts — patient-linked
+  // rows only go to users who hold patients_view (clinical staff).
+  const CLINICAL = ["U-001", "U-002", "U-003"]; // physician, nurse, charge nurse
+  for (const n of notifications) {
+    await prisma.notification.create({
+      data: {
+        id: n.id,
+        level: n.level,
+        key: n.key,
+        patientId: n.patientId ?? null,
+        min: n.min,
+        receipts: {
+          create: CLINICAL.map((uid, i) => ({
+            id: `${n.id}-r${i}`,
+            userId: uid,
+            // `read` on the seed item maps to a per-user receipt timestamp.
+            readAt: n.read ? new Date() : null,
+          })),
+        },
+      },
+    });
+  }
 
   await prisma.shiftHandoff.createMany({
     data: shiftHandoffs.map((s) => ({
