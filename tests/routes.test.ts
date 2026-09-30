@@ -112,17 +112,33 @@ describe("auth endpoints", () => {
   });
 
   it("login success → 200, cookie set, auth.login audited", async () => {
-    const r = await login(USERS.admin.u, USERS.admin.p, "10.1.1.1");
-    expect(r.status).toBe(200);
-    const body = await r.json();
-    expect(body.user.id).toBe("U-008");
-    expect(cookieStore.has("cs_session")).toBe(true);
-    const row = await prisma.auditLog.findFirst({
+    // TRUSTED_PROXY is off by default → spoofed XFF is ignored ("local").
+    const noProxy = await login(USERS.admin.u, USERS.admin.p, "10.1.1.1");
+    expect(noProxy.status).toBe(200);
+    let row = await prisma.auditLog.findFirst({
       where: { action: "auth.login", userId: "U-008" },
       orderBy: { createdAt: "desc" },
     });
-    expect(row).toBeTruthy();
-    expect(row!.ip).toBe("10.1.1.1");
+    expect(row!.ip).toBe("local");
+
+    // With a trusted proxy, the forwarded client IP is recorded.
+    const old = process.env.TRUSTED_PROXY;
+    try {
+      process.env.TRUSTED_PROXY = "1";
+      const r = await login(USERS.admin.u, USERS.admin.p, "10.1.1.1");
+      expect(r.status).toBe(200);
+      const body = await r.json();
+      expect(body.user.id).toBe("U-008");
+      expect(cookieStore.has("cs_session")).toBe(true);
+      row = await prisma.auditLog.findFirst({
+        where: { action: "auth.login", userId: "U-008" },
+        orderBy: { createdAt: "desc" },
+      });
+      expect(row).toBeTruthy();
+      expect(row!.ip).toBe("10.1.1.1");
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+    }
   });
 
   it("wrong password → 401 + auth.login_failed audited", async () => {
@@ -1419,7 +1435,7 @@ describe("B5 notification center", () => {
 describe("0.4 minimum-necessary users", () => {
   it("GET /api/handoffs users expose only id/names/role/dept", async () => {
     await loginAs("charge");
-    const r = await handoffsGet(get());
+    const r = await handoffsGet();
     expect(r.status).toBe(200);
     const body = await r.json();
     expect(body.users.length).toBeGreaterThan(0);
@@ -1430,7 +1446,7 @@ describe("0.4 minimum-necessary users", () => {
     }
     // Admin list still returns the full record.
     await loginAs("admin");
-    const full = await (await usersGet()).json();
+    const full = await (await usersGet(get())).json();
     expect(full.users[0].email).toBeTruthy();
   });
 });
