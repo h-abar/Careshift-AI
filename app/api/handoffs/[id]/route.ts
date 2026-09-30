@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
-import { dbSnapshots, dbUsers } from "@/lib/server/data";
+import { dbSnapshots, dbStaffPickers } from "@/lib/server/data";
 import { REQUIRED_CHECKLIST, handoffEvent } from "@/lib/server/handoffs";
 import { audit } from "@/lib/server/audit";
 import { can } from "@/lib/permissions";
@@ -55,7 +55,7 @@ export const GET = handle(
         },
       }),
       dbSnapshots(),
-      dbUsers(),
+      dbStaffPickers(),
     ]);
     if (!h) return Response.json({ error: "not found" }, { status: 404 });
     const mapped = mapHandoff(h);

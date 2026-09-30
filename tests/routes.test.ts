@@ -39,6 +39,7 @@ import { POST as handoffCreatePost } from "@/app/api/handoffs/create/route";
 import { POST as signoffPost } from "@/app/api/handoffs/[id]/signoff/route";
 import { POST as rejectPost } from "@/app/api/handoffs/[id]/reject/route";
 import { PATCH as handoffPatch, GET as handoffGet } from "@/app/api/handoffs/[id]/route";
+import { GET as handoffsGet } from "@/app/api/handoffs/route";
 import { POST as interventionPost } from "@/app/api/interventions/[stepId]/route";
 import { GET as usersGet, POST as usersPost } from "@/app/api/users/route";
 import { PATCH as userPatch } from "@/app/api/users/[id]/route";
@@ -1410,6 +1411,27 @@ describe("B5 notification center", () => {
     expect(list.notifications.some((x: { id: string }) => x.id === n.id)).toBe(
       true,
     );
+  });
+});
+
+/* ── 0.4: staff pickers carry minimum-necessary identity ── */
+
+describe("0.4 minimum-necessary users", () => {
+  it("GET /api/handoffs users expose only id/names/role/dept", async () => {
+    await loginAs("charge");
+    const r = await handoffsGet(get());
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.users.length).toBeGreaterThan(0);
+    for (const u of body.users) {
+      expect(Object.keys(u).sort()).toEqual(
+        ["dept", "id", "nameAr", "nameEn", "role"].sort(),
+      );
+    }
+    // Admin list still returns the full record.
+    await loginAs("admin");
+    const full = await (await usersGet(get())).json();
+    expect(full.users[0].email).toBeTruthy();
   });
 });
 

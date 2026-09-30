@@ -161,6 +161,15 @@ export interface User {
   createdAt: string;
 }
 
+/** Minimum-necessary staff identity for pickers — no contact/HR fields. */
+export interface StaffPicker {
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  role: RoleKey;
+  dept: string;
+}
+
 export type HandoffStatus =
   | "draft"
   | "pending"

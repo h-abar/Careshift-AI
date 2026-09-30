@@ -8,6 +8,7 @@ import type {
   JourneyKind,
   NotificationItem,
   ShiftHandoff,
+  StaffPicker,
   User,
 } from "@/lib/types";
 
@@ -131,13 +132,13 @@ export const usePatientsTable = (p?: { page?: number; pageSize?: number }) =>
 export const useHandoffContext = () =>
   useApi<{ ho: ShiftHandoff; snaps: PatientSnapshot[] }>("/api/handoff");
 export const useHandoffs = () =>
-  useApi<{ handoffs: HandoffRecord[]; users: Omit<User, "password">[] }>(
+  useApi<{ handoffs: HandoffRecord[]; users: StaffPicker[] }>(
     "/api/handoffs",
   );
 export const useHandoff = (id: string) =>
   useApi<{
     handoff: HandoffRecord;
-    users: Omit<User, "password">[];
+    users: StaffPicker[];
     snaps: PatientSnapshot[];
   }>(`/api/handoffs/${id}`, [id]);
 export const qs = (p: Record<string, string | number | undefined>) => {

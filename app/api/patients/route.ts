@@ -1,5 +1,5 @@
 import { requirePerm } from "@/lib/server/session";
-import { dbSnapshots, dbUsers } from "@/lib/server/data";
+import { dbSnapshots, dbStaffPickers } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
 import { auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
@@ -8,7 +8,7 @@ export const GET = handle(async (req: Request) => {
   const auth = await requirePerm("patients_view");
   const [snaps, users, assignments] = await Promise.all([
     dbSnapshots(),
-    dbUsers(),
+    dbStaffPickers(),
     prisma.assignment.findMany(),
   ]);
   await auditOnce(

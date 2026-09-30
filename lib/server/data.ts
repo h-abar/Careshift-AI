@@ -6,6 +6,7 @@ import type {
   InterventionStatus,
   InterventionStep,
   Patient,
+  StaffPicker,
   User,
 } from "@/lib/types";
 import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
@@ -96,6 +97,26 @@ export async function dbPatient(id: string): Promise<Patient | null> {
 
 export async function dbUsers(): Promise<Omit<User, "password">[]> {
   return (await prisma.user.findMany({ orderBy: { id: "asc" } })).map(toUser);
+}
+
+/**
+ * Minimum-necessary staff list for pickers (handoff wizard, handoff
+ * detail name resolution, patient assignments). Never leaks
+ * email/phone/employeeId/username to non-admin roles.
+ */
+export async function dbStaffPickers(): Promise<StaffPicker[]> {
+  return (
+    await prisma.user.findMany({
+      select: { id: true, nameEn: true, nameAr: true, roleKey: true, dept: true },
+      orderBy: { id: "asc" },
+    })
+  ).map((r) => ({
+    id: r.id,
+    nameEn: r.nameEn,
+    nameAr: r.nameAr,
+    role: r.roleKey as StaffPicker["role"],
+    dept: r.dept,
+  }));
 }
 
 export async function dbUser(id: string) {

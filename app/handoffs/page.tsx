@@ -7,9 +7,9 @@ import { useAuth } from "@/lib/auth";
 import { postJson, useHandoffs, useSnapshots } from "@/lib/api";
 import { useToast } from "@/components/toast";
 import { Card, Empty, ErrorState, Loading, Modal, Skeleton, RiskBadge, SectionTitle } from "@/components/ui";
-import type { HandoffStatus, User } from "@/lib/types";
+import type { HandoffStatus, StaffPicker } from "@/lib/types";
 
-type SafeUser = Omit<User, "password">;
+type SafeUser = StaffPicker;
 
 const STATUS_STYLE: Record<HandoffStatus, string> = {
   draft: "bg-slate-100 text-slate-600 border-slate-200",
