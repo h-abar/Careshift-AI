@@ -598,6 +598,7 @@ const ar: Record<string, string> = {
   "login.password": "كلمة المرور",
   "login.signin": "دخول",
   "login.error": "بيانات غير صحيحة أو حساب موقوف",
+  "login.locked": "تم قفل الحساب مؤقتًا بعد محاولات دخول فاشلة — حاول بعد 15 دقيقة",
   "login.demoAccounts": "حسابات تجريبية — اضغط للتعبئة",
   "login.show": "إظهار",
   "login.hide": "إخفاء",

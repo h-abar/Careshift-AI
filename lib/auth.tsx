@@ -23,7 +23,10 @@ interface Auth {
   loggedIn: boolean;
   loading: boolean;
   /** Server login — bcrypt-verified credentials → httpOnly session cookie. */
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (
+    username: string,
+    password: string,
+  ) => Promise<"ok" | "invalid" | "locked">;
   logout: () => Promise<void>;
   /** Admin "view as" — server-issued impersonation session, audit-logged. */
   switchUser: (id: string) => Promise<boolean>;
@@ -35,7 +38,7 @@ const Ctx = createContext<Auth>({
   impersonator: null,
   loggedIn: false,
   loading: true,
-  login: async () => false,
+  login: async () => "invalid",
   logout: async () => {},
   switchUser: async () => false,
   can: () => false,
@@ -65,9 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setUser(d.user);
       setImpersonator(null);
-      return true;
-    } catch {
-      return false;
+      return "ok" as const;
+    } catch (e) {
+      return (e instanceof Error && e.message === "locked"
+        ? "locked"
+        : "invalid") as "locked" | "invalid";
     }
   }, []);
 

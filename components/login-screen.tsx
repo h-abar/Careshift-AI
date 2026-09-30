@@ -20,17 +20,17 @@ export function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<"" | "invalid" | "locked">("");
   const [shake, setShake] = useState(0);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     if (busy) return;
     setBusy(true);
-    const ok = await login(username, password);
+    const res = await login(username, password);
     setBusy(false);
-    if (!ok) {
-      setError(true);
+    if (res !== "ok") {
+      setError(res);
       setShake((s) => s + 1);
     }
   };
@@ -234,7 +234,7 @@ export function LoginScreen() {
 
               {error && (
                 <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-                  ⚠ {t("login.error")}
+                  ⚠ {error === "locked" ? t("login.locked") : t("login.error")}
                 </p>
               )}
 

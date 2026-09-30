@@ -598,6 +598,7 @@ const en: Record<string, string> = {
   "login.password": "Password",
   "login.signin": "Sign in",
   "login.error": "Invalid credentials or suspended account",
+  "login.locked": "Account temporarily locked after failed attempts — try again in 15 minutes",
   "login.demoAccounts": "Demo accounts — click to fill",
   "login.show": "Show",
   "login.hide": "Hide",
