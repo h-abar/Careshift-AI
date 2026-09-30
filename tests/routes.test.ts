@@ -315,23 +315,65 @@ describe("interventions", () => {
     expect(r.status).toBe(200);
   });
 
-  it("nurse cannot escalate → 403; physician can → 200", async () => {
+  it("B3 lifecycle: start → overdue (derived) → escalate → resolve", async () => {
+    const step = "P-1042-IV4";
+    await prisma.interventionOverride.deleteMany({ where: { stepId: step } });
+
+    // Start the step with an already-past dueAt -> derived overdue.
     await loginAs("nurse");
-    const r1 = await interventionPost(
-      post({ patientId: "P-1042", status: "escalated", escalatedTo: "physician" }),
-      ctx({ stepId: "P-1042-IV3" }),
+    const start = await interventionPost(
+      post({
+        patientId: "P-1042", status: "in_progress", assigneeId: "U-002",
+        dueAt: new Date(Date.now() - 60_000).toISOString(), note: "started",
+      }),
+      ctx({ stepId: step }),
     );
-    expect(r1.status).toBe(403);
+    expect(start.status).toBe(200);
+
+    // Nurse still cannot escalate (perm) even though overdue is derived.
+    const deny = await interventionPost(
+      post({ patientId: "P-1042", status: "escalated", escalatedTo: "physician" }),
+      ctx({ stepId: step }),
+    );
+    expect(deny.status).toBe(403);
+
+    // Physician escalates the (derived) overdue step -> notify physician.
     await loginAs("physician");
-    const r2 = await interventionPost(
+    const esc = await interventionPost(
       post({ patientId: "P-1042", status: "escalated", escalatedTo: "physician" }),
-      ctx({ stepId: "P-1042-IV3" }),
+      ctx({ stepId: step }),
     );
-    expect(r2.status).toBe(200);
-    const a = await prisma.auditLog.findFirst({
-      where: { action: "intervention.escalate", entityId: "P-1042-IV3" },
+    expect(esc.status).toBe(200);
+    expect(
+      await prisma.notification.findFirst({
+        where: { userId: "U-001", entityId: step, key: "notif.interventionEscalated" },
+      }),
+    ).toBeTruthy();
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "intervention.escalate", entityId: step },
+      }),
+    ).toBeTruthy();
+
+    // Resolve closes the loop.
+    const res = await interventionPost(
+      post({ patientId: "P-1042", status: "resolved" }),
+      ctx({ stepId: step }),
+    );
+    expect(res.status).toBe(200);
+    const row = await prisma.interventionOverride.findUnique({
+      where: { stepId: step },
     });
-    expect(a).toBeTruthy();
+    expect(row!.resolvedAt).toBeTruthy();
+    // Terminal — further transitions rejected.
+    expect(
+      (
+        await interventionPost(
+          post({ patientId: "P-1042", status: "done" }),
+          ctx({ stepId: step }),
+        )
+      ).status,
+    ).toBe(409);
   });
 
   it("foreign stepId for patientId → 400", async () => {

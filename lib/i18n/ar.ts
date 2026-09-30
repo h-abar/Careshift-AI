@@ -21,6 +21,8 @@ const ar: Record<string, string> = {
   "common.dueIn": "يستحق خلال",
   "common.overdue": "متأخر",
   "common.markDone": "تأكيد التنفيذ",
+  "common.start": "بدء",
+  "common.resolve": "معالجة",
   "common.simulateDelay": "محاكاة تأخير",
   "common.escalate": "تصعيد",
   "common.escalatedTo": "صُعّد إلى",
@@ -59,6 +61,7 @@ const ar: Record<string, string> = {
   "iv.pending": "معلق",
   "iv.overdue": "متأخر",
   "iv.escalated": "مُصعّد",
+  "iv.resolved": "تمت المعالجة",
 
   "role.nurse": "ممرض/ة",
   "role.charge_nurse": "ممرض مسؤول",

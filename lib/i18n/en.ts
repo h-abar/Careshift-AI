@@ -21,6 +21,8 @@ const en: Record<string, string> = {
   "common.dueIn": "Due in",
   "common.overdue": "Overdue",
   "common.markDone": "Mark done",
+  "common.start": "Start",
+  "common.resolve": "Resolve",
   "common.simulateDelay": "Simulate delay",
   "common.escalate": "Escalate",
   "common.escalatedTo": "Escalated to",
@@ -59,6 +61,7 @@ const en: Record<string, string> = {
   "iv.pending": "Pending",
   "iv.overdue": "Overdue",
   "iv.escalated": "Escalated",
+  "iv.resolved": "Resolved",
 
   "role.nurse": "Nurse",
   "role.charge_nurse": "Charge Nurse",

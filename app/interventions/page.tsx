@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
+import { useAuth } from "@/lib/auth";
 import { postJson, useSnapshots } from "@/lib/api";
 import { fmtSar } from "@/lib/format";
 import {
@@ -24,6 +25,7 @@ const LOOP_STAGES_AR = ["تنبيه", "إسناد", "تنفيذ", "تحقق", "�
 
 export default function InterventionsPage() {
   const { t, lang } = useI18n();
+  const { can } = useAuth();
   const { data, refetch } = useSnapshots();
   const snaps = data?.snaps ?? [];
 
@@ -51,8 +53,9 @@ export default function InterventionsPage() {
       };
     });
 
-  const active = steps.filter((s) => s.status !== "done");
-  const done = steps.filter((s) => s.status === "done");
+  const closed = (s: InterventionStatus) => s === "done" || s === "resolved";
+  const active = steps.filter((s) => !closed(s.status));
+  const done = steps.filter((s) => closed(s.status));
   const shown = filter === "active" ? active : done;
 
   const persist = (
@@ -72,6 +75,10 @@ export default function InterventionsPage() {
     persist(id, patientId, "overdue");
   const escalate = (id: string, patientId: string, chain: Role[]) =>
     persist(id, patientId, "escalated", chain[0]);
+  const startStep = (id: string, patientId: string) =>
+    persist(id, patientId, "in_progress");
+  const resolve = (id: string, patientId: string) =>
+    persist(id, patientId, "resolved");
 
   const stages = lang === "ar" ? LOOP_STAGES_AR : LOOP_STAGES;
 
@@ -142,7 +149,7 @@ export default function InterventionsPage() {
 
               <div className="flex items-center gap-3">
                 <RiskBadge level={risk.level} />
-                {status !== "done" && status !== "escalated" && (
+                {!closed(status) && status !== "escalated" && (
                   <Countdown
                     seedMin={step.dueInMin}
                     onExpire={() => simulateOverdue(step.id, patient.id)}
@@ -158,15 +165,33 @@ export default function InterventionsPage() {
             </div>
 
             {/* actions row */}
-            {status !== "done" && (
+            {!closed(status) && (
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#e2e9f2] pt-3">
-                <button
-                  onClick={() => markDone(step.id, patient.id)}
-                  className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
-                >
-                  ✓ {t("common.markDone")}
-                </button>
-                {status === "overdue" && (
+                {status === "pending" && (
+                  <button
+                    onClick={() => startStep(step.id, patient.id)}
+                    className="rounded-lg bg-sky-50 border border-sky-200 px-3 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-100"
+                  >
+                    ▶ {t("common.start")}
+                  </button>
+                )}
+                {status === "escalated" && can("intervention_escalate") && (
+                  <button
+                    onClick={() => resolve(step.id, patient.id)}
+                    className="rounded-lg bg-teal-50 border border-teal-200 px-3 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-100"
+                  >
+                    ✓ {t("common.resolve")}
+                  </button>
+                )}
+                {status !== "escalated" && (
+                  <button
+                    onClick={() => markDone(step.id, patient.id)}
+                    className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                  >
+                    ✓ {t("common.markDone")}
+                  </button>
+                )}
+                {status === "overdue" && can("intervention_escalate") && (
                   <button
                     onClick={() => escalate(step.id, patient.id, step.escalationChain)}
                     className="rounded-lg bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100"

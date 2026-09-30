@@ -7,7 +7,8 @@ export type InterventionStatus =
   | "in_progress"
   | "pending"
   | "overdue"
-  | "escalated";
+  | "escalated"
+  | "resolved";
 export type ClaimStatus = "approved" | "pending" | "review" | "denied";
 export type Lang = "en" | "ar";
 
@@ -87,6 +88,12 @@ export interface InterventionStep {
   dueInMin: number; // countdown seed for the UI timer
   completedAt?: string;
   escalationChain: Role[]; // who it escalates to, in order
+  // Phase-2 lifecycle fields (persisted via InterventionOverride)
+  assigneeId?: string;
+  dueAt?: string;
+  note?: string;
+  escalatedTo?: Role | string;
+  resolvedAt?: string;
 }
 
 export type JourneyKind =

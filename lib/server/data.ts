@@ -4,6 +4,7 @@ import type {
   Claim,
   HandoffRecord,
   InterventionStatus,
+  InterventionStep,
   Patient,
   User,
 } from "@/lib/types";
@@ -120,11 +121,28 @@ export async function dbSnapshots(): Promise<PatientSnapshot[]> {
     .map(toPatient)
     .map((patient) => {
       const risk = assessClinicalRisk(patient);
+      const now = Date.now();
       const plan = buildInterventionPlan(patient, risk).map((s) => {
         const o = ov.get(s.id);
-        return o
-          ? { ...s, status: o.status as InterventionStatus, escalatedTo: o.escalatedTo ?? undefined }
-          : s;
+        if (!o) return s;
+        // Overdue is DERIVED from the real dueAt timestamp, never stored.
+        const derived =
+          o.dueAt && o.dueAt.getTime() < now &&
+          (o.status === "pending" || o.status === "in_progress")
+            ? "overdue"
+            : o.status;
+        return {
+          ...s,
+          status: derived as InterventionStatus,
+          escalatedTo: (o.escalatedTo ?? undefined) as InterventionStep["escalatedTo"],
+          assigneeId: o.assigneeId ?? undefined,
+          dueAt: o.dueAt?.toISOString(),
+          dueInMin: o.dueAt
+            ? Math.max(0, Math.round((o.dueAt.getTime() - now) / 60000))
+            : s.dueInMin,
+          note: o.note || undefined,
+          resolvedAt: o.resolvedAt?.toISOString(),
+        };
       });
       return { patient, risk, insurance: assessInsuranceRisk(patient, risk), plan };
     })
