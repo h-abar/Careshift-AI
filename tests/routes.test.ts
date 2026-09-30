@@ -30,6 +30,7 @@ import { GET as sessionGet } from "@/app/api/auth/session/route";
 import { POST as switchPost } from "@/app/api/auth/switch/route";
 import { POST as switchStopPost } from "@/app/api/auth/switch/stop/route";
 import { POST as acceptPost } from "@/app/api/handoffs/[id]/accept/route";
+import { POST as handoffCreatePost } from "@/app/api/handoffs/create/route";
 import { POST as interventionPost } from "@/app/api/interventions/[stepId]/route";
 import { GET as usersGet, POST as usersPost } from "@/app/api/users/route";
 import { PATCH as userPatch } from "@/app/api/users/[id]/route";
@@ -337,6 +338,15 @@ describe("interventions", () => {
     );
     expect(r.status).toBe(400);
   });
+
+  it("A6: well-formed stepId NOT in the generated plan → 400", async () => {
+    await loginAs("nurse");
+    const r = await interventionPost(
+      post({ patientId: "P-1042", status: "done" }),
+      ctx({ stepId: "P-1042-IV999" }),
+    );
+    expect(r.status).toBe(400);
+  });
 });
 
 /* ── claims ── */
@@ -396,6 +406,37 @@ describe("handoff accept", () => {
     await loginAs("charge");
     const r = await acceptPost(post({}), ctx({ id: "HF-2026-0929" }));
     expect(r.status).toBe(200);
+  });
+
+  it("A6: outgoingId === incomingId → 400", async () => {
+    await loginAs("charge");
+    const r = await handoffCreatePost(
+      post({
+        dept: "icu", shift: "day",
+        outgoingId: "U-002", incomingId: "U-002",
+        patientIds: ["P-1042"],
+      }),
+    );
+    expect(r.status).toBe(400);
+  });
+});
+
+/* ── A6: audit dedupe ── */
+
+describe("audit dedupe (A6)", () => {
+  it("repeated list views inside the window → a single audit row", async () => {
+    await prisma.auditLog.deleteMany({
+      where: { action: "patients.list" },
+    });
+    await loginAs("nurse");
+    await patientsGet(get());
+    await patientsGet(get());
+    await patientsGet(get());
+    expect(
+      await prisma.auditLog.count({
+        where: { action: "patients.list", userId: "U-002" },
+      }),
+    ).toBe(1);
   });
 });
 

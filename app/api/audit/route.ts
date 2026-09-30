@@ -1,6 +1,6 @@
 import { requirePerm } from "@/lib/server/session";
 import { prisma } from "@/lib/server/prisma";
-import { audit } from "@/lib/server/audit";
+import { auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 
 export const GET = handle(async (req: Request) => {
@@ -24,15 +24,9 @@ export const GET = handle(async (req: Request) => {
     prisma.user.findMany({ select: { id: true, nameEn: true, nameAr: true } }),
   ]);
   const name = new Map(users.map((u) => [u.id, u]));
-  await audit(
-    {
-      userId: auth.user.id,
-      action: "audit.list",
-      entityType: "audit",
-      entityId: "list",
-      sessionId: auth.sid,
-    },
-    req,
+  await auditOnce(
+    auth.user.id, "audit.list", "audit", "list",
+    auditDedupeMin(), auth.sid, req,
   );
   return ok({
     entries: entries.map((e) => ({

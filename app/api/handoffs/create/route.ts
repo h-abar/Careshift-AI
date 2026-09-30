@@ -19,6 +19,12 @@ export const POST = handle(async (req: Request) => {
   ) {
     return Response.json({ error: "incomplete" }, { status: 400 });
   }
+  if (body.outgoingId === body.incomingId) {
+    return Response.json(
+      { error: "outgoing and incoming must differ" },
+      { status: 400 },
+    );
+  }
 
   // Referential validation — staff must exist and be active, patients real.
   const [out, inc, patients] = await Promise.all([

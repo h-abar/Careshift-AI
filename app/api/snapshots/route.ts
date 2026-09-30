@@ -1,7 +1,7 @@
 import { requireAnyPerm } from "@/lib/server/session";
 import { can } from "@/lib/permissions";
 import { dbOrgStats } from "@/lib/server/data";
-import { auditOnce } from "@/lib/server/audit";
+import { auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 
 /**
@@ -17,13 +17,8 @@ export const GET = handle(async (req: Request) => {
     includeSnaps: can(auth.user.role, "patients_view"),
   });
   await auditOnce(
-    auth.user.id,
-    "org.view",
-    "org",
-    "snapshots",
-    30, // at most one org.view row per user per 30 min
-    auth.sid,
-    req,
+    auth.user.id, "org.view", "org", "snapshots",
+    auditDedupeMin(), auth.sid, req,
   );
   return ok(org);
 });

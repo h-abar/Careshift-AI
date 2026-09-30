@@ -1,7 +1,7 @@
 import { requirePerm } from "@/lib/server/session";
 import { dbUsers } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
-import { audit } from "@/lib/server/audit";
+import { audit, auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 import bcrypt from "bcryptjs";
 
@@ -12,15 +12,9 @@ const ROLES = [
 export const GET = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage");
   const users = await dbUsers();
-  await audit(
-    {
-      userId: auth.user.id,
-      action: "users.list",
-      entityType: "user",
-      entityId: "list",
-      sessionId: auth.sid,
-    },
-    req,
+  await auditOnce(
+    auth.user.id, "users.list", "user", "list",
+    auditDedupeMin(), auth.sid, req,
   );
   return ok({ users });
 });

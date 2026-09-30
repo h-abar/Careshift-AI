@@ -1,7 +1,7 @@
 import { requirePerm } from "@/lib/server/session";
 import { dbSnapshots, dbUsers } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
-import { audit } from "@/lib/server/audit";
+import { auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 
 export const GET = handle(async (req: Request) => {
@@ -11,15 +11,9 @@ export const GET = handle(async (req: Request) => {
     dbUsers(),
     prisma.assignment.findMany(),
   ]);
-  await audit(
-    {
-      userId: auth.user.id,
-      action: "patients.list",
-      entityType: "patient",
-      entityId: "list",
-      sessionId: auth.sid,
-    },
-    req,
+  await auditOnce(
+    auth.user.id, "patients.list", "patient", "list",
+    auditDedupeMin(), auth.sid, req,
   );
   return ok({
     snaps,

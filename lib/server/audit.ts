@@ -39,6 +39,12 @@ export async function audit(
   }
 }
 
+/** Dedupe window for view/list audits — AUDIT_DEDUPE_MIN env, default 30m. */
+export function auditDedupeMin(): number {
+  const n = Number(process.env.AUDIT_DEDUPE_MIN);
+  return Number.isFinite(n) && n > 0 ? n : 30;
+}
+
 /**
  * Deduped audit — writes only if the same user didn't record the same
  * action on the same entity within `windowMin`. Keeps list/page views

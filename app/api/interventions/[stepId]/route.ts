@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
+import { dbPatient } from "@/lib/server/data";
+import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
+import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 import type { InterventionStatus, Role } from "@/lib/types";
@@ -24,18 +27,18 @@ export const POST = handle(
         : "intervention_execute",
     );
 
-    // Step ids are generated as `${patientId}-IV${n}` — reject foreign ids.
-    if (!stepId.startsWith(`${body.patientId}-`)) {
-      return Response.json(
-        { error: "stepId does not belong to patientId" },
-        { status: 400 },
-      );
-    }
-    const patient = await prisma.patient.findUnique({
-      where: { id: body.patientId },
-    });
+    // The step must exist in the patient's GENERATED intervention plan —
+    // a well-formed but foreign/unknown stepId is rejected.
+    const patient = await dbPatient(body.patientId);
     if (!patient) {
       return Response.json({ error: "patient not found" }, { status: 404 });
+    }
+    const plan = buildInterventionPlan(patient, assessClinicalRisk(patient));
+    if (!plan.some((s) => s.id === stepId)) {
+      return Response.json(
+        { error: "stepId is not in this patient's intervention plan" },
+        { status: 400 },
+      );
     }
 
     const prev = await prisma.interventionOverride.findUnique({
