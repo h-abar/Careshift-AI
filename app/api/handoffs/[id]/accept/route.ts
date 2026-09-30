@@ -3,7 +3,8 @@ import { requirePerm } from "@/lib/server/session";
 import { handoffEvent } from "@/lib/server/handoffs";
 import { notify } from "@/lib/server/notify";
 import { audit } from "@/lib/server/audit";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { handoffAcceptSchema } from "@/lib/schemas";
 import { can } from "@/lib/permissions";
 
 /**
@@ -14,9 +15,9 @@ export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("handoff_accept");
     const { id } = await ctx.params;
-    const { checklist } = (await req.json().catch(() => ({}))) as {
-      checklist?: string[];
-    };
+    const { data: body, error } = await parseBody(req, handoffAcceptSchema);
+    if (error) return error;
+    const checklist = body.checklist;
 
     const h = await prisma.handoff.findUnique({ where: { id } });
     if (!h) return Response.json({ error: "not found" }, { status: 404 });

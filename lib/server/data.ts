@@ -132,7 +132,18 @@ export async function dbHandoffs(): Promise<HandoffRecord[]> {
   return (await prisma.handoff.findMany({ orderBy: { id: "desc" } })).map(toHandoff);
 }
 
-/** Snapshots over DB patients, applying persisted intervention overrides. */
+/**
+ * Snapshots over DB patients, applying persisted intervention overrides.
+ *
+ * MULTI-INSTANCE SAFETY: this is a per-process, best-effort cache with a
+ * short TTL (15 s). Writes bust it locally via invalidateSnapshots(), but a
+ * second app instance will not see that invalidation — its cache simply
+ * expires. That is acceptable for reads (worst case: a stale view for up to
+ * 15 s); all mutating routes still write straight to the DB. If the
+ * deployment ever scales past one instance and 15 s staleness matters,
+ * replace this with a shared store (Redis) or drop the cache — it is an
+ * optimization only, never a correctness dependency.
+ */
 const SNAPS_TTL_MS = 15_000;
 let snapsCache: { at: number; data: PatientSnapshot[] } | null = null;
 

@@ -30,58 +30,64 @@ export const PATCH = handle(
       return Response.json({ error: "cannot suspend self" }, { status: 400 });
     }
 
-    // Never allow demoting or suspending the LAST active admin — that
-    // would brick all user administration. Attempts are audited.
+    const suspending = b.status === "suspended" && user.status !== "suspended";
+    const roleChanged = b.roleKey !== undefined && b.roleKey !== user.roleKey;
+
+    // Last-admin guard and the update run in ONE transaction — a concurrent
+    // request can no longer slip between the count and the write.
     const wouldDemote =
       b.roleKey !== undefined && b.roleKey !== "admin" && user.roleKey === "admin";
     const wouldSuspend =
       b.status === "suspended" && user.status !== "suspended";
-    if ((wouldDemote || wouldSuspend) && user.roleKey === "admin") {
-      const activeAdmins = await prisma.user.count({
-        where: { roleKey: "admin", status: "active" },
-      });
-      if (activeAdmins <= 1) {
-        await audit(
-          {
-            userId: auth.user.id,
-            action: "user.last_admin_blocked",
-            entityType: "user",
-            entityId: id,
-            next: { attemptedRole: b.roleKey, attemptedStatus: b.status },
-            sessionId: auth.sid,
+    const needsAdminGuard =
+      (wouldDemote || wouldSuspend) && user.roleKey === "admin";
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (needsAdminGuard) {
+        const activeAdmins = await tx.user.count({
+          where: { roleKey: "admin", status: "active" },
+        });
+        if (activeAdmins <= 1) return "LAST_ADMIN" as const;
+      }
+      try {
+        return await tx.user.update({
+          where: { id },
+          data: {
+            nameEn: b.nameEn ?? undefined,
+            nameAr: b.nameAr ?? undefined,
+            roleKey: b.roleKey ?? undefined,
+            dept: b.dept ?? undefined,
+            status: b.status ?? undefined,
+            specialtyEn: b.specialtyEn ?? undefined,
+            specialtyAr: b.specialtyAr ?? undefined,
+            email: b.email ?? undefined,
+            phone: b.phone ?? undefined,
           },
-          req,
-        );
-        return Response.json(
-          { error: "cannot modify the last active admin" },
-          { status: 400 },
-        );
+        });
+      } catch (e) {
+        if (String(e).includes("Unique")) return "EMAIL_CONFLICT" as const;
+        throw e;
       }
-    }
-
-    const suspending = b.status === "suspended" && user.status !== "suspended";
-    const roleChanged = b.roleKey !== undefined && b.roleKey !== user.roleKey;
-
-    const updated = await prisma.user.update({
-      where: { id },
-      data: {
-        nameEn: b.nameEn ?? undefined,
-        nameAr: b.nameAr ?? undefined,
-        roleKey: b.roleKey ?? undefined,
-        dept: b.dept ?? undefined,
-        status: b.status ?? undefined,
-        specialtyEn: b.specialtyEn ?? undefined,
-        specialtyAr: b.specialtyAr ?? undefined,
-        email: b.email ?? undefined,
-        phone: b.phone ?? undefined,
-      },
-    }).catch((e) => {
-      if (String(e).includes("Unique")) {
-        return null; // email collision → 409 below
-      }
-      throw e;
     });
-    if (!updated) {
+
+    if (updated === "LAST_ADMIN") {
+      await audit(
+        {
+          userId: auth.user.id,
+          action: "user.last_admin_blocked",
+          entityType: "user",
+          entityId: id,
+          next: { attemptedRole: b.roleKey, attemptedStatus: b.status },
+          sessionId: auth.sid,
+        },
+        req,
+      );
+      return Response.json(
+        { error: "cannot modify the last active admin" },
+        { status: 400 },
+      );
+    }
+    if (updated === "EMAIL_CONFLICT") {
       return Response.json({ error: "email already in use" }, { status: 409 });
     }
 

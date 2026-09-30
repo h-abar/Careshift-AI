@@ -1430,7 +1430,7 @@ describe("0.4 minimum-necessary users", () => {
     }
     // Admin list still returns the full record.
     await loginAs("admin");
-    const full = await (await usersGet(get())).json();
+    const full = await (await usersGet()).json();
     expect(full.users[0].email).toBeTruthy();
   });
 });

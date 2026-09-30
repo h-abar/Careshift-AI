@@ -140,3 +140,7 @@ export const notifPatchSchema = z
 export const switchSchema = z
   .object({ userId: z.string().min(1) })
   .strict();
+
+export const handoffAcceptSchema = z
+  .object({ checklist: z.array(z.string()).max(50).optional() })
+  .strict();
