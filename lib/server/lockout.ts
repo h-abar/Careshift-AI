@@ -14,10 +14,12 @@ export const LOCKOUT_MAX_FAILS = 5;
  * Client IP — x-forwarded-for is attacker-controlled unless the app runs
  * behind a trusted proxy, so it is only honoured when TRUSTED_PROXY=1.
  */
-export function clientIp(req: Request): string {
+export function clientIp(headers: Headers): string {
   if (!trustedProxy()) return "local";
   return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local"
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headers.get("x-real-ip") ??
+    "local"
   );
 }
 

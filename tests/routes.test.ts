@@ -1413,6 +1413,48 @@ describe("B5 notification center", () => {
   });
 });
 
+/* ── 0.3: audit IP honours TRUSTED_PROXY via clientIp() ── */
+
+describe("0.3 audit IP", () => {
+  it("audit() records the trusted clientIp on the row", async () => {
+    const { audit } = await import("@/lib/server/audit");
+    const old = process.env.TRUSTED_PROXY;
+    try {
+      process.env.TRUSTED_PROXY = "1";
+      const req = new Request("http://test/api", {
+        headers: { "x-forwarded-for": "192.0.2.77" },
+      });
+      await audit(
+        {
+          userId: "U-008", action: "test.ip", entityType: "test",
+          entityId: "ip-check",
+        },
+        req,
+      );
+      const row = await prisma.auditLog.findFirst({
+        where: { action: "test.ip", entityId: "ip-check" },
+        orderBy: { createdAt: "desc" },
+      });
+      expect(row?.ip).toBe("192.0.2.77");
+      // Without TRUSTED_PROXY the same spoofed header is ignored.
+      delete process.env.TRUSTED_PROXY;
+      await audit(
+        {
+          userId: "U-008", action: "test.ip", entityType: "test",
+          entityId: "ip-check-2",
+        },
+        req,
+      );
+      const row2 = await prisma.auditLog.findFirst({
+        where: { entityId: "ip-check-2" },
+      });
+      expect(row2?.ip).toBe("local");
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+    }
+  });
+});
+
 /* ── C6: server-side pagination ── */
 
 describe("pagination", () => {

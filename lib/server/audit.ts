@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { prisma } from "@/lib/server/prisma";
+import { clientIp } from "@/lib/server/lockout";
 
 /** Writes an AuditLog row. Failures never break the request. */
 export async function audit(
@@ -15,13 +16,12 @@ export async function audit(
   req?: Request,
 ) {
   try {
+    // Same trust rules as the login lockout: x-forwarded-for / x-real-ip
+    // are only honoured when TRUSTED_PROXY is set — otherwise spoofable.
     const h = req
       ? req.headers
       : await headers();
-    const ip =
-      h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      h.get("x-real-ip") ??
-      "local";
+    const ip = clientIp(h);
     await prisma.auditLog.create({
       data: {
         userId: e.userId,

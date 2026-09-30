@@ -13,7 +13,7 @@ export const POST = handle(async (req: Request) => {
   if (error) return error;
   const { username, password } = data;
   const name = username.trim().toLowerCase();
-  const ip = clientIp(req);
+  const ip = clientIp(req.headers);
 
   // DB-backed lockout — per-username (any IP) OR per-username+IP.
   if (await isLocked(name, ip)) {

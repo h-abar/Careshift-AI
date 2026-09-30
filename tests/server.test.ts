@@ -145,3 +145,23 @@ describe("env validation (A4)", () => {
     }
   });
 });
+
+describe("clientIp / audit IP (0.3)", () => {
+  it("ignores spoofable forwarding headers unless TRUSTED_PROXY", async () => {
+    const { clientIp } = await import("@/lib/server/lockout");
+    const old = process.env.TRUSTED_PROXY;
+    try {
+      const h = new Headers({ "x-forwarded-for": "203.0.113.9, 10.0.0.1" });
+      delete process.env.TRUSTED_PROXY;
+      expect(clientIp(h)).toBe("local");
+      process.env.TRUSTED_PROXY = "1";
+      expect(clientIp(h)).toBe("203.0.113.9"); // left-most forwarded hop
+      expect(clientIp(new Headers({ "x-real-ip": "198.51.100.7" }))).toBe(
+        "198.51.100.7",
+      );
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+    }
+  });
+
+});
