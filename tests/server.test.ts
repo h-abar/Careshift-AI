@@ -132,6 +132,32 @@ describe("env validation (A4)", () => {
     expect(await verifyToken("garbage-token")).toBeNull();
   });
 
+  it("kid rotation: new tokens use s1, old tokens verify via SESSION_SECRET_PREV (s0)", async () => {
+    const keyA = "a".repeat(40);
+    const keyB = "b".repeat(40);
+    vi.stubEnv("SESSION_SECRET", keyA);
+    vi.stubEnv("SESSION_SECRET_PREV", "");
+    try {
+      const oldToken = await signSession({
+        sub: "U-1", sid: "s-1", role: "nurse",
+      });
+      // Rotate: A becomes previous, B becomes current.
+      vi.stubEnv("SESSION_SECRET", keyB);
+      vi.stubEnv("SESSION_SECRET_PREV", keyA);
+      expect((await verifyToken(oldToken))?.sub).toBe("U-1"); // kid s1 misses → s0 hit
+      const newToken = await signSession({
+        sub: "U-1", sid: "s-2", role: "nurse",
+      });
+      expect((await verifyToken(newToken))?.sid).toBe("s-2");
+      // After the TTL grace, PREV is removed and old tokens die.
+      vi.stubEnv("SESSION_SECRET_PREV", "");
+      expect(await verifyToken(oldToken)).toBeNull();
+      expect((await verifyToken(newToken))?.sub).toBe("U-1");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("TRUSTED_PROXY is off by default", async () => {
     const { trustedProxy } = await import("@/lib/server/env");
     const old = process.env.TRUSTED_PROXY;

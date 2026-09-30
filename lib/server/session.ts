@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT, decodeProtectedHeader, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
@@ -19,9 +19,20 @@ const TTL_MS = 8 * 60 * 60 * 1000; // 8h
  * Dev: a fixed dev key is used with a loud warning so sign/verify stay
  * stable across restarts without a .env.
  */
-const secret = () => {
-  const s = process.env.SESSION_SECRET;
-  if (!s || s.length < 32) {
+/**
+ * Key ring for rotation (item 6): kid "s1" = SESSION_SECRET (current),
+ * kid "s0" = SESSION_SECRET_PREV (previous, kept during rotation so
+ * already-issued sessions stay valid until they expire — max 8h TTL).
+ * Rotate by moving the old value to SESSION_SECRET_PREV, setting a new
+ * SESSION_SECRET, deploying, then removing PREV after one TTL.
+ */
+const keyRing = (): Record<string, Uint8Array> => {
+  const ring: Record<string, Uint8Array> = {};
+  const cur = process.env.SESSION_SECRET;
+  const prev = process.env.SESSION_SECRET_PREV;
+  if (cur && cur.length >= 32) ring.s1 = new TextEncoder().encode(cur);
+  if (prev && prev.length >= 32) ring.s0 = new TextEncoder().encode(prev);
+  if (!ring.s1) {
     if (process.env.NODE_ENV === "production") {
       throw new Error(
         "SESSION_SECRET is missing or shorter than 32 chars — set it in the environment before starting Careshift AI.",
@@ -30,9 +41,9 @@ const secret = () => {
     console.warn(
       "[SECURITY] SESSION_SECRET is missing/short — using an insecure dev key. DO NOT deploy like this.",
     );
-    return new TextEncoder().encode("careshift-INSECURE-dev-key-000");
+    ring.s1 = new TextEncoder().encode("careshift-INSECURE-dev-key-000");
   }
-  return new TextEncoder().encode(s);
+  return ring;
 };
 
 export interface SessionPayload {
@@ -44,25 +55,39 @@ export interface SessionPayload {
 
 export async function signSession(p: SessionPayload): Promise<string> {
   return new SignJWT({ sid: p.sid, role: p.role, imp: p.imp })
-    .setProtectedHeader({ alg: "HS256" })
+    .setProtectedHeader({ alg: "HS256", kid: "s1" })
     .setSubject(p.sub)
     .setIssuedAt()
     .setExpirationTime(new Date(Date.now() + TTL_MS))
-    .sign(secret());
+    .sign(keyRing().s1);
 }
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
-  // Resolve the key OUTSIDE the try — a missing/weak SESSION_SECRET is a
+  // Resolve keys OUTSIDE the try — a missing/weak SESSION_SECRET is a
   // configuration error and must propagate, not be swallowed as "bad token".
-  const key = secret();
+  const ring = keyRing();
   try {
-    const { payload } = await jwtVerify(token, key);
-    return {
-      sub: payload.sub as string,
-      sid: payload.sid as string,
-      role: payload.role as User["role"],
-      imp: payload.imp as string | undefined,
-    };
+    // kid picks the preferred key; fall back to the rest of the ring so
+    // tokens signed before a rotation (kid s1 when s1 was the old key)
+    // still verify via s0.
+    const kid = decodeProtectedHeader(token).kid;
+    const candidates = [...new Set([kid, "s1", "s0"].filter(Boolean))];
+    for (const k of candidates) {
+      const key = ring[k as keyof typeof ring];
+      if (!key) continue;
+      try {
+        const { payload } = await jwtVerify(token, key);
+        return {
+          sub: payload.sub as string,
+          sid: payload.sid as string,
+          role: payload.role as User["role"],
+          imp: payload.imp as string | undefined,
+        };
+      } catch {
+        continue; // wrong key / expired / malformed — try next candidate
+      }
+    }
+    return null;
   } catch {
     return null;
   }
