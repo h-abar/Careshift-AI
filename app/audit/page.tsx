@@ -8,8 +8,12 @@ import { Card, Loading, SectionTitle } from "@/components/ui";
 
 const KNOWN = [
   "auth.login", "auth.logout", "auth.login_failed", "auth.switch",
-  "patient.view", "handoff.accept", "claim.status",
+  "auth.switch_end", "auth.locked",
+  "patient.view", "patients.list", "claims.list", "users.list",
+  "audit.list", "org.view",
+  "handoff.accept", "handoff.create", "claim.status",
   "intervention.status", "intervention.escalate",
+  "user.create", "user.update", "user.password_reset",
 ];
 
 export default function AuditPage() {

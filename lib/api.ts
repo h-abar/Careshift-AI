@@ -183,3 +183,13 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
   if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error ?? `${r.status}`);
   return (await r.json()) as T;
 }
+
+export async function patchJson<T>(path: string, body: unknown): Promise<T> {
+  const r = await fetch(path, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error ?? `${r.status}`);
+  return (await r.json()) as T;
+}

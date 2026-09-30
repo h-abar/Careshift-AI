@@ -1,9 +1,10 @@
 import { requirePerm } from "@/lib/server/session";
 import { prisma } from "@/lib/server/prisma";
+import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 
 export const GET = handle(async (req: Request) => {
-  await requirePerm("audit_view");
+  const auth = await requirePerm("audit_view");
   const url = new URL(req.url);
   const userId = url.searchParams.get("userId") ?? undefined;
   const action = url.searchParams.get("action") ?? undefined;
@@ -23,6 +24,16 @@ export const GET = handle(async (req: Request) => {
     prisma.user.findMany({ select: { id: true, nameEn: true, nameAr: true } }),
   ]);
   const name = new Map(users.map((u) => [u.id, u]));
+  await audit(
+    {
+      userId: auth.user.id,
+      action: "audit.list",
+      entityType: "audit",
+      entityId: "list",
+      sessionId: auth.sid,
+    },
+    req,
+  );
   return ok({
     entries: entries.map((e) => ({
       id: e.id,

@@ -133,4 +133,13 @@ export async function requirePerm(perm: PermKey): Promise<AuthContext> {
   return auth;
 }
 
+/** Any-of permission check — for aggregate endpoints shared across roles. */
+export async function requireAnyPerm(perms: PermKey[]): Promise<AuthContext> {
+  const auth = await requireAuth();
+  if (!perms.some((p) => can(auth.user.role, p))) {
+    throw new ApiError(403, "forbidden");
+  }
+  return auth;
+}
+
 export const sessionTtlMs = TTL_MS;

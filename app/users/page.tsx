@@ -4,10 +4,17 @@ import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { useUsers } from "@/lib/api";
+import { patchJson, postJson, useUsers } from "@/lib/api";
 import { Avatar, Card, Loading, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/icons";
-import type { RoleKey } from "@/lib/types";
+import type { RoleKey, User } from "@/lib/types";
+
+type U = Omit<User, "password">;
+
+const ROLES: RoleKey[] = [
+  "admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin",
+];
+const DEPTS = ["icu", "er", "medical", "surgical", "claims", "operations", "it"];
 
 const fmtLast = (min: number, t: (k: string) => string) =>
   min < 60
@@ -16,14 +23,23 @@ const fmtLast = (min: number, t: (k: string) => string) =>
       ? `${Math.floor(min / 60)} ${t("usr.hrAgo")}`
       : `${Math.floor(min / 1440)} ${t("usr.dayAgo")}`;
 
+const EMPTY = {
+  username: "", nameEn: "", nameAr: "", roleKey: "nurse" as RoleKey,
+  dept: "icu", employeeId: "", email: "", phone: "", password: "",
+};
+
 export default function UsersPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data } = useUsers();
+  const { data, refetch } = useUsers();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [dept, setDept] = useState("");
   const [status, setStatus] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [form, setForm] = useState(EMPTY);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
 
   if (!can("users_manage"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
@@ -40,14 +56,54 @@ export default function UsersPage() {
     );
   });
 
+  const patch = async (id: string, body: Record<string, string>) => {
+    try {
+      await patchJson(`/api/users/${id}`, body);
+      refetch();
+    } catch {
+      /* audited server-side; UI just keeps prior state */
+    }
+  };
+
+  const resetPw = async (u: U) => {
+    const pw = window.prompt(`${t("usr.resetPwPrompt")}`);
+    if (!pw) return;
+    try {
+      await postJson(`/api/users/${u.id}/reset-password`, { password: pw });
+    } catch {
+      /* invalid / too short → server rejects */
+    }
+  };
+
+  const create = async () => {
+    if (busy) return;
+    setBusy(true);
+    setErr("");
+    try {
+      await postJson("/api/users", form);
+      setShowNew(false);
+      setForm(EMPTY);
+      refetch();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const select =
     "rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-[#0e9bb5]/50";
+  const actBtn =
+    "rounded-md border border-[#e2e9f2] px-2 py-1 text-[11px] font-semibold text-slate-600 hover:border-[#0e9bb5]/40 hover:text-[#0e9bb5]";
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SectionTitle>{t("usr.title")}</SectionTitle>
-        <button className="rounded-lg bg-[#13304d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b5fad] transition-colors">
+        <button
+          onClick={() => setShowNew(true)}
+          className="rounded-lg bg-[#13304d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b5fad] transition-colors"
+        >
           + {t("usr.add")}
         </button>
       </div>
@@ -65,13 +121,13 @@ export default function UsersPage() {
         </div>
         <select value={role} onChange={(e) => setRole(e.target.value)} className={select}>
           <option value="">{t("usr.allRoles")}</option>
-          {(["admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin"] as RoleKey[]).map((r) => (
+          {ROLES.map((r) => (
             <option key={r} value={r}>{t(`userRole.${r}`)}</option>
           ))}
         </select>
         <select value={dept} onChange={(e) => setDept(e.target.value)} className={select}>
           <option value="">{t("usr.allDepts")}</option>
-          {["icu", "er", "medical", "surgical", "claims", "operations", "it"].map((d) => (
+          {DEPTS.map((d) => (
             <option key={d} value={d}>{t(`dept.${d}`)}</option>
           ))}
         </select>
@@ -106,8 +162,28 @@ export default function UsersPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{t(`userRole.${u.role}`)}</td>
-                <td className="px-4 py-3 text-slate-600">{t(`dept.${u.dept}`)}</td>
+                <td className="px-4 py-3">
+                  <select
+                    value={u.role}
+                    onChange={(e) => patch(u.id, { roleKey: e.target.value })}
+                    className="rounded-md border border-transparent bg-transparent px-1 py-0.5 text-xs text-slate-600 hover:border-[#e2e9f2]"
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>{t(`userRole.${r}`)}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={u.dept}
+                    onChange={(e) => patch(u.id, { dept: e.target.value })}
+                    className="rounded-md border border-transparent bg-transparent px-1 py-0.5 text-xs text-slate-600 hover:border-[#e2e9f2]"
+                  >
+                    {DEPTS.map((d) => (
+                      <option key={d} value={d}>{t(`dept.${d}`)}</option>
+                    ))}
+                  </select>
+                </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
                     u.status === "active"
@@ -119,12 +195,27 @@ export default function UsersPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-500">{fmtLast(u.lastLoginMin, t)}</td>
                 <td className="px-4 py-3">
-                  <Link
-                    href={`/users/${u.id}`}
-                    className="text-xs font-semibold text-[#0e9bb5] hover:underline"
-                  >
-                    {t("usr.profile")} →
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Link
+                      href={`/users/${u.id}`}
+                      className="text-xs font-semibold text-[#0e9bb5] hover:underline"
+                    >
+                      {t("usr.profile")} →
+                    </Link>
+                    <button
+                      onClick={() =>
+                        patch(u.id, {
+                          status: u.status === "active" ? "suspended" : "active",
+                        })
+                      }
+                      className={`${actBtn} ${u.status === "active" ? "!text-red-500 hover:!border-red-300" : "!text-emerald-600 hover:!border-emerald-300"}`}
+                    >
+                      {u.status === "active" ? t("usr.suspend") : t("usr.reactivate")}
+                    </button>
+                    <button onClick={() => resetPw(u)} className={actBtn}>
+                      {t("usr.resetPw")}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -135,28 +226,119 @@ export default function UsersPage() {
       {/* Mobile cards */}
       <div className="space-y-2.5 md:hidden">
         {filtered.map((u) => (
-          <Link key={u.id} href={`/users/${u.id}`}>
-            <Card className="!p-3.5 flex items-center gap-3">
-              <Avatar name={lang === "ar" ? u.nameAr : u.nameEn} size="h-10 w-10" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold text-[#13304d]">
-                  {lang === "ar" ? u.nameAr : u.nameEn}
+          <div key={u.id}>
+            <Link href={`/users/${u.id}`}>
+              <Card className="!p-3.5 flex items-center gap-3">
+                <Avatar name={lang === "ar" ? u.nameAr : u.nameEn} size="h-10 w-10" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-[#13304d]">
+                    {lang === "ar" ? u.nameAr : u.nameEn}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {t(`userRole.${u.role}`)} · {t(`dept.${u.dept}`)}
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500">
-                  {t(`userRole.${u.role}`)} · {t(`dept.${u.dept}`)}
-                </div>
-              </div>
-              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                u.status === "active"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-slate-100 text-slate-500 border-slate-200"
-              }`}>
-                {t(`ustatus.${u.status}`)}
-              </span>
-            </Card>
-          </Link>
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                  u.status === "active"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
+                }`}>
+                  {t(`ustatus.${u.status}`)}
+                </span>
+              </Card>
+            </Link>
+          </div>
         ))}
       </div>
+
+      {/* Create-user modal */}
+      {showNew && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 className="mb-4 text-base font-bold text-[#13304d]">
+              {t("usr.newUser")}
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  ["username", t("usr.username")],
+                  ["nameEn", t("usr.nameEn")],
+                  ["nameAr", t("usr.nameAr")],
+                  ["employeeId", t("usr.employeeId")],
+                  ["email", t("usr.email")],
+                  ["phone", t("usr.phone")],
+                  ["password", t("usr.password")],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="block">
+                  <span className="mb-1 block text-[11px] font-semibold text-slate-500">
+                    {label}
+                  </span>
+                  <input
+                    type={k === "password" ? "password" : "text"}
+                    value={form[k]}
+                    onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                    className="w-full rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-2 text-sm outline-none focus:border-[#0e9bb5]/50"
+                  />
+                </label>
+              ))}
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-semibold text-slate-500">
+                  {t("usr.role")}
+                </span>
+                <select
+                  value={form.roleKey}
+                  onChange={(e) =>
+                    setForm({ ...form, roleKey: e.target.value as RoleKey })
+                  }
+                  className="w-full rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-2 text-sm outline-none"
+                >
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>{t(`userRole.${r}`)}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-semibold text-slate-500">
+                  {t("usr.dept")}
+                </span>
+                <select
+                  value={form.dept}
+                  onChange={(e) => setForm({ ...form, dept: e.target.value })}
+                  className="w-full rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-2 text-sm outline-none"
+                >
+                  {DEPTS.map((d) => (
+                    <option key={d} value={d}>{t(`dept.${d}`)}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {err && (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+                {err}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowNew(false);
+                  setErr("");
+                }}
+                className="rounded-lg border border-[#e2e9f2] px-4 py-2 text-sm font-semibold text-slate-600"
+              >
+                {t("usr.cancel")}
+              </button>
+              <button
+                onClick={create}
+                disabled={busy}
+                className="rounded-lg bg-[#0e9bb5] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {t("usr.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
