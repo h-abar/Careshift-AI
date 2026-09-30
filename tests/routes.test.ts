@@ -6,6 +6,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { execSync } from "node:child_process";
 import { rmSync } from "node:fs";
+import path from "node:path";
 
 const cookieStore = vi.hoisted(() => new Map<string, string>());
 
@@ -22,7 +23,11 @@ vi.mock("next/headers", () => ({
 import { GET as patientsGet } from "@/app/api/patients/route";
 import { GET as patientGet } from "@/app/api/patients/[id]/route";
 import { GET as claimsGet } from "@/app/api/claims/route";
-import { PATCH as claimPatch } from "@/app/api/claims/[id]/route";
+import { PATCH as claimPatch, GET as claimGet } from "@/app/api/claims/[id]/route";
+import { POST as claimAppeal } from "@/app/api/claims/[id]/appeal/route";
+import { POST as claimResubmit } from "@/app/api/claims/[id]/resubmit/route";
+import { POST as claimUpload } from "@/app/api/claims/[id]/documents/route";
+import { GET as documentGet } from "@/app/api/documents/[docId]/route";
 import { GET as snapshotsGet } from "@/app/api/snapshots/route";
 import { POST as loginPost } from "@/app/api/auth/login/route";
 import { POST as logoutPost } from "@/app/api/auth/logout/route";
@@ -88,6 +93,10 @@ beforeAll(async () => {
   const env = { ...process.env, DATABASE_URL: "file:./test.db" };
   execSync("npx prisma migrate deploy", { env, stdio: "ignore" });
   execSync("npx tsx prisma/seed.ts", { env, stdio: "ignore" });
+  process.env.UPLOAD_DIR = path.join(
+    (await import("node:os")).tmpdir(),
+    "cs-test-uploads",
+  );
 }, 120_000);
 
 beforeEach(() => cookieStore.clear());
@@ -414,7 +423,10 @@ describe("claims_edit", () => {
     });
     expect(a).toBeTruthy();
     expect(JSON.parse(a!.prevJson!)).toEqual({ status: "pending" });
-    expect(JSON.parse(a!.nextJson!)).toEqual({ status: "review" });
+    expect(JSON.parse(a!.nextJson!)).toEqual({
+      status: "review",
+      denialCode: null,
+    });
   });
 
   it("illegal transition (approved → denied) → 400", async () => {
@@ -424,6 +436,182 @@ describe("claims_edit", () => {
     await loginAs("insurance");
     const r = await claimPatch(patch({ status: "denied" }), ctx({ id: claim!.id }));
     expect(r.status).toBe(400);
+  });
+});
+
+/* ── B4: claims lifecycle + documents + appeal/resubmit ── */
+
+const uploadReq = (file: File | null, kind = "") => {
+  const fd = new FormData();
+  if (file) fd.append("file", file);
+  if (kind) fd.append("kind", kind);
+  return new Request("http://test/api", { method: "POST", body: fd });
+};
+
+describe("B4 claims lifecycle", () => {
+  it("denied requires a valid denialCode; stores it + ClaimEvent", async () => {
+    const claim = await prisma.insuranceClaim.findFirst({
+      where: { status: "pending" },
+    });
+    await loginAs("insurance");
+    // No code → 400
+    expect(
+      (
+        await claimPatch(
+          patch({ status: "denied" }),
+          ctx({ id: claim!.id }),
+        )
+      ).status,
+    ).toBe(400);
+    // Bogus code → 400
+    expect(
+      (
+        await claimPatch(
+          patch({ status: "denied", denialCode: "nonsense" }),
+          ctx({ id: claim!.id }),
+        )
+      ).status,
+    ).toBe(400);
+    const r = await claimPatch(
+      patch({ status: "denied", denialCode: "missing_docs" }),
+      ctx({ id: claim!.id }),
+    );
+    expect(r.status).toBe(200);
+    const row = await prisma.insuranceClaim.findUnique({
+      where: { id: claim!.id },
+    });
+    expect(row!.denialCode).toBe("missing_docs");
+    const ev = await prisma.claimEvent.findFirst({
+      where: { claimId: claim!.id, action: "status" },
+    });
+    expect(ev!.detail).toContain("missing_docs");
+    // Other claims viewers were notified.
+    expect(
+      await prisma.notification.findFirst({
+        where: { entityId: claim!.id, key: "notif.claimStatus" },
+      }),
+    ).toBeTruthy();
+  });
+
+  it("appeal: denied → review, reason required + audited", async () => {
+    const claim = await prisma.insuranceClaim.findFirst({
+      where: { status: "denied" },
+    });
+    await loginAs("insurance");
+    expect(
+      (await claimAppeal(post({}), ctx({ id: claim!.id }))).status,
+    ).toBe(400);
+    const r = await claimAppeal(
+      post({ reason: "Additional records attached" }),
+      ctx({ id: claim!.id }),
+    );
+    expect(r.status).toBe(200);
+    expect(
+      (await prisma.insuranceClaim.findUnique({ where: { id: claim!.id } }))!
+        .status,
+    ).toBe("review");
+    expect(
+      await prisma.claimEvent.findFirst({
+        where: { claimId: claim!.id, action: "appeal" },
+      }),
+    ).toBeTruthy();
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "claim.appeal", entityId: claim!.id },
+      }),
+    ).toBeTruthy();
+    // A non-denied claim cannot be appealed.
+    expect(
+      (await claimAppeal(post({ reason: "x" }), ctx({ id: claim!.id }))).status,
+    ).toBe(409);
+  });
+
+  it("resubmit: denied → review with note + audit", async () => {
+    const claim = await prisma.insuranceClaim.create({
+      data: {
+        id: "CL-TEST-RS",
+        amountSar: 5000, status: "denied", dxKey: "dka",
+        losDays: 2, icuDays: 0,
+        evidenceJson: '["diagnosis"]', frictionJson: "[]",
+        denialCode: "coding_error",
+      },
+    });
+    await loginAs("insurance");
+    expect(
+      (await claimResubmit(post({}), ctx({ id: claim.id }))).status,
+    ).toBe(400);
+    const r = await claimResubmit(
+      post({ note: "Codes corrected" }),
+      ctx({ id: claim.id }),
+    );
+    expect(r.status).toBe(200);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "claim.resubmit", entityId: claim.id },
+      }),
+    ).toBeTruthy();
+  });
+
+  it("documents: type/size validated, evidence updates readiness", async () => {
+    const claim = await prisma.insuranceClaim.findFirst({
+      where: { status: "review" },
+    });
+    await loginAs("nurse"); // no claims_edit
+    const bad = new File(["x"], "x.txt", { type: "text/plain" });
+    expect(
+      (
+        await claimUpload(uploadReq(bad), ctx({ id: claim!.id }))
+      ).status,
+    ).toBe(403);
+    await loginAs("insurance");
+    expect(
+      (await claimUpload(uploadReq(bad), ctx({ id: claim!.id }))).status,
+    ).toBe(400);
+    const big = new File(
+      [new Uint8Array(5 * 1024 * 1024 + 1)],
+      "big.pdf",
+      { type: "application/pdf" },
+    );
+    expect(
+      (await claimUpload(uploadReq(big), ctx({ id: claim!.id }))).status,
+    ).toBe(400);
+
+    const pdf = new File([new Uint8Array([37, 80, 68, 70])], "lab.pdf", {
+      type: "application/pdf",
+    });
+    const r = await claimUpload(
+      uploadReq(pdf, "lab"),
+      ctx({ id: claim!.id }),
+    );
+    expect(r.status).toBe(200);
+    const { document } = await r.json();
+    const row = await prisma.insuranceClaim.findUnique({
+      where: { id: claim!.id },
+    });
+    expect(JSON.parse(row!.evidenceJson)).toContain("lab");
+
+    // Authenticated download → 200 + mime; anonymous → 401.
+    const dl = await documentGet(get(), ctx({ docId: document.id }));
+    expect(dl.status).toBe(200);
+    expect(dl.headers.get("Content-Type")).toBe("application/pdf");
+    cookieStore.clear();
+    expect(
+      (await documentGet(get(), ctx({ docId: document.id }))).status,
+    ).toBe(401);
+  });
+
+  it("GET claim detail → documents + events + readiness", async () => {
+    await loginAs("insurance");
+    const claims = await prisma.insuranceClaim.findFirst({
+      where: { status: "review" },
+    });
+    const r = await claimGet(get(), ctx({ id: claims!.id }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.claim.id).toBe(claims!.id);
+    expect(body.documents.length).toBeGreaterThan(0);
+    expect(body.events.length).toBeGreaterThan(0);
+    expect(body.readiness.score).toBeGreaterThan(0);
   });
 });
 

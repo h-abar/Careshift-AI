@@ -48,6 +48,9 @@ next-env.d.ts
 *.keystore
 local.properties
 
+# claim document uploads (local dev store)
+/uploads/
+
 # prisma / local db
 /prisma/*.db
 /prisma/*.db-journal

@@ -1,0 +1,54 @@
+import { prisma } from "@/lib/server/prisma";
+import { requirePerm } from "@/lib/server/session";
+import { audit } from "@/lib/server/audit";
+import { claimEvent, notifyClaimWatchers } from "@/lib/server/claims";
+import { handle, ok } from "@/lib/server/json";
+
+/**
+ * Resubmit a denied claim after fixing the deficiency — a note describing
+ * what was corrected is required and kept in the claim history.
+ */
+export const POST = handle(
+  async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
+    const auth = await requirePerm("claims_edit");
+    const { id } = await ctx.params;
+    const { note } = (await req.json().catch(() => ({}))) as { note?: string };
+    if (!note?.trim()) {
+      return Response.json(
+        { error: "resubmission note is required", code: "note_required" },
+        { status: 400 },
+      );
+    }
+
+    const claim = await prisma.insuranceClaim.findUnique({ where: { id } });
+    if (!claim) return Response.json({ error: "not found" }, { status: 404 });
+    if (claim.status !== "denied") {
+      return Response.json(
+        { error: "only denied claims can be resubmitted", code: "invalid_state" },
+        { status: 409 },
+      );
+    }
+
+    const updated = await prisma.insuranceClaim.update({
+      where: { id },
+      data: { status: "review", denialCode: null, updatedBy: auth.user.id },
+    });
+
+    await claimEvent(id, auth.user.id, "resubmit", note.trim());
+    await audit(
+      {
+        userId: auth.user.id,
+        action: "claim.resubmit",
+        entityType: "claim",
+        entityId: id,
+        prev: { status: "denied", denialCode: claim.denialCode },
+        next: { status: "review", note: note.trim() },
+        sessionId: auth.sid,
+      },
+      req,
+    );
+    await notifyClaimWatchers(id, auth.user.id, "info", "resubmit");
+
+    return ok({ claim: updated });
+  },
+);

@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
-import { useAuth } from "@/lib/auth";
-import { patchJson, useClaims, useOrg } from "@/lib/api";
-import type { ClaimStatus } from "@/lib/types";
+import { useClaims, useOrg } from "@/lib/api";
+import { ClaimDetail } from "@/components/claim-detail";
 import { fmtSar, fmtSarK } from "@/lib/format";
 import {
   Card,
@@ -27,14 +26,6 @@ import {
   YAxis,
 } from "recharts";
 
-/** Mirrors the server-side transition map in app/api/claims/[id]/route.ts. */
-const NEXT_STATUS: Record<ClaimStatus, ClaimStatus[]> = {
-  pending: ["review", "approved", "denied"],
-  review: ["approved", "denied"],
-  denied: ["review"],
-  approved: [],
-};
-
 const STATUS_COLORS: Record<string, string> = {
   approved: "#34d399",
   pending: "#94a3b8",
@@ -44,7 +35,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function InsurancePage() {
   const { t, lang } = useI18n();
-  const { can } = useAuth();
   const { data: org } = useOrg();
   const { data: claimsData, refetch } = useClaims();
   if (!org || !claimsData) return <Loading />;
@@ -267,36 +257,19 @@ export default function InsurancePage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {can("claims_edit") ? (
-                    <select
-                      value={c.status}
-                      title={t("claim.changeStatus")}
-                      onChange={async (e) => {
-                        try {
-                          await patchJson(`/api/claims/${c.id}`, {
-                            status: e.target.value,
-                          });
-                          refetch();
-                        } catch {
-                          /* invalid transition → server rejects, keep state */
-                        }
-                      }}
-                      className="rounded-md border border-[#e2e9f2] bg-white px-1.5 py-0.5 text-xs font-semibold text-slate-600"
-                    >
-                      <option value={c.status}>{t(`claim.${c.status}`)}</option>
-                      {(NEXT_STATUS[c.status] ?? []).map((s) => (
-                        <option key={s} value={s}>
-                          → {t(`claim.${s}`)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className={`text-xs font-semibold ${
-                      c.status === "denied" ? "text-red-600" : "text-amber-300"
-                    }`}>
-                      {t(`claim.${c.status}`)}
-                    </span>
-                  )}
+                  <span
+                    className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                      c.status === "approved"
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                        : c.status === "denied"
+                          ? "bg-red-50 border-red-200 text-red-600"
+                          : c.status === "review"
+                            ? "bg-amber-50 border-amber-200 text-amber-700"
+                            : "bg-slate-50 border-[#e2e9f2] text-slate-500"
+                    }`}
+                  >
+                    {t(`claim.${c.status}`)}
+                  </span>
                   <span className="font-mono text-sm font-bold text-[#13304d]">
                     {r.score}%
                   </span>
@@ -334,6 +307,7 @@ export default function InsurancePage() {
                   ))}
                 </div>
               )}
+              <ClaimDetail claim={c} onChanged={refetch} />
             </div>
           ))}
         </div>

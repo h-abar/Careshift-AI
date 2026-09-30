@@ -1,0 +1,320 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n/provider";
+import { useAuth } from "@/lib/auth";
+import { patchJson, postJson, useApi } from "@/lib/api";
+import { DENIAL_CODES } from "@/lib/denial";
+import { EVIDENCE_KEYS } from "@/lib/data/claims";
+import type { Claim, ClaimStatus } from "@/lib/types";
+
+interface ClaimDetailData {
+  claim: Claim & { denialCode?: string | null };
+  readiness: { score: number; checklist: { key: string; ok: boolean }[] } | null;
+  documents: {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+  }[];
+  events: {
+    id: string;
+    action: string;
+    detail: string;
+    createdAt: string;
+    actorId: string;
+  }[];
+}
+
+const NEXT_STATUS: Record<ClaimStatus, ClaimStatus[]> = {
+  pending: ["review", "approved", "denied"],
+  review: ["approved", "denied"],
+  denied: ["review"],
+  approved: [],
+};
+
+/**
+ * Expandable claim panel: denial-code-gated status changes, document
+ * upload/list, appeal & resubmit paths, and the per-claim history trail.
+ */
+export function ClaimDetail({
+  claim,
+  onChanged,
+}: {
+  claim: Claim & { denialCode?: string | null };
+  onChanged: () => void;
+}) {
+  const { t } = useI18n();
+  const { can } = useAuth();
+  const canEdit = can("claims_edit");
+  const [open, setOpen] = useState(false);
+  const [pendingDenied, setPendingDenied] = useState(false);
+  const [denialCode, setDenialCode] = useState("");
+  const [appealMode, setAppealMode] = useState<"appeal" | "resubmit" | null>(null);
+  const [reason, setReason] = useState("");
+  const [err, setErr] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [kind, setKind] = useState("");
+  const { data: detail, refetch } = useApi<ClaimDetailData>(
+    open ? `/api/claims/${claim.id}` : null,
+    [claim.id, open],
+  );
+
+  const run = async (fn: () => Promise<unknown>) => {
+    setErr("");
+    try {
+      await fn();
+      setPendingDenied(false);
+      setAppealMode(null);
+      setReason("");
+      await refetch();
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const changeStatus = (status: ClaimStatus) =>
+    run(() =>
+      patchJson(`/api/claims/${claim.id}`, {
+        status,
+        ...(status === "denied" ? { denialCode } : {}),
+      }),
+    );
+
+  const upload = (f: File) =>
+    run(async () => {
+      const fd = new FormData();
+      fd.append("file", f);
+      if (kind) fd.append("kind", kind);
+      const r = await fetch(`/api/claims/${claim.id}/documents`, {
+        method: "POST",
+        body: fd,
+      });
+      if (!r.ok)
+        throw new Error(
+          (await r.json().catch(() => ({})))?.error ?? `${r.status}`,
+        );
+    });
+
+  const inputCls =
+    "rounded-md border border-[#e2e9f2] bg-white px-1.5 py-0.5 text-xs font-semibold text-slate-600";
+  const btnCls =
+    "rounded-lg border px-2.5 py-1 text-xs font-semibold";
+
+  return (
+    <div className="mt-3 border-t border-[#e2e9f2] pt-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs font-semibold text-[#0e9bb5] hover:underline"
+      >
+        {open ? "▾" : "▸"} {t("claim.detail")}
+      </button>
+      {claim.denialCode && (
+        <span className="ms-3 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] text-red-600">
+          {t(`deny.${claim.denialCode}`)}
+        </span>
+      )}
+      {err && <span className="ms-3 text-[11px] text-red-500">{err}</span>}
+
+      {!open ? null : !detail ? (
+        <p className="mt-2 text-xs text-slate-400">…</p>
+      ) : (
+        <div className="mt-3 space-y-3">
+          {/* lifecycle actions */}
+          {canEdit && (
+            <div className="flex flex-wrap items-center gap-2">
+              {!pendingDenied ? (
+                <select
+                  value={claim.status}
+                  title={t("claim.changeStatus")}
+                  onChange={(e) => {
+                    const v = e.target.value as ClaimStatus;
+                    if (v === "denied") setPendingDenied(true);
+                    else if (v !== claim.status) changeStatus(v);
+                  }}
+                  className={inputCls}
+                >
+                  <option value={claim.status}>
+                    {t(`claim.${claim.status}`)}
+                  </option>
+                  {(NEXT_STATUS[claim.status] ?? []).map((s) => (
+                    <option key={s} value={s}>
+                      → {t(`claim.${s}`)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  <select
+                    value={denialCode}
+                    title={t("claim.denialCode")}
+                    onChange={(e) => setDenialCode(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">{t("claim.selectDenial")}</option>
+                    {DENIAL_CODES.map((c) => (
+                      <option key={c} value={c}>
+                        {t(`deny.${c}`)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    disabled={!denialCode}
+                    onClick={() => changeStatus("denied")}
+                    className={`${btnCls} bg-red-50 border-red-200 text-red-700 disabled:opacity-40`}
+                  >
+                    {t("claim.denied")}
+                  </button>
+                  <button
+                    onClick={() => setPendingDenied(false)}
+                    className={`${btnCls} border-[#e2e9f2] text-slate-400`}
+                  >
+                    {t("usr.cancel")}
+                  </button>
+                </>
+              )}
+              {claim.status === "denied" && (
+                <>
+                  <button
+                    onClick={() => setAppealMode("appeal")}
+                    className={`${btnCls} bg-amber-50 border-amber-200 text-amber-700`}
+                  >
+                    {t("claim.appeal")}
+                  </button>
+                  <button
+                    onClick={() => setAppealMode("resubmit")}
+                    className={`${btnCls} bg-sky-50 border-sky-200 text-sky-700`}
+                  >
+                    {t("claim.resubmit")}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {appealMode && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={t(
+                  appealMode === "appeal"
+                    ? "claim.appealReason"
+                    : "claim.resubmitNote",
+                )}
+                className={`${inputCls} min-w-56 flex-1`}
+              />
+              <button
+                disabled={!reason.trim()}
+                onClick={() =>
+                  run(() =>
+                    postJson(`/api/claims/${claim.id}/${appealMode}`, {
+                      [appealMode === "appeal" ? "reason" : "note"]: reason,
+                    }),
+                  )
+                }
+                className={`${btnCls} bg-[#0e9bb5]/10 border-[#0e9bb5]/30 text-[#0e9bb5] disabled:opacity-40`}
+              >
+                {t(appealMode === "appeal" ? "claim.appeal" : "claim.resubmit")}
+              </button>
+              <button
+                onClick={() => setAppealMode(null)}
+                className={`${btnCls} border-[#e2e9f2] text-slate-400`}
+              >
+                {t("usr.cancel")}
+              </button>
+            </div>
+          )}
+
+          {/* documents */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500">
+                {t("claim.documents")} ({detail.documents.length})
+              </span>
+              {canEdit && (
+                <span className="flex items-center gap-2">
+                  <select
+                    value={kind}
+                    onChange={(e) => setKind(e.target.value)}
+                    title={t("claim.evidenceKind")}
+                    className={inputCls}
+                  >
+                    <option value="">{t("claim.evidenceKind")}</option>
+                    {EVIDENCE_KEYS.map((k) => (
+                      <option key={k} value={k}>
+                        {t(`ev.${k}`)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className={`${btnCls} bg-[#0e9bb5]/10 border-[#0e9bb5]/30 text-[#0e9bb5]`}
+                  >
+                    {t("claim.upload")}
+                  </button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void upload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </span>
+              )}
+            </div>
+            {detail.documents.map((d) => (
+              <a
+                key={d.id}
+                href={`/api/documents/${d.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-md border border-[#e2e9f2] bg-white px-2.5 py-1.5 text-xs text-slate-600 hover:border-[#0e9bb5]/40"
+              >
+                <span className="truncate">{d.fileName}</span>
+                <span className="ms-2 shrink-0 font-mono text-[10px] text-slate-400">
+                  {Math.ceil(d.sizeBytes / 1024)} KB
+                </span>
+              </a>
+            ))}
+            {detail.documents.length === 0 && (
+              <p className="text-[11px] text-slate-400">—</p>
+            )}
+          </div>
+
+          {/* history */}
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500">
+              {t("claim.history")}
+            </span>
+            <ul className="mt-1 space-y-1">
+              {detail.events.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex items-baseline gap-2 text-[11px] text-slate-500"
+                >
+                  <span className="font-mono text-[10px] text-slate-400">
+                    {new Date(e.createdAt).toLocaleString()}
+                  </span>
+                  <span className="font-semibold text-[#13304d]">
+                    {e.action}
+                  </span>
+                  <span className="truncate">{e.detail}</span>
+                </li>
+              ))}
+              {detail.events.length === 0 && (
+                <li className="text-[11px] text-slate-400">—</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
