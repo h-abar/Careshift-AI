@@ -182,3 +182,14 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
 }
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  username  String
+  ip        String
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([username, createdAt])
+  @@index([username, ip, createdAt])
+}

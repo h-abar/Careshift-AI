@@ -3,30 +3,9 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/server/prisma";
 import { signSession, SESSION_COOKIE, sessionTtlMs } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
+import { clientIp, isLocked, recordAttempt } from "@/lib/server/lockout";
 import { handle, ok } from "@/lib/server/json";
 import type { User } from "@/lib/types";
-
-/** Lockout — max 5 failed logins per username+IP per 15 minutes. */
-const WINDOW_MS = 15 * 60 * 1000;
-const MAX_FAILS = 5;
-const attempts = new Map<string, { count: number; resetAt: number }>();
-
-function attemptKey(username: string, ip: string) {
-  return `${username.toLowerCase()}|${ip}`;
-}
-function lockedUntil(key: string) {
-  const a = attempts.get(key);
-  if (!a || Date.now() > a.resetAt) return null;
-  return a.count >= MAX_FAILS ? a.resetAt : null;
-}
-function recordFail(key: string) {
-  const a = attempts.get(key);
-  if (!a || Date.now() > a.resetAt) {
-    attempts.set(key, { count: 1, resetAt: Date.now() + WINDOW_MS });
-  } else {
-    a.count += 1;
-  }
-}
 
 export const POST = handle(async (req: Request) => {
   const { username, password } = (await req.json().catch(() => ({}))) as {
@@ -36,26 +15,20 @@ export const POST = handle(async (req: Request) => {
   if (!username || !password) {
     return Response.json({ error: "missing credentials" }, { status: 400 });
   }
+  const name = username.trim().toLowerCase();
+  const ip = clientIp(req);
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  const key = attemptKey(username.trim(), ip);
-
-  // Locked out → 429 + audit (audited again on the triggering failure below).
-  if (lockedUntil(key)) {
+  // DB-backed lockout — per-username (any IP) OR per-username+IP.
+  if (await isLocked(name, ip)) {
     await audit(
-      { userId: username, action: "auth.locked", entityType: "session", entityId: "-" },
+      { userId: name, action: "auth.locked", entityType: "session", entityId: "-" },
       req,
     );
     return Response.json({ error: "locked" }, { status: 429 });
   }
 
   const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { username: username.trim().toLowerCase() },
-        { email: username.trim().toLowerCase() },
-      ],
-    },
+    where: { OR: [{ username: name }, { email: name }] },
   });
 
   const valid =
@@ -64,20 +37,20 @@ export const POST = handle(async (req: Request) => {
     (await bcrypt.compare(password, user.passwordHash));
 
   if (!valid) {
-    recordFail(key);
+    await recordAttempt(name, ip, false);
     await audit(
       {
-        userId: user?.id ?? username,
+        userId: user?.id ?? name,
         action: "auth.login_failed",
         entityType: "session",
         entityId: "-",
       },
       req,
     );
-    if (lockedUntil(key)) {
+    if (await isLocked(name, ip)) {
       await audit(
         {
-          userId: user?.id ?? username,
+          userId: user?.id ?? name,
           action: "auth.locked",
           entityType: "session",
           entityId: "-",
@@ -89,7 +62,7 @@ export const POST = handle(async (req: Request) => {
     return Response.json({ error: "invalid credentials" }, { status: 401 });
   }
 
-  attempts.delete(key); // success clears the window
+  await recordAttempt(name, ip, true);
 
   const session = await prisma.session.create({
     data: {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import bcrypt from "bcryptjs";
 import {
   can,
@@ -115,19 +115,16 @@ describe("client data safety", () => {
 describe("env validation (A4)", () => {
   it("production fails fast without a >=32-char SESSION_SECRET", async () => {
     const { validateEnv } = await import("@/lib/server/env");
-    const oldEnv = process.env.NODE_ENV;
-    const oldSecret = process.env.SESSION_SECRET;
     try {
-      process.env.NODE_ENV = "production";
-      delete process.env.SESSION_SECRET;
+      vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("SESSION_SECRET", "");
       expect(() => validateEnv()).toThrow(/SESSION_SECRET/);
-      process.env.SESSION_SECRET = "short";
+      vi.stubEnv("SESSION_SECRET", "short");
       expect(() => validateEnv()).toThrow(/SESSION_SECRET/);
-      process.env.SESSION_SECRET = "x".repeat(40);
+      vi.stubEnv("SESSION_SECRET", "x".repeat(40));
       expect(() => validateEnv()).not.toThrow();
     } finally {
-      process.env.NODE_ENV = oldEnv;
-      process.env.SESSION_SECRET = oldSecret;
+      vi.unstubAllEnvs();
     }
   });
 

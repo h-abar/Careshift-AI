@@ -34,6 +34,7 @@ import { POST as interventionPost } from "@/app/api/interventions/[stepId]/route
 import { GET as usersGet, POST as usersPost } from "@/app/api/users/route";
 import { PATCH as userPatch } from "@/app/api/users/[id]/route";
 import { POST as resetPwPost } from "@/app/api/users/[id]/reset-password/route";
+import { POST as unlockPost } from "@/app/api/users/[id]/unlock/route";
 import { GET as auditGet } from "@/app/api/audit/route";
 import { prisma } from "@/lib/server/prisma";
 import { signSession } from "@/lib/server/session";
@@ -124,7 +125,7 @@ describe("auth endpoints", () => {
     expect(r.status).toBe(401);
   });
 
-  it("5 failed logins → 429 lockout + auth.locked audited", async () => {
+  it("5 failed logins → 429 lockout; admin unlock restores access", async () => {
     const ip = "10.9.9.9";
     for (let i = 0; i < 5; i++) {
       await login(USERS.physician.u, "bad", ip);
@@ -135,10 +136,42 @@ describe("auth endpoints", () => {
     // Even the correct password is rejected while locked.
     const r2 = await login(USERS.physician.u, USERS.physician.p, ip);
     expect(r2.status).toBe(429);
-    const row = await prisma.auditLog.findFirst({
-      where: { action: "auth.locked" },
+    expect(
+      await prisma.auditLog.findFirst({ where: { action: "auth.locked" } }),
+    ).toBeTruthy();
+
+    // Admin unlock clears the failed-attempt window — audited.
+    await loginAs("admin");
+    const target = await prisma.user.findUnique({
+      where: { username: USERS.physician.u },
     });
-    expect(row).toBeTruthy();
+    const ur = await unlockPost(post({}), ctx({ id: target!.id }));
+    expect(ur.status).toBe(200);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "auth.unlock", entityId: target!.id },
+      }),
+    ).toBeTruthy();
+    const ok2 = await login(USERS.physician.u, USERS.physician.p, ip);
+    expect(ok2.status).toBe(200);
+  });
+
+  it("per-username lock counts failures across different IPs", async () => {
+    const old = process.env.TRUSTED_PROXY;
+    process.env.TRUSTED_PROXY = "1"; // honour x-forwarded-for here
+    try {
+      const name = "locktest@x.io";
+      for (let i = 0; i < 5; i++) await login(name, "bad", `10.8.8.${i}`);
+      // 6th failure comes from yet another IP — the per-username
+      // counter (independent of IP) has already tripped.
+      const r = await login(name, "bad", "10.8.8.99");
+      expect(r.status).toBe(429);
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+      await prisma.loginAttempt.deleteMany({
+        where: { username: "locktest@x.io" },
+      });
+    }
   });
 
   it("logout → 200, session row deleted, auth.logout audited", async () => {
