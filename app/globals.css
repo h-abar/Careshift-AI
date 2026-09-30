@@ -48,6 +48,22 @@ body {
   outline-offset: 2px;
 }
 
+/* WCAG 2.5.5 — ≥44px targets on touch devices only (density kept on desktop) */
+@media (pointer: coarse) {
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    min-height: 44px;
+  }
+  button,
+  [role="button"] {
+    min-width: 44px;
+  }
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-6px); }

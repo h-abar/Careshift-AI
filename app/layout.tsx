@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { AuthProvider } from "@/lib/auth";
 import { ToastProvider } from "@/components/toast";
@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   title: "Careshift AI — Predict. Intervene. Prove.",
   description:
     "AI-powered clinical & insurance intelligence platform: predictive shift handoff, closed-loop interventions, and claim-ready digital evidence.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
