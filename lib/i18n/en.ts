@@ -650,6 +650,8 @@ const en: Record<string, string> = {
   "login.signin": "Sign in",
   "login.error": "Invalid credentials or suspended account",
   "login.locked": "Account temporarily locked after failed attempts — try again in 15 minutes",
+  "login.captcha": "CAPTCHA token",
+  "login.captchaPlaceholder": "Enter the verification token to continue",
   "login.show": "Show",
   "login.hide": "Hide",
   "login.tagline": "Predict. Intervene. Prove.",

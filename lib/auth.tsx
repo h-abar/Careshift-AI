@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { can, type PermKey } from "@/lib/permissions";
-import { postJson } from "@/lib/api";
+import { postJson, ApiError } from "@/lib/api";
 import type { User } from "@/lib/types";
 
 type SessionUser = Omit<User, "password">;
@@ -22,11 +22,14 @@ interface Auth {
   impersonator: SessionUser | null;
   loggedIn: boolean;
   loading: boolean;
-  /** Server login — bcrypt-verified credentials → httpOnly session cookie. */
+  /** Server login — bcrypt-verified credentials → httpOnly session cookie.
+   *  Returns "captcha" when the username is locked but the server will accept
+   *  a captchaToken (0.6 — configured verifier only). */
   login: (
     username: string,
     password: string,
-  ) => Promise<"ok" | "invalid" | "locked">;
+    captchaToken?: string,
+  ) => Promise<"ok" | "invalid" | "locked" | "captcha">;
   logout: () => Promise<void>;
   /** Admin "view as" — server-issued impersonation session, audit-logged. */
   switchUser: (id: string) => Promise<boolean>;
@@ -63,21 +66,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
-    try {
-      const d = await postJson<{ user: SessionUser }>("/api/auth/login", {
-        username,
-        password,
-      });
-      setUser(d.user);
-      setImpersonator(null);
-      return "ok" as const;
-    } catch (e) {
-      return (e instanceof Error && e.message === "locked"
-        ? "locked"
-        : "invalid") as "locked" | "invalid";
-    }
-  }, []);
+  const login = useCallback(
+    async (username: string, password: string, captchaToken?: string) => {
+      try {
+        const d = await postJson<{ user: SessionUser }>("/api/auth/login", {
+          username,
+          password,
+          ...(captchaToken ? { captchaToken } : {}),
+        });
+        setUser(d.user);
+        setImpersonator(null);
+        return "ok" as const;
+      } catch (e) {
+        if (e instanceof Error && e.message === "locked")
+          return (e instanceof ApiError && e.code === "captcha_required"
+            ? "captcha"
+            : "locked") as "captcha" | "locked";
+        return "invalid" as const;
+      }
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     try {

@@ -3,7 +3,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/server/prisma";
 import { signSession, SESSION_COOKIE, sessionTtlMs } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
-import { clientIp, isLocked, recordAttempt } from "@/lib/server/lockout";
+import { clientIp, lockState, recordAttempt } from "@/lib/server/lockout";
+import { captchaVerifier } from "@/lib/server/captcha";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { loginSchema } from "@/lib/schemas";
 import type { User } from "@/lib/types";
@@ -11,17 +12,33 @@ import type { User } from "@/lib/types";
 export const POST = handle(async (req: Request) => {
   const { data, error } = await parseBody(req, loginSchema);
   if (error) return error;
-  const { username, password } = data;
+  const { username, password, captchaToken } = data;
   const name = username.trim().toLowerCase();
   const ip = clientIp(req.headers);
 
-  // DB-backed lockout — per-username (any IP) OR per-username+IP.
-  if (await isLocked(name, ip)) {
+  // DB-backed lockout — per-username+IP is absolute; the sprayable
+  // per-username-any-IP lock degrades to a CAPTCHA challenge when a
+  // verifier is configured, so it cannot deny a known user forever (0.6).
+  let lock = await lockState(name, ip);
+  const verifier = captchaVerifier();
+  const captchaOk =
+    lock.userLocked &&
+    !lock.pairLocked &&
+    verifier !== null &&
+    captchaToken !== undefined &&
+    (await verifier.verify(captchaToken, ip));
+  if (lock.pairLocked || (lock.userLocked && !captchaOk)) {
     await audit(
       { userId: name, action: "auth.locked", entityType: "session", entityId: "-" },
       req,
     );
-    return Response.json({ error: "locked" }, { status: 429 });
+    return Response.json(
+      {
+        error: "locked",
+        ...(verifier && !lock.pairLocked ? { code: "captcha_required" } : {}),
+      },
+      { status: 429, headers: { "Retry-After": String(lock.retryAfterSeconds || 60) } },
+    );
   }
 
   const user = await prisma.user.findFirst({
@@ -44,7 +61,8 @@ export const POST = handle(async (req: Request) => {
       },
       req,
     );
-    if (await isLocked(name, ip)) {
+    lock = await lockState(name, ip);
+    if (lock.pairLocked || (lock.userLocked && !captchaOk)) {
       await audit(
         {
           userId: user?.id ?? name,
@@ -54,7 +72,13 @@ export const POST = handle(async (req: Request) => {
         },
         req,
       );
-      return Response.json({ error: "locked" }, { status: 429 });
+      return Response.json(
+        {
+          error: "locked",
+          ...(verifier && !lock.pairLocked ? { code: "captcha_required" } : {}),
+        },
+        { status: 429, headers: { "Retry-After": String(lock.retryAfterSeconds || 60) } },
+      );
     }
     return Response.json({ error: "invalid credentials" }, { status: 401 });
   }

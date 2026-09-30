@@ -650,6 +650,8 @@ const ar: Record<string, string> = {
   "login.signin": "دخول",
   "login.error": "بيانات غير صحيحة أو حساب موقوف",
   "login.locked": "تم قفل الحساب مؤقتًا بعد محاولات دخول فاشلة — حاول بعد 15 دقيقة",
+  "login.captcha": "رمز التحقق (CAPTCHA)",
+  "login.captchaPlaceholder": "أدخل رمز التحقق للمتابعة",
   "login.show": "إظهار",
   "login.hide": "إخفاء",
   "login.tagline": "تنبّأ بالخطر. تدخّل مبكرًا. أثبت الأثر.",

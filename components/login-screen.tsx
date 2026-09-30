@@ -20,14 +20,15 @@ export function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [error, setError] = useState<"" | "invalid" | "locked">("");
+  const [error, setError] = useState<"" | "invalid" | "locked" | "captcha">("");
+  const [captchaToken, setCaptchaToken] = useState("");
   const [shake, setShake] = useState(0);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     if (busy) return;
     setBusy(true);
-    const res = await login(username, password);
+    const res = await login(username, password, captchaToken || undefined);
     setBusy(false);
     if (res !== "ok") {
       setError(res);
@@ -232,9 +233,24 @@ export function LoginScreen() {
                 </button>
               </div>
 
+              {error === "captcha" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-[#13304d]">
+                    {t("login.captcha")}
+                  </label>
+                  <input
+                    value={captchaToken}
+                    onChange={(e) => setCaptchaToken(e.target.value)}
+                    autoComplete="off"
+                    placeholder={t("login.captchaPlaceholder")}
+                    className="w-full rounded-2xl border border-[#e9eef5] bg-[#f7fafc] py-3.5 px-4 text-base text-[#13304d] outline-none transition-all placeholder:text-slate-400 focus:border-[#0e9bb5] focus:bg-white focus:ring-4 focus:ring-[#0e9bb5]/10"
+                  />
+                </div>
+              )}
+
               {error && (
                 <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-                  ⚠ {error === "locked" ? t("login.locked") : t("login.error")}
+                  ⚠ {error === "locked" || error === "captcha" ? t("login.locked") : t("login.error")}
                 </p>
               )}
 

@@ -48,6 +48,7 @@ import { POST as unlockPost } from "@/app/api/users/[id]/unlock/route";
 import { GET as auditGet } from "@/app/api/audit/route";
 import { prisma } from "@/lib/server/prisma";
 import { signSession } from "@/lib/server/session";
+import { __setCaptchaVerifierForTests } from "@/lib/server/captcha";
 
 /* ── helpers ── */
 
@@ -1562,5 +1563,105 @@ describe("pagination", () => {
     expect(p1.snaps).toHaveLength(5);
     expect(p1.total).toBe(all.snaps.length);
     expect(all.snaps.length).toBeGreaterThan(5);
+  });
+});
+
+/* ── 0.6: lockout DoS — CAPTCHA gate + progressive Retry-After ── */
+describe("0.6 lockout DoS", () => {
+  it("sprayed username lock degrades to CAPTCHA gate; pair lock stays absolute", async () => {
+    const old = process.env.TRUSTED_PROXY;
+    process.env.TRUSTED_PROXY = "1";
+    __setCaptchaVerifierForTests({
+      name: "test",
+      verify: async () => true,
+    });
+    try {
+      // Spray a username from rotating IPs → per-username lock only.
+      const name = "sprayvictim@x.io";
+      for (let i = 0; i < 5; i++) await login(name, "bad", `10.7.7.${i}`);
+      // Fresh IP: locked, but the server offers a CAPTCHA challenge.
+      const r = await login(name, "bad", "10.7.7.99");
+      expect(r.status).toBe(429);
+      const body = await r.json();
+      expect(body.code).toBe("captcha_required");
+      expect(Number(r.headers.get("retry-after"))).toBeGreaterThan(0);
+      // A valid token passes the username-wide gate → real credential check.
+      const r2 = await loginPost(
+        post(
+          { username: name, password: "bad", captchaToken: "tok" },
+          "10.7.7.100",
+        ),
+      );
+      expect(r2.status).toBe(401);
+      // The tight per-username+IP lock is NEVER captcha-bypassed.
+      const pairIp = "10.7.8.1";
+      for (let i = 0; i < 5; i++) {
+        await loginPost(
+          post(
+            { username: "pairlock@x.io", password: "bad", captchaToken: "tok" },
+            pairIp,
+          ),
+        );
+      }
+      const r3 = await loginPost(
+        post(
+          { username: "pairlock@x.io", password: "bad", captchaToken: "tok" },
+          pairIp,
+        ),
+      );
+      expect(r3.status).toBe(429);
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+      __setCaptchaVerifierForTests(undefined);
+    }
+  });
+
+  it("legit user completes login through a sprayed username lock", async () => {
+    const old = process.env.TRUSTED_PROXY;
+    process.env.TRUSTED_PROXY = "1";
+    __setCaptchaVerifierForTests({
+      name: "test",
+      verify: async () => true,
+    });
+    try {
+      for (let i = 0; i < 5; i++) {
+        await login(USERS.nurse2.u, "bad", `10.6.6.${i}`);
+      }
+      const r = await loginPost(
+        post(
+          {
+            username: USERS.nurse2.u,
+            password: USERS.nurse2.p,
+            captchaToken: "tok",
+          },
+          "10.6.6.99",
+        ),
+      );
+      expect(r.status).toBe(200);
+      // Successful login clears the sprayed failures.
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+      __setCaptchaVerifierForTests(undefined);
+    }
+  });
+
+  it("without a verifier configured, username lock is a hard 429", async () => {
+    const old = process.env.TRUSTED_PROXY;
+    process.env.TRUSTED_PROXY = "1";
+    try {
+      for (let i = 0; i < 5; i++) {
+        await login("noverifier@x.io", "bad", `10.5.5.${i}`);
+      }
+      const r = await loginPost(
+        post(
+          { username: "noverifier@x.io", password: "x", captchaToken: "tok" },
+          "10.5.5.99",
+        ),
+      );
+      expect(r.status).toBe(429);
+      expect((await r.json()).code).toBeUndefined();
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+    }
   });
 });

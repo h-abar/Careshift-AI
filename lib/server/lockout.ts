@@ -23,7 +23,14 @@ export function clientIp(headers: Headers): string {
   );
 }
 
-export async function isLocked(username: string, ip: string) {
+/**
+ * Lock state, split by scope — 0.6:
+ *  - userLocked: username failed from ANY IP (sprayable DoS vector →
+ *    CAPTCHA-gated, see captcha.ts)
+ *  - pairLocked: username failed from THIS IP (local attacker → never bypassed)
+ * retryAfterSeconds escalates with failure count (progressive delay).
+ */
+export async function lockState(username: string, ip: string) {
   const since = new Date(Date.now() - LOCKOUT_WINDOW_MS);
   const name = username.toLowerCase();
   const [userFails, pairFails] = await Promise.all([
@@ -39,7 +46,20 @@ export async function isLocked(username: string, ip: string) {
       },
     }),
   ]);
-  return userFails >= LOCKOUT_MAX_FAILS || pairFails >= LOCKOUT_MAX_FAILS;
+  const fails = Math.max(userFails, pairFails);
+  return {
+    userLocked: userFails >= LOCKOUT_MAX_FAILS,
+    pairLocked: pairFails >= LOCKOUT_MAX_FAILS,
+    retryAfterSeconds:
+      fails >= LOCKOUT_MAX_FAILS
+        ? Math.min(60 + fails * 30, LOCKOUT_WINDOW_MS / 1000)
+        : 0,
+  };
+}
+
+export async function isLocked(username: string, ip: string) {
+  const s = await lockState(username, ip);
+  return s.userLocked || s.pairLocked;
 }
 
 export async function recordAttempt(

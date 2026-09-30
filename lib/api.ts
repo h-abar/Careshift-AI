@@ -232,13 +232,30 @@ export const usePatientDetail = (id: string) =>
 
 /* ── Mutations ── */
 
+/** Carries the consistent server error shape {error, code?, fields?} to callers. */
+export class ApiError extends Error {
+  code?: string;
+  fields?: Record<string, string>;
+  status: number;
+  constructor(status: number, body: { error?: string; code?: string; fields?: Record<string, string> }) {
+    super(body.error ?? `${status}`);
+    this.status = status;
+    this.code = body.code;
+    this.fields = body.fields;
+  }
+}
+
+async function failIfNotOk(r: Response) {
+  if (!r.ok) throw new ApiError(r.status, await r.json().catch(() => ({})));
+}
+
 export async function postJson<T>(path: string, body: unknown): Promise<T> {
   const r = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error ?? `${r.status}`);
+  await failIfNotOk(r);
   return (await r.json()) as T;
 }
 
@@ -248,6 +265,6 @@ export async function patchJson<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error ?? `${r.status}`);
+  await failIfNotOk(r);
   return (await r.json()) as T;
 }

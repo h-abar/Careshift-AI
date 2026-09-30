@@ -12,6 +12,9 @@ export const loginSchema = z
   .object({
     username: z.string().min(1),
     password: z.string().min(1),
+    // 0.6 — CAPTCHA response token; only consulted when a verifier is
+    // configured and the username-wide lock is hit.
+    captchaToken: z.string().max(2048).optional(),
   })
   .strict();
 

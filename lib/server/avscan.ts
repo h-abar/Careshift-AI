@@ -35,6 +35,7 @@ export class ClamAvScanner implements AvScanner {
     private timeoutMs = 15_000,
   ) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   scan(buf: Buffer, _fileName: string): Promise<AvResult> {
     return new Promise((resolve, reject) => {
       const sock = net.createConnection({ host: this.host, port: this.port });
