@@ -49,6 +49,7 @@ import { GET as auditGet } from "@/app/api/audit/route";
 import { prisma } from "@/lib/server/prisma";
 import { signSession } from "@/lib/server/session";
 import { __setCaptchaVerifierForTests } from "@/lib/server/captcha";
+import { checkRate } from "@/lib/server/ratelimit";
 
 /* ── helpers ── */
 
@@ -99,6 +100,11 @@ beforeAll(async () => {
     (await import("node:os")).tmpdir(),
     "cs-test-uploads",
   );
+  // Raise rate limits for the suite — the dedicated rate-limit test
+  // lowers its own bucket back down locally.
+  for (const k of ["RL_LOGIN", "RL_USERADMIN", "RL_UPLOAD", "RL_REASSESS", "RL_CLAIMWRITE"]) {
+    process.env[k] = "10000";
+  }
 }, 120_000);
 
 beforeEach(() => cookieStore.clear());
@@ -1662,6 +1668,42 @@ describe("0.6 lockout DoS", () => {
       expect((await r.json()).code).toBeUndefined();
     } finally {
       process.env.TRUSTED_PROXY = old;
+    }
+  });
+});
+
+/* ── 4: instance-safe rate limiting ── */
+describe("4 rate limiting", () => {
+  it("checkRate: fixed window — limit reached → denied + retryAfter", async () => {
+    const b = "t.bucket", k = `k-${Date.now()}`;
+    const r1 = await checkRate(b, k, 2, 60_000);
+    const r2 = await checkRate(b, k, 2, 60_000);
+    expect(r1.allowed && r2.allowed).toBe(true);
+    const r3 = await checkRate(b, k, 2, 60_000);
+    expect(r3.allowed).toBe(false);
+    expect(r3.retryAfterSeconds).toBeGreaterThan(0);
+    // a different key is independent
+    expect((await checkRate(b, k + "x", 2, 60_000)).allowed).toBe(true);
+  });
+
+  it("reassess is rate-limited: beyond the limit → 429 + Retry-After", async () => {
+    const old = process.env.RL_REASSESS;
+    process.env.RL_REASSESS = "3"; // shrink the window's cap for the test
+    try {
+      await loginAs("charge");
+      const ctxP = ctx({ id: "P-1042" });
+      for (let i = 0; i < 3; i++) {
+        expect((await reassessPost(post({}), ctxP)).status).toBe(200);
+      }
+      const blocked = await reassessPost(post({}), ctxP);
+      expect(blocked.status).toBe(429);
+      expect((await blocked.json()).code).toBe("rate_limited");
+      expect(Number(blocked.headers.get("retry-after"))).toBeGreaterThan(0);
+      // a different user has an independent bucket
+      await loginAs("nurse");
+      expect((await reassessPost(post({}), ctxP)).status).toBe(200);
+    } finally {
+      process.env.RL_REASSESS = old;
     }
   });
 });

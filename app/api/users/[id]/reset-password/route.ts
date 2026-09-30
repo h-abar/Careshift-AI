@@ -4,6 +4,7 @@ import { audit } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { resetPwSchema } from "@/lib/schemas";
 import bcrypt from "bcryptjs";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 /**
  * User-admin: reset a password → bcrypt hash. Never audited with the value.
@@ -13,6 +14,8 @@ import bcrypt from "bcryptjs";
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("users_manage");
+    const rg = await rateGuard(auth.user.id, "userAdmin");
+    if (rg) return rg;
     const { id } = await ctx.params;
     const { data, error } = await parseBody(req, resetPwSchema);
     if (error) return error;

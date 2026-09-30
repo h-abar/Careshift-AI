@@ -4,6 +4,7 @@ import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { userPatchSchema } from "@/lib/schemas";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 export const GET = handle(
   async (_req: Request, ctx: { params: Promise<{ id: string }> }) => {
@@ -20,6 +21,8 @@ export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("users_manage");
     const { id } = await ctx.params;
+    const rg = await rateGuard(auth.user.id, "userAdmin");
+    if (rg) return rg;
     const { data: b, error } = await parseBody(req, userPatchSchema);
     if (error) return error;
 

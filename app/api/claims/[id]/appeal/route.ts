@@ -4,6 +4,7 @@ import { audit } from "@/lib/server/audit";
 import { claimEvent, notifyClaimWatchers } from "@/lib/server/claims";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { appealSchema } from "@/lib/schemas";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 /**
  * Appeal a denied claim — requires a reason, returns the claim to "review".
@@ -12,6 +13,8 @@ import { appealSchema } from "@/lib/schemas";
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("claims_edit");
+    const rg = await rateGuard(auth.user.id, "claimWrite");
+    if (rg) return rg;
     const { id } = await ctx.params;
     const { data, error } = await parseBody(req, appealSchema);
     if (error) return error;

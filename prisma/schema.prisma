@@ -300,3 +300,13 @@ model LoginAttempt {
   @@index([username, createdAt])
   @@index([username, ip, createdAt])
 }
+
+// Phase 3 item 4 — instance-safe rate limiting (fixed-window counters,
+// atomic upsert+increment; shared across app instances via the DB).
+model RateBucket {
+  id        String   @id // `${bucket}:${key}:${windowStart}`
+  count     Int      @default(0)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}

@@ -4,12 +4,15 @@ import { runRiskAssessment } from "@/lib/server/risk";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 /** Manual risk reassessment — recomputes, persists, alerts on crossing. */
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("risk_view");
     const { id } = await ctx.params;
+    const rg = await rateGuard(`${auth.user.id}:${id}`, "reassess");
+    if (rg) return rg;
     const patient = await dbPatient(id);
     if (!patient) {
       return Response.json({ error: "not found" }, { status: 404 });

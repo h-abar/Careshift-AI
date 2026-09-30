@@ -6,6 +6,7 @@ import { handle, ok, parseBody } from "@/lib/server/json";
 import { userCreateSchema } from "@/lib/schemas";
 import { LOCKOUT_MAX_FAILS, LOCKOUT_WINDOW_MS } from "@/lib/server/lockout";
 import bcrypt from "bcryptjs";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 export const GET = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage");
@@ -74,6 +75,9 @@ export const GET = handle(async (req: Request) => {
 /** User-admin: create an account (bcrypt-hashed password, audited). */
 export const POST = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage");
+  const rg = await rateGuard(auth.user.id, "userAdmin");
+  if (rg) return rg;
+
   const { data: b, error } = await parseBody(req, userCreateSchema);
   if (error) return error;
 

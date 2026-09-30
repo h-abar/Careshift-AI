@@ -4,6 +4,7 @@ import { audit } from "@/lib/server/audit";
 import { claimEvent, notifyClaimWatchers } from "@/lib/server/claims";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { resubmitSchema } from "@/lib/schemas";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 /**
  * Resubmit a denied claim after fixing the deficiency — a note describing
@@ -12,6 +13,8 @@ import { resubmitSchema } from "@/lib/schemas";
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("claims_edit");
+    const rg = await rateGuard(auth.user.id, "claimWrite");
+    if (rg) return rg;
     const { id } = await ctx.params;
     const { data, error } = await parseBody(req, resubmitSchema);
     if (error) return error;

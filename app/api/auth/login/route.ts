@@ -8,6 +8,7 @@ import { captchaVerifier } from "@/lib/server/captcha";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { loginSchema } from "@/lib/schemas";
 import type { User } from "@/lib/types";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 export const POST = handle(async (req: Request) => {
   const { data, error } = await parseBody(req, loginSchema);
@@ -15,6 +16,9 @@ export const POST = handle(async (req: Request) => {
   const { username, password, captchaToken } = data;
   const name = username.trim().toLowerCase();
   const ip = clientIp(req.headers);
+
+  const rg = await rateGuard(`${name}:${ip}`, "login");
+  if (rg) return rg;
 
   // DB-backed lockout — per-username+IP is absolute; the sprayable
   // per-username-any-IP lock degrades to a CAPTCHA challenge when a

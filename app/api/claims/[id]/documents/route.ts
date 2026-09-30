@@ -10,6 +10,7 @@ import { EVIDENCE_KEYS } from "@/lib/data/claims";
 import { readFileWithCap, sniffMime } from "@/lib/server/uploads";
 import { activeScanner } from "@/lib/server/avscan";
 import { handle, ok } from "@/lib/server/json";
+import { rateGuard } from "@/lib/server/ratelimit";
 
 export const uploadDir = () =>
   process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
@@ -32,6 +33,8 @@ const ENVELOPE_BYTES = 64 * 1024;
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
     const auth = await requirePerm("claims_edit");
+    const rg = await rateGuard(auth.user.id, "upload");
+    if (rg) return rg;
     const { id } = await ctx.params;
 
     const claim = await prisma.insuranceClaim.findUnique({ where: { id } });
