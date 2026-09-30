@@ -5,13 +5,17 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { postJson, useSnapshots } from "@/lib/api";
+import { useToast } from "@/components/toast";
 import { fmtSar } from "@/lib/format";
 import {
   Card,
   Countdown,
+  Empty,
+  ErrorState,
   IvStatusChip,
   Loading,
   RiskBadge,
+  Skeleton,
 } from "@/components/ui";
 import type { InterventionStatus, Role } from "@/lib/types";
 
@@ -26,13 +30,16 @@ const LOOP_STAGES_AR = ["تنبيه", "إسناد", "تنفيذ", "تحقق", "�
 export default function InterventionsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data, refetch } = useSnapshots();
+  const { data, loading, error, refetch } = useSnapshots();
+  const toast = useToast();
   const snaps = data?.snaps ?? [];
 
   // Optimistic overrides — each change is POSTed to the API which persists
   // an InterventionOverride row and writes an audit entry.
   const [overrides, setOverrides] = useState<Record<string, StepState>>({});
   const [filter, setFilter] = useState<"active" | "done">("active");
+  if (loading && !data) return <Skeleton rows={5} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
 
   const steps = snaps
@@ -66,7 +73,13 @@ export default function InterventionsPage() {
   ) => {
     setOverrides((o) => ({ ...o, [stepId]: { status, escalatedTo } }));
     postJson(`/api/interventions/${stepId}`, { patientId, status, escalatedTo })
-      .catch(() => {})
+      .then(() => toast(t("common.saved"), "success"))
+      .catch(() => {
+        setOverrides((o) =>
+          Object.fromEntries(Object.entries(o).filter(([k]) => k !== stepId)),
+        );
+        toast(t("common.failed"), "error");
+      })
       .finally(() => refetch());
   };
   const markDone = (id: string, patientId: string) =>
@@ -214,9 +227,7 @@ export default function InterventionsPage() {
             )}
           </Card>
         ))}
-        {shown.length === 0 && (
-          <p className="py-10 text-center text-sm text-slate-500">—</p>
-        )}
+        {shown.length === 0 && <Empty />}
       </div>
     </div>
   );

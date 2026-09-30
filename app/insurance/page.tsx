@@ -7,10 +7,13 @@ import { ClaimDetail } from "@/components/claim-detail";
 import { fmtSar, fmtSarK } from "@/lib/format";
 import {
   Card,
+  Empty,
+  ErrorState,
   Loading,
   Meter,
   RiskBadge,
   SectionTitle,
+  Skeleton,
 } from "@/components/ui";
 import {
   Bar,
@@ -36,7 +39,9 @@ const STATUS_COLORS: Record<string, string> = {
 export default function InsurancePage() {
   const { t, lang } = useI18n();
   const { data: org } = useOrg();
-  const { data: claimsData, refetch } = useClaims();
+  const { data: claimsData, loading, error, refetch } = useClaims();
+  if (loading && !claimsData) return <Skeleton rows={5} />;
+  if (error && !claimsData) return <ErrorState onRetry={refetch} />;
   if (!org || !claimsData) return <Loading />;
   const claims = claimsData.claims;
   const savingsTrend = claimsData.savingsTrend;
@@ -162,6 +167,9 @@ export default function InsurancePage() {
                   </td>
                 </tr>
               ))}
+              {claims.length === 0 && (
+                <tr><td colSpan={8}><Empty /></td></tr>
+              )}
             </tbody>
           </table>
         </div>

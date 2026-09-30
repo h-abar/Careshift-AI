@@ -5,9 +5,10 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { patchJson, postJson, useHandoff } from "@/lib/api";
+import { useToast } from "@/components/toast";
 import { buildSbar } from "@/lib/engines/sbar";
 import { fmtSar } from "@/lib/format";
-import { Card, IvStatusChip, Loading, Meter, RiskBadge, SectionTitle } from "@/components/ui";
+import { Card, ErrorState, IvStatusChip, Loading, Meter, RiskBadge, SectionTitle, Skeleton } from "@/components/ui";
 import type { HandoffStatus, Sbar } from "@/lib/types";
 
 const CHECKLIST = [
@@ -42,12 +43,15 @@ const EVENT_LABEL: Record<string, string> = {
 export function HandoffDetail({ handoffId }: { handoffId: string }) {
   const { t, lang } = useI18n();
   const { user, can } = useAuth();
-  const { data, refetch } = useHandoff(handoffId);
+  const { data, loading, error, refetch } = useHandoff(handoffId);
+  const toast = useToast();
 
   const [rejectReason, setRejectReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
+  if (loading && !data) return <Skeleton rows={5} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data || !user) return <Loading />;
   const { handoff: h, snaps, users } = data;
   const userName = (id: string) => {
@@ -71,10 +75,14 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
     setBusy(true);
     setErr("");
     fn()
-      .then(() => refetch())
+      .then(() => {
+        refetch();
+        toast(t("common.saved"), "success");
+      })
       .catch(async (e) => {
         try { setErr(JSON.parse(e.message).error ?? "error"); }
         catch { setErr("error"); }
+        toast(t("common.failed"), "error");
       })
       .finally(() => setBusy(false));
   };

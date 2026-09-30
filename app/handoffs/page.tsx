@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { postJson, useHandoffs, useSnapshots } from "@/lib/api";
-import { Card, Loading, RiskBadge, SectionTitle } from "@/components/ui";
+import { useToast } from "@/components/toast";
+import { Card, Empty, ErrorState, Loading, Skeleton, RiskBadge, SectionTitle } from "@/components/ui";
 import type { HandoffStatus, User } from "@/lib/types";
 
 type SafeUser = Omit<User, "password">;
@@ -26,13 +27,15 @@ export default function HandoffsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
   const [wizard, setWizard] = useState(false);
-  const { data, refetch } = useHandoffs();
+  const { data, loading, error, refetch } = useHandoffs();
   const { data: snapData } = useSnapshots();
   const snaps = snapData?.snaps ?? [];
   const riskOf = (pid: string) => snaps.find((s) => s.patient.id === pid)?.risk;
 
   if (!can("handoff_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (loading && !data) return <Skeleton rows={4} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data || !snapData) return <Loading />;
   const userName = (id: string) => {
     const u = data.users.find((x) => x.id === id);
@@ -54,6 +57,7 @@ export default function HandoffsPage() {
       </div>
 
       <div className="space-y-3">
+        {data.handoffs.length === 0 && <Empty />}
         {data.handoffs.map((h) => {
           const reviewed = Object.values(h.reviewed).filter(Boolean).length;
           const criticalCount = h.patientIds.filter(
@@ -117,6 +121,7 @@ function HandoffWizard({
   onClose: () => void;
 }) {
   const { t, lang } = useI18n();
+  const toast = useToast();
   const [step, setStep] = useState(0);
   const [dept, setDept] = useState("icu");
   const [shift, setShift] = useState<"day" | "night">("day");
@@ -286,11 +291,9 @@ function HandoffWizard({
                     incomingId: incoming,
                     patientIds: [...selected],
                   })
-                    .catch(() => {})
-                    .finally(() => {
-                      setSaving(false);
-                      setDone(true);
-                    });
+                    .then(() => setDone(true))
+                    .catch(() => toast(t("common.failed"), "error"))
+                    .finally(() => setSaving(false));
                 }}
                 className="rounded-lg bg-[#13304d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b5fad] disabled:opacity-50"
               >

@@ -5,12 +5,12 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { usePatientsTable } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
-import { Card, Loading, Meter, RiskBadge, SectionTitle } from "@/components/ui";
+import { Card, Empty, ErrorState, Loading, Skeleton, Meter, RiskBadge, SectionTitle } from "@/components/ui";
 
 export default function PatientsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data } = usePatientsTable();
+  const { data, loading, error, refetch } = usePatientsTable();
   const snaps = data?.snaps ?? [];
   const userName = (id: string) =>
     data?.userNames[id] ? (lang === "ar" ? data.userNames[id].ar : data.userNames[id].en) : "—";
@@ -19,6 +19,8 @@ export default function PatientsPage() {
 
   if (!can("patients_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (loading && !data) return <Skeleton rows={6} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
 
   return (
@@ -72,6 +74,9 @@ export default function PatientsPage() {
                 </tr>
               );
             })}
+            {snaps.length === 0 && (
+              <tr><td colSpan={8}><Empty /></td></tr>
+            )}
           </tbody>
         </table>
       </Card>

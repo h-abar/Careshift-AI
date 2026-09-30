@@ -7,12 +7,14 @@ import { useOrg, usePatientsTable } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
 import {
   Card,
+  ErrorState,
   IvStatusChip,
   KpiCard,
   Loading,
   Meter,
   RiskBadge,
   SectionTitle,
+  Skeleton,
 } from "@/components/ui";
 import {
   CartesianGrid,
@@ -39,7 +41,9 @@ export default function Home() {
 /* ── Oversight home (e.g. insurance reviewer) — aggregates only, no PHI ── */
 function OversightHome() {
   const { t } = useI18n();
-  const { data: s } = useOrg();
+  const { data: s, loading, error, refetch } = useOrg();
+  if (loading && !s) return <Skeleton rows={5} />;
+  if (error && !s) return <ErrorState onRetry={refetch} />;
   if (!s) return <Loading />;
 
   return (
@@ -96,7 +100,9 @@ function OversightHome() {
 /* ═══════════ Command Center — "what needs attention now?" ═══════════ */
 function CommandCenter() {
   const { t, lang } = useI18n();
-  const { data: s } = useOrg();
+  const { data: s, loading, error, refetch } = useOrg();
+  if (loading && !s) return <Skeleton rows={6} />;
+  if (error && !s) return <ErrorState onRetry={refetch} />;
   if (!s) return <Loading />;
   const snaps = s.snaps ?? [];
 
@@ -292,7 +298,9 @@ function CommandCenter() {
 function MyWork() {
   const { t, lang } = useI18n();
   const { user } = useAuth();
-  const { data } = usePatientsTable();
+  const { data, loading, error, refetch } = usePatientsTable();
+  if (loading && !data) return <Skeleton rows={5} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data || !user) return <Loading />;
   const { snaps, assignments } = data;
 

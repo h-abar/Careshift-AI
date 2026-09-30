@@ -214,6 +214,84 @@ export function Avatar({ name, size = "h-9 w-9", className = "" }: { name: strin
   );
 }
 
+/** Skeleton placeholder rows while a data view loads. */
+export function Skeleton({
+  rows = 4,
+  className = "",
+}: {
+  rows?: number;
+  className?: string;
+}) {
+  return (
+    <div className={`animate-pulse space-y-3 ${className}`} aria-busy="true">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div
+          key={i}
+          className="h-16 rounded-xl border border-[#e2e9f2] bg-white"
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Uniform empty state. */
+export function Empty({ title, hint }: { title?: string; hint?: string }) {
+  const { t } = useI18n();
+  return (
+    <div className="py-12 text-center">
+      <p className="text-sm font-semibold text-slate-500">
+        {title ?? t("common.empty")}
+      </p>
+      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+    </div>
+  );
+}
+
+/** Uniform error state with a retry action. */
+export function ErrorState({ onRetry }: { onRetry?: () => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="py-12 text-center" role="alert">
+      <p className="text-sm font-semibold text-red-500">
+        {t("common.loadError")}
+      </p>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="mt-3 rounded-lg border border-[#e2e9f2] px-4 py-2 text-sm font-semibold text-[#0e9bb5] hover:bg-[#0e9bb5]/5"
+        >
+          {t("common.retry")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Standard data-view gate: skeleton while loading, error+retry on failure,
+ * Loading as a last resort. Wrap the page body after hooks resolve.
+ */
+export function Gate({
+  loading,
+  error,
+  data,
+  onRetry,
+  skeletonRows = 4,
+  children,
+}: {
+  loading: boolean;
+  error: string | null;
+  data: unknown;
+  onRetry?: () => void;
+  skeletonRows?: number;
+  children: ReactNode;
+}) {
+  if (loading && !data) return <Skeleton rows={skeletonRows} />;
+  if (error && !data) return <ErrorState onRetry={onRetry} />;
+  if (!data) return <Loading />;
+  return <>{children}</>;
+}
+
 /** Brand logo tile — the dark "C" mark in a rounded card. */
 export function Loading() {
   return (

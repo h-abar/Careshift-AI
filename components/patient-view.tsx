@@ -5,15 +5,17 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { postJson, usePatientDetail } from "@/lib/api";
+import { useToast } from "@/components/toast";
 import { fmtSar } from "@/lib/format";
 import {
   Card,
+  ErrorState,
   IvStatusChip,
   LEVEL_STYLES,
-  Loading,
   Meter,
   RiskBadge,
   SectionTitle,
+  Skeleton,
 } from "@/components/ui";
 import {
   CartesianGrid,
@@ -41,10 +43,10 @@ export function PatientView({ patientId }: { patientId: string }) {
   const { t, lang } = useI18n();
   const { data, error, refetch } = usePatientDetail(patientId);
   const { can } = useAuth();
+  const toast = useToast();
   const [reassessing, setReassessing] = useState(false);
-  if (error)
-    return <p className="py-20 text-center text-slate-400">Patient not found.</p>;
-  if (!data) return <Loading />;
+  if (error) return <ErrorState onRetry={refetch} />;
+  if (!data) return <Skeleton rows={6} />;
   const {
     patient: p,
     risk,
@@ -112,8 +114,11 @@ export function PatientView({ patientId }: { patientId: string }) {
               onClick={() => {
                 setReassessing(true);
                 postJson(`/api/patients/${p.id}/reassess`, {})
-                  .then(() => refetch())
-                  .catch(() => {})
+                  .then(() => {
+                    refetch();
+                    toast(t("common.saved"), "success");
+                  })
+                  .catch(() => toast(t("common.failed"), "error"))
                   .finally(() => setReassessing(false));
               }}
               disabled={reassessing}

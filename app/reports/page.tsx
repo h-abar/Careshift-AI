@@ -4,7 +4,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { useOrg } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
-import { Card, KpiCard, Loading, Meter, SectionTitle } from "@/components/ui";
+import { Card, KpiCard, ErrorState, Loading, Skeleton, Meter, SectionTitle } from "@/components/ui";
 import {
   Bar,
   BarChart,
@@ -22,10 +22,12 @@ export default function ReportsPage() {
   // Reports-safe aggregates — /api/snapshots carries handoff/claim counts and
   // the savings trend, so roles without handoff_view / insurance_view (e.g.
   // physician, insurance) never hit a 403 endpoint from this page.
-  const { data: s } = useOrg();
+  const { data: s, loading, error, refetch } = useOrg();
 
   if (!can("reports_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (loading && !s) return <Skeleton rows={5} />;
+  if (error && !s) return <ErrorState onRetry={refetch} />;
   if (!s) return <Loading />;
 
   const savingsTrend = s.savingsTrend;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { useAudit } from "@/lib/api";
-import { Card, Loading, SectionTitle } from "@/components/ui";
+import { Card, Empty, ErrorState, Loading, Skeleton, SectionTitle } from "@/components/ui";
 
 const KNOWN = [
   "auth.login", "auth.logout", "auth.login_failed", "auth.switch",
@@ -19,12 +19,14 @@ const KNOWN = [
 export default function AuditPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data } = useAudit();
+  const { data, loading, error, refetch } = useAudit();
   const [fUser, setFUser] = useState("");
   const [fAction, setFAction] = useState("");
 
   if (!can("audit_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (loading && !data) return <Skeleton rows={6} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
 
   const entries = data.entries.filter(
@@ -125,9 +127,7 @@ export default function AuditPage() {
             ))}
             {entries.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                  —
-                </td>
+                <td colSpan={7}><Empty /></td>
               </tr>
             )}
           </tbody>

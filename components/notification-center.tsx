@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { patchJson, postJson, useNotifications } from "@/lib/api";
+import { useToast } from "@/components/toast";
 import { Icon } from "@/components/icons";
 import type { NotificationItem } from "@/lib/types";
 
@@ -35,6 +36,7 @@ export function NotificationCenter() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const { data, refetch } = useNotifications();
+  const toast = useToast();
   const items = data?.notifications ?? [];
   const unread = items.filter((n) => !n.read).length;
   const ref = useRef<HTMLDivElement>(null);
@@ -55,17 +57,17 @@ export function NotificationCenter() {
   const ack = (id: string) =>
     patchJson(`/api/notifications/${id}`, { action: "ack" })
       .then(() => refetch())
-      .catch(() => {});
+      .catch(() => toast(t("common.failed"), "error"));
 
   const dismiss = (id: string) =>
     patchJson(`/api/notifications/${id}`, { action: "dismiss" })
       .then(() => refetch())
-      .catch(() => {});
+      .catch(() => toast(t("common.failed"), "error"));
 
   const markAll = () =>
     postJson(`/api/notifications`, {})
       .then(() => refetch())
-      .catch(() => {});
+      .catch(() => toast(t("common.failed"), "error"));
 
   return (
     <div className="relative" ref={ref}>

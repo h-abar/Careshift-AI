@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { patchJson, postJson, useUsers } from "@/lib/api";
-import { Avatar, Card, ConfirmDialog, Loading, SectionTitle } from "@/components/ui";
+import { useToast } from "@/components/toast";
+import { Avatar, Card, ConfirmDialog, Empty, ErrorState, Loading, SectionTitle, Skeleton } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import type { RoleKey, User } from "@/lib/types";
 
@@ -33,7 +34,8 @@ const EMPTY = {
 export default function UsersPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const { data, refetch } = useUsers();
+  const { data, loading, error, refetch } = useUsers();
+  const toast = useToast();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [dept, setDept] = useState("");
@@ -55,6 +57,8 @@ export default function UsersPage() {
 
   if (!can("users_manage"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (loading && !data) return <Skeleton rows={6} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
   const users = data.users;
 
@@ -72,8 +76,9 @@ export default function UsersPage() {
     try {
       await patchJson(`/api/users/${id}`, body);
       refetch();
+      toast(t("common.saved"), "success");
     } catch {
-      /* audited server-side; UI just keeps prior state */
+      toast(t("common.failed"), "error");
     }
   };
 
@@ -85,7 +90,7 @@ export default function UsersPage() {
       );
       if (r.tempPassword) setTempPw(r.tempPassword);
     } catch {
-      /* server rejects → no password shown */
+      toast(t("common.failed"), "error");
     }
   };
 
@@ -93,7 +98,10 @@ export default function UsersPage() {
     try {
       await postJson(`/api/users/${u.id}/unlock`, {});
       refetch();
-    } catch {}
+      toast(t("common.saved"), "success");
+    } catch {
+      toast(t("common.failed"), "error");
+    }
   };
 
   const userName = (u: U) => (lang === "ar" ? u.nameAr : u.nameEn);
@@ -123,8 +131,10 @@ export default function UsersPage() {
       setShowNew(false);
       setForm(EMPTY);
       refetch();
+      toast(t("common.saved"), "success");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
+      toast(t("common.failed"), "error");
     } finally {
       setBusy(false);
     }
@@ -287,12 +297,16 @@ export default function UsersPage() {
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6}><Empty /></td></tr>
+            )}
           </tbody>
         </table>
       </Card>
 
       {/* Mobile cards */}
       <div className="space-y-2.5 md:hidden">
+        {filtered.length === 0 && <Empty />}
         {filtered.map((u) => (
           <div key={u.id}>
             <Link href={`/users/${u.id}`}>

@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
 import { useUser } from "@/lib/api";
 import { PERMISSION_KEYS, ROLE_PERMISSIONS } from "@/lib/permissions";
-import { Avatar, Card, Loading, SectionTitle } from "@/components/ui";
+import { Avatar, Card, ErrorState, Loading, SectionTitle, Skeleton } from "@/components/ui";
 
 export function UserProfile({ userId }: { userId: string }) {
   const { t, lang } = useI18n();
-  const { data } = useUser(userId);
+  const { data, loading, error, refetch } = useUser(userId);
+  if (loading && !data) return <Skeleton rows={4} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
   const u = data.user;
   const perms = ROLE_PERMISSIONS[u.role];

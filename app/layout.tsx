@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { AuthProvider } from "@/lib/auth";
+import { ToastProvider } from "@/components/toast";
 import { AppShell } from "@/components/app-shell";
 import "@fontsource/alexandria/arabic-400.css";
 import "@fontsource/alexandria/arabic-500.css";
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full antialiased">
         <I18nProvider>
           <AuthProvider>
-            <AppShell>{children}</AppShell>
+            <ToastProvider>
+              <AppShell>{children}</AppShell>
+            </ToastProvider>
           </AuthProvider>
         </I18nProvider>
       </body>

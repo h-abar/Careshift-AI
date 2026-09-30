@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { patchJson, postJson, useApi } from "@/lib/api";
+import { useToast } from "@/components/toast";
+import { Skeleton } from "@/components/ui";
 import { DENIAL_CODES } from "@/lib/denial";
 import { EVIDENCE_KEYS } from "@/lib/data/claims";
 import type { Claim, ClaimStatus } from "@/lib/types";
@@ -54,9 +56,10 @@ export function ClaimDetail({
   const [appealMode, setAppealMode] = useState<"appeal" | "resubmit" | null>(null);
   const [reason, setReason] = useState("");
   const [err, setErr] = useState("");
+  const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState("");
-  const { data: detail, refetch } = useApi<ClaimDetailData>(
+  const { data: detail, error: detailErr, refetch } = useApi<ClaimDetailData>(
     open ? `/api/claims/${claim.id}` : null,
     [claim.id, open],
   );
@@ -70,8 +73,10 @@ export function ClaimDetail({
       setReason("");
       await refetch();
       onChanged();
+      toast(t("common.saved"), "success");
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
+      toast(t("common.failed"), "error");
     }
   };
 
@@ -118,8 +123,18 @@ export function ClaimDetail({
       )}
       {err && <span className="ms-3 text-[11px] text-red-500">{err}</span>}
 
-      {!open ? null : !detail ? (
-        <p className="mt-2 text-xs text-slate-400">…</p>
+      {!open ? null : detailErr ? (
+        <div className="mt-2 flex items-center gap-3">
+          <span className="text-xs text-red-500">{t("common.loadError")}</span>
+          <button
+            onClick={() => refetch()}
+            className="text-xs font-semibold text-[#0e9bb5] hover:underline"
+          >
+            {t("common.retry")}
+          </button>
+        </div>
+      ) : !detail ? (
+        <Skeleton rows={3} className="mt-2" />
       ) : (
         <div className="mt-3 space-y-3">
           {/* lifecycle actions */}

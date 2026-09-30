@@ -9,7 +9,9 @@ import {
   Card,
   Countdown,
   LEVEL_STYLES,
+  ErrorState,
   Loading,
+  Skeleton,
   Meter,
   RiskBadge,
   SectionTitle,
@@ -17,7 +19,9 @@ import {
 
 export default function HandoffPage() {
   const { t, lang } = useI18n();
-  const { data } = useHandoffContext();
+  const { data, loading, error, refetch } = useHandoffContext();
+  if (loading && !data) return <Skeleton rows={5} />;
+  if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
   const { ho, snaps } = data;
   const elevated = snaps.filter((s) => s.risk.level !== "low");
