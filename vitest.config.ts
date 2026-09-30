@@ -8,5 +8,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    env: {
+      DATABASE_URL: "file:./prisma/dev.db",
+      SESSION_SECRET: "vitest-session-secret",
+    },
   },
 });

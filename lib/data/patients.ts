@@ -511,7 +511,7 @@ export const patients: Patient[] = [
     shift: "day",
     vitals: [v("09:00", 72, 118, 14, 36.7, 99), v("12:00", 70, 116, 14, 36.7, 99)],
     labs: [{ key: "wbc", value: "7.2", flag: "normal" }],
-    riskFlags: [],
+    riskFlags: ["pain-score"],
     meds: [],
     noteEn: "Observation after contrast reaction — mild urticaria, resolved; monitored overnight.",
     noteAr: "مراقبة بعد تفاعل للصبغة — شرى خفيف زال؛ مراقبة ليلية.",

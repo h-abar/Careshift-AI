@@ -38,7 +38,7 @@ const MOBILE_NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, toggle } = useI18n();
-  const { user, can, loggedIn } = useAuth();
+  const { user, can } = useAuth();
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
 
@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const visibleMobile = MOBILE_NAV.filter((n) => !("perm" in n) || !n.perm || can(n.perm));
 
   // Gate the whole workspace behind the login screen — except the public demo.
-  if (!loggedIn) {
+  if (!user) {
     if (pathname === "/demo")
       return (
         <main className="min-h-screen bg-[#f4f7fa] px-4 py-6 sm:px-6">{children}</main>

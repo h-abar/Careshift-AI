@@ -4,12 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { handoffRecords } from "@/lib/data/handoffs";
-import { users, userName } from "@/lib/data/users";
-import { patients, getPatient } from "@/lib/data/patients";
-import { buildSnapshots } from "@/lib/aggregate";
-import { Card, RiskBadge, SectionTitle } from "@/components/ui";
-import type { HandoffStatus } from "@/lib/types";
+import { postJson, useHandoffs, useSnapshots } from "@/lib/api";
+import { Card, Loading, RiskBadge, SectionTitle } from "@/components/ui";
+import type { HandoffStatus, User } from "@/lib/types";
+
+type SafeUser = Omit<User, "password">;
 
 const STATUS_STYLE: Record<HandoffStatus, string> = {
   draft: "bg-slate-100 text-slate-600 border-slate-200",
@@ -25,11 +24,18 @@ export default function HandoffsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
   const [wizard, setWizard] = useState(false);
-  const snaps = buildSnapshots();
+  const { data, refetch } = useHandoffs();
+  const { data: snapData } = useSnapshots();
+  const snaps = snapData?.snaps ?? [];
   const riskOf = (pid: string) => snaps.find((s) => s.patient.id === pid)?.risk;
 
   if (!can("handoff_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (!data || !snapData) return <Loading />;
+  const userName = (id: string) => {
+    const u = data.users.find((x) => x.id === id);
+    return u ? (lang === "ar" ? u.nameAr : u.nameEn) : id;
+  };
 
   return (
     <div className="space-y-5">
@@ -46,7 +52,7 @@ export default function HandoffsPage() {
       </div>
 
       <div className="space-y-3">
-        {handoffRecords.map((h) => {
+        {data.handoffs.map((h) => {
           const reviewed = Object.values(h.reviewed).filter(Boolean).length;
           const criticalCount = h.patientIds.filter(
             (pid) => riskOf(pid)?.level === "critical" || riskOf(pid)?.level === "high",
@@ -62,9 +68,9 @@ export default function HandoffsPage() {
                         {t(`dept.${h.dept}`)} · {t(`hf.shift.${h.shift}`)} · {h.date}
                       </div>
                       <div className="mt-0.5 text-xs text-slate-500">
-                        {t("hf.outgoing")}: {userName(h.outgoingId, lang)}
+                        {t("hf.outgoing")}: {userName(h.outgoingId)}
                         <span className="mx-2 text-[#0e9bb5]">→</span>
-                        {t("hf.incoming")}: {userName(h.incomingId, lang)}
+                        {t("hf.incoming")}: {userName(h.incomingId)}
                       </div>
                     </div>
                   </div>
@@ -87,13 +93,27 @@ export default function HandoffsPage() {
         })}
       </div>
 
-      {wizard && <HandoffWizard onClose={() => setWizard(false)} />}
+      {wizard && (
+        <HandoffWizard
+          users={data.users}
+          onClose={() => {
+            setWizard(false);
+            refetch();
+          }}
+        />
+      )}
     </div>
   );
 }
 
 /* ── 3-step creation wizard ── */
-function HandoffWizard({ onClose }: { onClose: () => void }) {
+function HandoffWizard({
+  users,
+  onClose,
+}: {
+  users: SafeUser[];
+  onClose: () => void;
+}) {
   const { t, lang } = useI18n();
   const [step, setStep] = useState(0);
   const [dept, setDept] = useState("icu");
@@ -102,8 +122,10 @@ function HandoffWizard({ onClose }: { onClose: () => void }) {
   const [incoming, setIncoming] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const snaps = buildSnapshots();
+  const { data: snapData } = useSnapshots();
+  const snaps = snapData?.snaps ?? [];
   const suggested = new Set(
     snaps.filter((s) => s.risk.level !== "low").map((s) => s.patient.id),
   );
@@ -251,10 +273,26 @@ function HandoffWizard({ onClose }: { onClose: () => void }) {
                 {t("hf.back")}
               </button>
               <button
-                onClick={() => (step < 2 ? setStep(step + 1) : setDone(true))}
-                className="rounded-lg bg-[#13304d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b5fad]"
+                disabled={saving || (step === 2 && (!outgoing || !incoming || selected.size === 0))}
+                onClick={() => {
+                  if (step < 2) return setStep(step + 1);
+                  setSaving(true);
+                  postJson("/api/handoffs/create", {
+                    dept,
+                    shift,
+                    outgoingId: outgoing,
+                    incomingId: incoming,
+                    patientIds: [...selected],
+                  })
+                    .catch(() => {})
+                    .finally(() => {
+                      setSaving(false);
+                      setDone(true);
+                    });
+                }}
+                className="rounded-lg bg-[#13304d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b5fad] disabled:opacity-50"
               >
-                {step < 2 ? t("hf.next") : t("hf.createBtn")}
+                {step < 2 ? t("hf.next") : saving ? "…" : t("hf.createBtn")}
               </button>
             </>
           )}

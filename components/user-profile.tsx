@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
-import { getUser } from "@/lib/data/users";
+import { useUser } from "@/lib/api";
 import { PERMISSION_KEYS, ROLE_PERMISSIONS } from "@/lib/permissions";
-import { Avatar, Card, SectionTitle } from "@/components/ui";
+import { Avatar, Card, Loading, SectionTitle } from "@/components/ui";
 
 export function UserProfile({ userId }: { userId: string }) {
   const { t, lang } = useI18n();
-  const u = getUser(userId)!;
+  const { data } = useUser(userId);
+  if (!data) return <Loading />;
+  const u = data.user;
   const perms = ROLE_PERMISSIONS[u.role];
 
   const info: [string, string][] = [

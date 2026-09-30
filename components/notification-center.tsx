@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
-import { notifications as seed } from "@/lib/data/handoffs";
+import { useNotifications } from "@/lib/api";
 import { Icon } from "@/components/icons";
 
 const DOT: Record<string, string> = {
@@ -15,7 +15,12 @@ const DOT: Record<string, string> = {
 export function NotificationCenter() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState(seed);
+  const { data } = useNotifications();
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const items = (data?.notifications ?? []).map((n) => ({
+    ...n,
+    read: n.read || readIds.has(n.id),
+  }));
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -48,7 +53,9 @@ export function NotificationCenter() {
           <div className="flex items-center justify-between border-b border-[#eef2f7] px-4 py-2.5">
             <span className="text-sm font-bold text-[#13304d]">{t("ntf.title")}</span>
             <button
-              onClick={() => setItems((its) => its.map((n) => ({ ...n, read: true })))}
+              onClick={() =>
+                setReadIds(new Set(items.map((n) => n.id)))
+              }
               className="text-[11px] font-medium text-[#0e9bb5] hover:underline"
             >
               {t("ntf.markAll")}

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
-import { buildSnapshots } from "@/lib/aggregate";
+import { useHandoffContext } from "@/lib/api";
 import { buildSbar } from "@/lib/engines/sbar";
-import { handoffs } from "@/lib/data/shifts";
 import { fmtSar } from "@/lib/format";
 import {
   Card,
   Countdown,
   LEVEL_STYLES,
+  Loading,
   Meter,
   RiskBadge,
   SectionTitle,
@@ -17,8 +17,9 @@ import {
 
 export default function HandoffPage() {
   const { t, lang } = useI18n();
-  const snaps = buildSnapshots();
-  const ho = handoffs[0];
+  const { data } = useHandoffContext();
+  if (!data) return <Loading />;
+  const { ho, snaps } = data;
   const elevated = snaps.filter((s) => s.risk.level !== "low");
   const routine = snaps.filter((s) => s.risk.level === "low");
 

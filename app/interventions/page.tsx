@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
-import { buildSnapshots } from "@/lib/aggregate";
+import { postJson, useSnapshots } from "@/lib/api";
 import { fmtSar } from "@/lib/format";
 import {
   Card,
   Countdown,
   IvStatusChip,
+  Loading,
   RiskBadge,
 } from "@/components/ui";
 import type { InterventionStatus, Role } from "@/lib/types";
@@ -23,11 +24,14 @@ const LOOP_STAGES_AR = ["تنبيه", "إسناد", "تنفيذ", "تحقق", "�
 
 export default function InterventionsPage() {
   const { t, lang } = useI18n();
-  const snaps = buildSnapshots();
+  const { data, refetch } = useSnapshots();
+  const snaps = data?.snaps ?? [];
 
-  // local interactive state: stepId → overrides
+  // Optimistic overrides — each change is POSTed to the API which persists
+  // an InterventionOverride row and writes an audit entry.
   const [overrides, setOverrides] = useState<Record<string, StepState>>({});
   const [filter, setFilter] = useState<"active" | "done">("active");
+  if (!data) return <Loading />;
 
   const steps = snaps
     .flatMap((s) =>
@@ -51,15 +55,23 @@ export default function InterventionsPage() {
   const done = steps.filter((s) => s.status === "done");
   const shown = filter === "active" ? active : done;
 
-  const markDone = (id: string) =>
-    setOverrides((o) => ({ ...o, [id]: { ...o[id], status: "done" } }));
-  const simulateOverdue = (id: string) =>
-    setOverrides((o) => ({ ...o, [id]: { ...o[id], status: "overdue" } }));
-  const escalate = (id: string, chain: Role[]) =>
-    setOverrides((o) => ({
-      ...o,
-      [id]: { status: "escalated", escalatedTo: chain[0] },
-    }));
+  const persist = (
+    stepId: string,
+    patientId: string,
+    status: InterventionStatus,
+    escalatedTo?: Role,
+  ) => {
+    setOverrides((o) => ({ ...o, [stepId]: { status, escalatedTo } }));
+    postJson(`/api/interventions/${stepId}`, { patientId, status, escalatedTo })
+      .catch(() => {})
+      .finally(() => refetch());
+  };
+  const markDone = (id: string, patientId: string) =>
+    persist(id, patientId, "done");
+  const simulateOverdue = (id: string, patientId: string) =>
+    persist(id, patientId, "overdue");
+  const escalate = (id: string, patientId: string, chain: Role[]) =>
+    persist(id, patientId, "escalated", chain[0]);
 
   const stages = lang === "ar" ? LOOP_STAGES_AR : LOOP_STAGES;
 
@@ -133,7 +145,7 @@ export default function InterventionsPage() {
                 {status !== "done" && status !== "escalated" && (
                   <Countdown
                     seedMin={step.dueInMin}
-                    onExpire={() => simulateOverdue(step.id)}
+                    onExpire={() => simulateOverdue(step.id, patient.id)}
                   />
                 )}
                 {status === "escalated" && escalatedTo && (
@@ -149,14 +161,14 @@ export default function InterventionsPage() {
             {status !== "done" && (
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#e2e9f2] pt-3">
                 <button
-                  onClick={() => markDone(step.id)}
+                  onClick={() => markDone(step.id, patient.id)}
                   className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
                 >
                   ✓ {t("common.markDone")}
                 </button>
                 {status === "overdue" && (
                   <button
-                    onClick={() => escalate(step.id, step.escalationChain)}
+                    onClick={() => escalate(step.id, patient.id, step.escalationChain)}
                     className="rounded-lg bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100"
                   >
                     🔺 {t("common.escalate")} → {t(`role.${step.escalationChain[0]}`)}
@@ -164,7 +176,7 @@ export default function InterventionsPage() {
                 )}
                 {status === "in_progress" && (
                   <button
-                    onClick={() => simulateOverdue(step.id)}
+                    onClick={() => simulateOverdue(step.id, patient.id)}
                     className="rounded-lg border border-[#e2e9f2] px-3 py-1 text-xs text-slate-400 hover:text-slate-200"
                   >
                     ⏱ {t("common.simulateDelay")}

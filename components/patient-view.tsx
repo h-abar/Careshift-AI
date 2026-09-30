@@ -2,19 +2,13 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
-import { getPatient } from "@/lib/data/patients";
-import { getJourney } from "@/lib/data/journeys";
-import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
-import { assessInsuranceRisk } from "@/lib/engines/insurance-risk";
-import { buildInterventionPlan } from "@/lib/engines/interventions";
-import { simulateWhatIf } from "@/lib/engines/simulator";
-import { claims } from "@/lib/data/claims";
-import { claimReadiness } from "@/lib/engines/claim-readiness";
+import { usePatientDetail } from "@/lib/api";
 import { fmtSar } from "@/lib/format";
 import {
   Card,
   IvStatusChip,
   LEVEL_STYLES,
+  Loading,
   Meter,
   RiskBadge,
   SectionTitle,
@@ -43,16 +37,21 @@ const KIND_ICON: Record<JourneyKind, string> = {
 
 export function PatientView({ patientId }: { patientId: string }) {
   const { t, lang } = useI18n();
-  const p = getPatient(patientId)!;
-  const risk = assessClinicalRisk(p);
-  const ins = assessInsuranceRisk(p, risk);
-  const plan = buildInterventionPlan(p, risk);
-  const journey = getJourney(p.id);
-  const sim = simulateWhatIf(p, risk);
+  const { data, error } = usePatientDetail(patientId);
+  if (error)
+    return <p className="py-20 text-center text-slate-400">Patient not found.</p>;
+  if (!data) return <Loading />;
+  const {
+    patient: p,
+    risk,
+    insurance: ins,
+    plan,
+    journey,
+    sim,
+    claim: linkedClaim,
+    readiness,
+  } = data;
   const st = LEVEL_STYLES[risk.level];
-
-  const linkedClaim = claims.find((c) => c.patientId === p.id);
-  const readiness = linkedClaim ? claimReadiness(linkedClaim) : null;
 
   const vitals = p.vitals.map((v) => ({
     t: v.t,

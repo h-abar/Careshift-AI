@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { users } from "@/lib/data/users";
+import { useUsers } from "@/lib/api";
 import { Avatar } from "@/components/ui";
 
 export function UserMenu() {
   const { t, lang, toggle } = useI18n();
-  const { user, setUser, logout } = useAuth();
+  const { user, impersonator, switchUser, logout } = useAuth();
+  // "View as" is admin-only — /api/users 403s for other roles (data stays
+  // null → section hidden), and the switch endpoint enforces + audits it.
+  const { data: usersData } = useUsers();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -19,6 +22,8 @@ export function UserMenu() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, []);
+
+  if (!user) return null;
 
   return (
     <div className="relative" ref={ref}>
@@ -46,37 +51,44 @@ export function UserMenu() {
             <div className="text-xs text-slate-500">
               {t(`userRole.${user.role}`)} · {t(`dept.${user.dept}`)}
             </div>
+            {impersonator && (
+              <div className="mt-1.5 rounded-md bg-purple-50 border border-purple-200 px-2 py-1 text-[10px] font-semibold text-purple-700">
+                {t("usr.viewAs")}: {lang === "ar" ? impersonator.nameAr : impersonator.nameEn}
+              </div>
+            )}
           </div>
 
-          <div className="px-4 py-2.5">
-            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              {t("usr.viewAs")} (demo)
+          {usersData && (
+            <div className="px-4 py-2.5">
+              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                {t("usr.viewAs")} (admin)
+              </div>
+              <div className="max-h-44 space-y-0.5 overflow-y-auto">
+                {usersData.users.map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => {
+                      switchUser(u.id);
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-xs ${
+                      u.id === user.id
+                        ? "bg-[#0e9bb5]/10 text-[#0e9bb5] font-semibold"
+                        : "text-slate-600 hover:bg-[#f4f7fa]"
+                    }`}
+                  >
+                    <Avatar name={lang === "ar" ? u.nameAr : u.nameEn} size="h-6 w-6" />
+                    <span className="flex-1 truncate">
+                      {lang === "ar" ? u.nameAr : u.nameEn}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {t(`userRole.${u.role}`)}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="max-h-44 space-y-0.5 overflow-y-auto">
-              {users.map((u) => (
-                <button
-                  key={u.id}
-                  onClick={() => {
-                    setUser(u.id);
-                    setOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-xs ${
-                    u.id === user.id
-                      ? "bg-[#0e9bb5]/10 text-[#0e9bb5] font-semibold"
-                      : "text-slate-600 hover:bg-[#f4f7fa]"
-                  }`}
-                >
-                  <Avatar name={lang === "ar" ? u.nameAr : u.nameEn} size="h-6 w-6" />
-                  <span className="flex-1 truncate">
-                    {lang === "ar" ? u.nameAr : u.nameEn}
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    {t(`userRole.${u.role}`)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           <div className="border-t border-[#eef2f7] px-4 py-2.5 space-y-1.5">
             <button

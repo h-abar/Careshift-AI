@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { orgStats, buildSnapshots } from "@/lib/aggregate";
-import { assignments } from "@/lib/data/handoffs";
+import { useOrg, usePatientsTable } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
 import {
   Card,
   IvStatusChip,
   KpiCard,
+  Loading,
   Meter,
   RiskBadge,
   SectionTitle,
@@ -29,6 +29,7 @@ import {
 
 export default function Home() {
   const { user } = useAuth();
+  if (!user) return <Loading />;
   if (user.role === "admin" || user.role === "hospital_admin")
     return <CommandCenter />;
   return <MyWork />;
@@ -37,7 +38,8 @@ export default function Home() {
 /* ═══════════ Command Center — "what needs attention now?" ═══════════ */
 function CommandCenter() {
   const { t, lang } = useI18n();
-  const s = orgStats();
+  const { data: s } = useOrg();
+  if (!s) return <Loading />;
   const snaps = s.snaps;
 
   const riskMap = snaps.map((x) => ({
@@ -232,7 +234,9 @@ function CommandCenter() {
 function MyWork() {
   const { t, lang } = useI18n();
   const { user } = useAuth();
-  const snaps = buildSnapshots();
+  const { data } = usePatientsTable();
+  if (!data || !user) return <Loading />;
+  const { snaps, assignments } = data;
 
   const mine = assignments.filter(
     (a) => a.nurseId === user.id || a.physicianId === user.id || a.chargeNurseId === user.id,

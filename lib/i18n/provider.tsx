@@ -42,7 +42,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = (localStorage.getItem("careshift-lang") as Lang) || "ar";
-    setLangState(saved);
+    // Deferred — synchronous setState in an effect body triggers cascading renders.
+    queueMicrotask(() => setLangState(saved));
     apply(saved);
   }, [apply]);
 

@@ -214,6 +214,17 @@ export function Avatar({ name, size = "h-9 w-9", className = "" }: { name: strin
 }
 
 /** Brand logo tile — the dark "C" mark in a rounded card. */
+export function Loading() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <div className="flex items-center gap-3 text-sm font-semibold text-slate-400">
+        <span className="h-2.5 w-2.5 animate-ping rounded-full bg-[#0e9bb5]" />
+        Careshift AI
+      </div>
+    </div>
+  );
+}
+
 export function Logo({ size = "h-9 w-9", className = "" }: { size?: string; className?: string }) {
   return (
     <span className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-sm ${size} ${className}`}>

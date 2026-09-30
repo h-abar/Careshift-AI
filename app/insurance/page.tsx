@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
-import { buildSnapshots, orgStats } from "@/lib/aggregate";
-import { claims, savingsTrend } from "@/lib/data/claims";
-import { claimReadiness } from "@/lib/engines/claim-readiness";
+import { useClaims, useOrg } from "@/lib/api";
 import { fmtSar, fmtSarK } from "@/lib/format";
 import {
   Card,
+  Loading,
   Meter,
   RiskBadge,
   SectionTitle,
@@ -35,8 +34,12 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function InsurancePage() {
   const { t, lang } = useI18n();
-  const snaps = buildSnapshots();
-  const org = orgStats();
+  const { data: org } = useOrg();
+  const { data: claimsData } = useClaims();
+  if (!org || !claimsData) return <Loading />;
+  const snaps = org.snaps;
+  const claims = claimsData.claims;
+  const savingsTrend = claimsData.savingsTrend;
 
   const exposure = {
     highRisk: snaps.filter((s) => s.risk.level !== "low").length,
@@ -67,7 +70,7 @@ export default function InsurancePage() {
 
   const riskyClaims = claims
     .filter((c) => c.status !== "approved")
-    .map((c) => ({ c, r: claimReadiness(c) }))
+    .map((c) => ({ c, r: c.readiness }))
     .sort((a, b) => a.r.score - b.r.score)
     .slice(0, 5);
 

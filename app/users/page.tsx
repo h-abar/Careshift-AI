@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { users } from "@/lib/data/users";
-import { Avatar, Card, SectionTitle } from "@/components/ui";
+import { useUsers } from "@/lib/api";
+import { Avatar, Card, Loading, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import type { RoleKey } from "@/lib/types";
 
@@ -19,6 +19,7 @@ const fmtLast = (min: number, t: (k: string) => string) =>
 export default function UsersPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
+  const { data } = useUsers();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [dept, setDept] = useState("");
@@ -26,6 +27,8 @@ export default function UsersPage() {
 
   if (!can("users_manage"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (!data) return <Loading />;
+  const users = data.users;
 
   const filtered = users.filter((u) => {
     const name = (lang === "ar" ? u.nameAr : u.nameEn).toLowerCase();

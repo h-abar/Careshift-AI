@@ -140,8 +140,7 @@ export type RoleKey =
 
 export interface User {
   id: string;
-  username: string; // demo credentials
-  password: string; // demo credentials — prototype only, no real auth
+  username: string;
   nameEn: string;
   nameAr: string;
   role: RoleKey;

@@ -9,88 +9,106 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { users } from "@/lib/data/users";
 import { can, type PermKey } from "@/lib/permissions";
+import { postJson } from "@/lib/api";
 import type { User } from "@/lib/types";
 
+type SessionUser = Omit<User, "password">;
+
 interface Auth {
-  /** Currently authenticated user (placeholder admin while logged out). */
-  user: User;
+  /** Currently authenticated user (null until session check resolves). */
+  user: SessionUser | null;
+  /** The admin who is impersonating, if viewing as someone else. */
+  impersonator: SessionUser | null;
   loggedIn: boolean;
-  /** Returns the user on success, null on bad credentials/suspended account. */
-  login: (username: string, password: string) => User | null;
-  logout: () => void;
-  /** Demo role switcher (kept for the jury walkthrough). */
-  setUser: (id: string) => void;
+  loading: boolean;
+  /** Server login — bcrypt-verified credentials → httpOnly session cookie. */
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  /** Admin "view as" — server-issued impersonation session, audit-logged. */
+  switchUser: (id: string) => Promise<boolean>;
   can: (perm: PermKey) => boolean;
 }
 
 const Ctx = createContext<Auth>({
-  user: users[7],
+  user: null,
+  impersonator: null,
   loggedIn: false,
-  login: () => null,
-  logout: () => {},
-  setUser: () => {},
-  can: () => true,
+  loading: true,
+  login: async () => false,
+  logout: async () => {},
+  switchUser: async () => false,
+  can: () => false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [userId, setUserId] = useState("U-008");
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [impersonator, setImpersonator] = useState<SessionUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem("careshift-user");
-    if (saved && users.some((u) => u.id === saved)) {
-      setUserId(saved);
-      setLoggedIn(true);
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((d) => {
+        setUser(d.user ?? null);
+        setImpersonator(d.impersonator ?? null);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const login = useCallback(async (username: string, password: string) => {
+    try {
+      const d = await postJson<{ user: SessionUser }>("/api/auth/login", {
+        username,
+        password,
+      });
+      setUser(d.user);
+      setImpersonator(null);
+      return true;
+    } catch {
+      return false;
     }
-    setHydrated(true);
   }, []);
 
-  const persist = useCallback((id: string) => {
-    setUserId(id);
-    setLoggedIn(true);
-    localStorage.setItem("careshift-user", id);
+  const logout = useCallback(async () => {
+    try {
+      await postJson("/api/auth/logout", {});
+    } finally {
+      setUser(null);
+      setImpersonator(null);
+    }
   }, []);
 
-  const login = useCallback(
-    (username: string, password: string): User | null => {
-      const u = users.find(
-        (x) =>
-          (x.username === username.trim().toLowerCase() ||
-            x.email.toLowerCase() === username.trim().toLowerCase()) &&
-          x.password === password &&
-          x.status === "active",
+  const switchUser = useCallback(async (id: string) => {
+    try {
+      const d = await postJson<{ user: SessionUser; impersonator: SessionUser }>(
+        "/api/auth/switch",
+        { userId: id },
       );
-      if (!u) return null;
-      persist(u.id);
-      return u;
-    },
-    [persist],
-  );
-
-  const logout = useCallback(() => {
-    setLoggedIn(false);
-    localStorage.removeItem("careshift-user");
+      setUser(d.user);
+      setImpersonator(d.impersonator);
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
-
-  const user = users.find((u) => u.id === userId) ?? users[0];
 
   const value = useMemo<Auth>(
     () => ({
       user,
-      loggedIn: loggedIn && hydrated,
+      impersonator,
+      loggedIn: !!user,
+      loading,
       login,
       logout,
-      setUser: persist,
-      can: (p) => can(user.role, p),
+      switchUser,
+      can: (p) => (user ? can(user.role, p) : false),
     }),
-    [user, loggedIn, hydrated, login, logout, persist],
+    [user, impersonator, loading, login, logout, switchUser],
   );
 
-  // Before hydration we don't know the session — render nothing (avoids flash).
-  if (!hydrated) return null;
+  if (loading) return null;
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

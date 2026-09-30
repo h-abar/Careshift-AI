@@ -2,10 +2,9 @@
 
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { orgStats } from "@/lib/aggregate";
-import { savingsTrend } from "@/lib/data/claims";
+import { useClaims, useHandoffs, useOrg } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
-import { Card, KpiCard, Meter, SectionTitle } from "@/components/ui";
+import { Card, KpiCard, Loading, Meter, SectionTitle } from "@/components/ui";
 import {
   Bar,
   BarChart,
@@ -20,10 +19,17 @@ import {
 export default function ReportsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const s = orgStats();
+  const { data: s } = useOrg();
+  const { data: claimsData } = useClaims();
+  const { data: handoffsData } = useHandoffs();
 
   if (!can("reports_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (!s || !claimsData || !handoffsData) return <Loading />;
+
+  const savingsTrend = claimsData.savingsTrend;
+  const deniedCount = claimsData.claims.filter((c) => c.status === "denied").length;
+  const handoffCount = handoffsData.handoffs.length;
 
   const trend = savingsTrend.map((m) => ({
     name: lang === "ar" ? m.monthAr : m.month,
@@ -43,9 +49,9 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label={t("rpt.handoffs")} value={34} trend="+9%" trendUp />
-        <KpiCard label={t("rpt.closures")} value={`${s.operational.closedLoopCompletion}%`} accent="text-emerald-600" trend="+6%" trendUp />
-        <KpiCard label={t("rpt.denials")} value={17} accent="text-[#0e9bb5]" trend="+21%" trendUp />
+        <KpiCard label={t("rpt.handoffs")} value={handoffCount} />
+        <KpiCard label={t("rpt.closures")} value={`${s.operational.closedLoopCompletion}%`} accent="text-emerald-600" />
+        <KpiCard label={t("rpt.denials")} value={deniedCount} accent="text-[#0e9bb5]" />
         <KpiCard
           label={t("ins.avoided")}
           value={fmtSarK(trend[trend.length - 1].avoided * 1000)}

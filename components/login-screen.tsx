@@ -22,9 +22,13 @@ export function LoginScreen() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(0);
+  const [busy, setBusy] = useState(false);
 
-  const submit = () => {
-    const ok = login(username, password);
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true);
+    const ok = await login(username, password);
+    setBusy(false);
     if (!ok) {
       setError(true);
       setShake((s) => s + 1);
@@ -236,9 +240,11 @@ export function LoginScreen() {
 
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[#1d6ae5] to-[#38bdf8] py-4 text-base font-bold text-white shadow-lg shadow-[#1d6ae5]/25 transition-all hover:shadow-xl hover:shadow-[#1d6ae5]/30 hover:brightness-105"
+                disabled={busy}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[#1d6ae5] to-[#38bdf8] py-4 text-base font-bold text-white shadow-lg shadow-[#1d6ae5]/25 transition-all hover:shadow-xl hover:shadow-[#1d6ae5]/30 hover:brightness-105 disabled:opacity-60"
               >
-                {t("login.signin")} <span className="rtl:rotate-180">→</span>
+                {busy ? "…" : t("login.signin")}{" "}
+                <span className="rtl:rotate-180">→</span>
               </button>
             </form>
 

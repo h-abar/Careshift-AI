@@ -1,0 +1,156 @@
+// Careshift AI — Prisma schema
+// Dev: SQLite (file:./dev.db). Postgres-ready: swap provider + DATABASE_URL.
+// Rich nested demo data is stored as JSON strings for portability.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  key    String @id
+  nameEn String
+  nameAr String
+  users  User[]
+}
+
+model User {
+  id         String    @id
+  username   String    @unique
+  passwordHash String
+  nameEn     String
+  nameAr     String
+  roleKey    String
+  dept       String
+  specialtyEn String
+  specialtyAr String
+  email      String    @unique
+  phone      String
+  employeeId String    @unique
+  status     String    // active | suspended
+  lastLoginAt DateTime?
+  createdAt  DateTime  @default(now())
+  role       Role      @relation(fields: [roleKey], references: [key])
+  sessions   Session[]
+}
+
+model Session {
+  id             String   @id
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  impersonatorId String?  // set when an admin is viewing as another user
+  ip             String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@index([userId])
+}
+
+model Patient {
+  id           String @id
+  nameEn       String
+  nameAr       String
+  age          Int
+  sex          String
+  room         String
+  dxKey        String
+  attending    String
+  admittedAt   String
+  shift        String
+  dept         String @default("icu")
+  vitalsJson   String
+  labsJson     String
+  riskFlagsJson String
+  medsJson     String
+  noteEn       String
+  noteAr       String
+  journeyJson  String?
+
+  claims        InsuranceClaim[]
+  riskRuns      RiskAssessment[]
+  overrides     InterventionOverride[]
+}
+
+model Shift {
+  id     String @id
+  key    String // day | night
+  nameEn String
+  nameAr String
+  label  String // e.g. "Morning Shift"
+}
+
+model Handoff {
+  id           String @id
+  dept         String
+  shift        String
+  date         String
+  outgoingId   String
+  incomingId   String
+  patientIdsJson String
+  status       String
+  reviewedJson String
+  checklistJson String
+  timelineJson String
+}
+
+model RiskAssessment {
+  id           String   @id @default(cuid())
+  patientId    String
+  patient      Patient  @relation(fields: [patientId], references: [id])
+  score        Int
+  level        String
+  conditionKey String
+  factorsJson  String
+  windowHrs    Int
+  confidence   Int
+  assessedAt   DateTime @default(now())
+
+  @@index([patientId])
+}
+
+model InsuranceClaim {
+  id          String   @id
+  patientId   String?
+  patient     Patient? @relation(fields: [patientId], references: [id])
+  amountSar   Int
+  status      String   // approved | pending | review | denied
+  dxKey       String
+  losDays     Int
+  icuDays     Int
+  evidenceJson  String
+  frictionJson  String
+  updatedAt   DateTime @default(now())
+  updatedBy   String?
+}
+
+model InterventionOverride {
+  stepId      String   @id
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  status      String
+  escalatedTo String?
+  updatedBy   String
+  updatedAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // e.g. auth.login, patient.view, claim.status
+  entityType String   // user | patient | claim | handoff | session | intervention
+  entityId   String
+  prevJson   String?
+  nextJson   String?
+  ip         String?
+  sessionId  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

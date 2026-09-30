@@ -3,19 +3,23 @@
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { buildSnapshots } from "@/lib/aggregate";
-import { getAssignment } from "@/lib/data/handoffs";
-import { userName } from "@/lib/data/users";
+import { usePatientsTable } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
-import { Card, Meter, RiskBadge, SectionTitle } from "@/components/ui";
+import { Card, Loading, Meter, RiskBadge, SectionTitle } from "@/components/ui";
 
 export default function PatientsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const snaps = buildSnapshots();
+  const { data } = usePatientsTable();
+  const snaps = data?.snaps ?? [];
+  const userName = (id: string) =>
+    data?.userNames[id] ? (lang === "ar" ? data.userNames[id].ar : data.userNames[id].en) : "—";
+  const getAssignment = (pid: string) =>
+    data?.assignments.find((a) => a.patientId === pid);
 
   if (!can("patients_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+  if (!data) return <Loading />;
 
   return (
     <div className="space-y-5">
@@ -54,7 +58,7 @@ export default function PatientsPage() {
                     HR {v.hr} · BP {v.sbp} · SpO₂ {v.spo2}%{v.glucose ? ` · Glu ${v.glucose}` : ""}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
-                    {a ? userName(a.nurseId, lang) : "—"}
+                    {a ? userName(a.nurseId) : "—"}
                   </td>
                   <td className="px-4 py-3 w-28">
                     <div className="flex items-center gap-1.5">

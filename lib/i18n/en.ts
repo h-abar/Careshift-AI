@@ -476,6 +476,18 @@ const en: Record<string, string> = {
   "auditAction.reviewedClaim": "Reviewed claim",
   "auditAction.acknowledgedRisk": "Acknowledged AI risk",
   "auditAction.updatedUser": "Updated user",
+  "auditAction.auth.login": "Logged in",
+  "auditAction.auth.logout": "Logged out",
+  "auditAction.auth.login_failed": "Failed login",
+  "auditAction.auth.switch": "Viewed as (role switch)",
+  "auditAction.patient.view": "Viewed patient record",
+  "auditAction.handoff.accept": "Accepted handoff",
+  "auditAction.claim.status": "Changed claim status",
+  "auditAction.intervention.status": "Updated intervention",
+  "auditAction.intervention.escalate": "Escalated intervention",
+  "audit.ip": "IP",
+  "audit.filterUser": "Filter by user…",
+  "audit.filterAction": "Filter by action…",
 
   // ── Patients page ──
   "pts.title": "Patients",

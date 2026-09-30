@@ -2,13 +2,12 @@ import type { User } from "@/lib/types";
 
 /**
  * Demo accounts — credentials are prototype-only (no real auth backend).
- * username = email prefix · password = Demo@<employee number>.
- * The login screen exposes them as one-click role cards for the jury demo.
+ * Passwords live ONLY in the seed (bcrypt-hashed into the DB) — see prisma/seed.ts.
  */
 export const users: User[] = [
   {
     id: "U-001", nameEn: "Dr. Ahmed Salem", nameAr: "د. أحمد سالم",
-    username: "a.salem", password: "Demo@1021",
+    username: "a.salem",
     role: "physician", dept: "icu",
     specialty: { en: "Internal Medicine", ar: "باطنية" },
     email: "a.salem@hospital.sa", phone: "+966 5X XXX 1201",
@@ -16,7 +15,7 @@ export const users: User[] = [
   },
   {
     id: "U-002", nameEn: "Sara Ahmed", nameAr: "سارة أحمد",
-    username: "s.ahmed", password: "Demo@2088",
+    username: "s.ahmed",
     role: "nurse", dept: "er",
     specialty: { en: "Emergency Nursing", ar: "تمريض طوارئ" },
     email: "s.ahmed@hospital.sa", phone: "+966 5X XXX 2088",
@@ -24,7 +23,7 @@ export const users: User[] = [
   },
   {
     id: "U-003", nameEn: "Khaled Mohammed", nameAr: "خالد محمد",
-    username: "k.mohammed", password: "Demo@3310",
+    username: "k.mohammed",
     role: "charge_nurse", dept: "icu",
     specialty: { en: "Critical Care Nursing", ar: "تمريض عناية مركزة" },
     email: "k.mohammed@hospital.sa", phone: "+966 5X XXX 3310",
@@ -32,7 +31,7 @@ export const users: User[] = [
   },
   {
     id: "U-004", nameEn: "Dr. Lina Haddad", nameAr: "د. لينا حداد",
-    username: "l.haddad", password: "Demo@4477",
+    username: "l.haddad",
     role: "physician", dept: "medical",
     specialty: { en: "Endocrinology", ar: "غدد صماء وسكري" },
     email: "l.haddad@hospital.sa", phone: "+966 5X XXX 4477",
@@ -40,7 +39,7 @@ export const users: User[] = [
   },
   {
     id: "U-005", nameEn: "Mona Alotaibi", nameAr: "منى العتيبي",
-    username: "m.alotaibi", password: "Demo@5542",
+    username: "m.alotaibi",
     role: "insurance", dept: "claims",
     specialty: { en: "Claims Review", ar: "مراجعة المطالبات" },
     email: "m.alotaibi@hospital.sa", phone: "+966 5X XXX 5542",
@@ -48,7 +47,7 @@ export const users: User[] = [
   },
   {
     id: "U-006", nameEn: "Faisal Alshammari", nameAr: "فيصل الشمري",
-    username: "f.shammari", password: "Demo@6613",
+    username: "f.shammari",
     role: "hospital_admin", dept: "operations",
     specialty: { en: "Hospital Operations", ar: "عمليات المستشفى" },
     email: "f.shammari@hospital.sa", phone: "+966 5X XXX 6613",
@@ -56,7 +55,7 @@ export const users: User[] = [
   },
   {
     id: "U-007", nameEn: "Rania Yousef", nameAr: "رانيا يوسف",
-    username: "r.yousef", password: "Demo@7704",
+    username: "r.yousef",
     role: "nurse", dept: "medical",
     specialty: { en: "Medical Ward Nursing", ar: "تمريض أقسام الباطنية" },
     email: "r.yousef@hospital.sa", phone: "+966 5X XXX 7704",
@@ -64,7 +63,7 @@ export const users: User[] = [
   },
   {
     id: "U-008", nameEn: "Omar Khalil", nameAr: "عمر خليل",
-    username: "o.khalil", password: "Demo@8895",
+    username: "o.khalil",
     role: "admin", dept: "it",
     specialty: { en: "Systems Administration", ar: "إدارة الأنظمة" },
     email: "o.khalil@hospital.sa", phone: "+966 5X XXX 8895",
@@ -72,7 +71,7 @@ export const users: User[] = [
   },
   {
     id: "U-009", nameEn: "Dr. Reem Farouk", nameAr: "د. ريم فاروق",
-    username: "r.farouk", password: "Demo@9012",
+    username: "r.farouk",
     role: "physician", dept: "er",
     specialty: { en: "Emergency Medicine", ar: "طب طوارئ" },
     email: "r.farouk@hospital.sa", phone: "+966 5X XXX 9012",
@@ -80,7 +79,7 @@ export const users: User[] = [
   },
   {
     id: "U-010", nameEn: "Nadia Hassan", nameAr: "نادية حسن",
-    username: "n.hassan", password: "Demo@0143",
+    username: "n.hassan",
     role: "nurse", dept: "icu",
     specialty: { en: "Critical Care Nursing", ar: "تمريض عناية مركزة" },
     email: "n.hassan@hospital.sa", phone: "+966 5X XXX 0143",

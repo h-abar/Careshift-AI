@@ -476,6 +476,18 @@ const ar: Record<string, string> = {
   "auditAction.reviewedClaim": "مراجعة مطالبة",
   "auditAction.acknowledgedRisk": "الإقرار بخطر الذكاء الاصطناعي",
   "auditAction.updatedUser": "تحديث مستخدم",
+  "auditAction.auth.login": "تسجيل دخول",
+  "auditAction.auth.logout": "تسجيل خروج",
+  "auditAction.auth.login_failed": "محاولة دخول فاشلة",
+  "auditAction.auth.switch": "عرض بصلاحية (تبديل دور)",
+  "auditAction.patient.view": "عرض سجل مريض",
+  "auditAction.handoff.accept": "قبول تسليم",
+  "auditAction.claim.status": "تغيير حالة مطالبة",
+  "auditAction.intervention.status": "تحديث تدخل",
+  "auditAction.intervention.escalate": "تصعيد تدخل",
+  "audit.ip": "IP",
+  "audit.filterUser": "تصفية حسب المستخدم…",
+  "audit.filterAction": "تصفية حسب الإجراء…",
 
   // ── Patients page ──
   "pts.title": "المرضى",

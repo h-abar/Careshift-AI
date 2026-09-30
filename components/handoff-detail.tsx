@@ -4,13 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { getHandoff } from "@/lib/data/handoffs";
-import { userName } from "@/lib/data/users";
-import { getPatient } from "@/lib/data/patients";
-import { buildSnapshots } from "@/lib/aggregate";
+import { postJson, useHandoff } from "@/lib/api";
 import { buildSbar } from "@/lib/engines/sbar";
 import { fmtSar } from "@/lib/format";
-import { Card, IvStatusChip, Meter, RiskBadge, SectionTitle } from "@/components/ui";
+import { Card, IvStatusChip, Loading, Meter, RiskBadge, SectionTitle } from "@/components/ui";
 import type { HandoffStatus } from "@/lib/types";
 
 const CHECKLIST = [
@@ -33,26 +30,43 @@ const STATUS_STYLE: Record<HandoffStatus, string> = {
 export function HandoffDetail({ handoffId }: { handoffId: string }) {
   const { t, lang } = useI18n();
   const { can } = useAuth();
-  const h = getHandoff(handoffId)!;
-  const snaps = buildSnapshots();
+  const { data, refetch } = useHandoff(handoffId);
 
-  const [checked, setChecked] = useState<string[]>(h.checklist);
-  const [accepted, setAccepted] = useState(
-    h.status === "accepted" || h.status === "completed",
-  );
-  const [timeline, setTimeline] = useState(h.timeline);
+  const [checked, setChecked] = useState<string[] | null>(null);
+  const [accepted, setAccepted] = useState(false);
+  const [timeline, setTimeline] = useState<{ t: string; key: string }[] | null>(null);
+
+  if (!data) return <Loading />;
+  const { handoff: h, snaps, users } = data;
+  const userName = (id: string) => {
+    const u = users.find((x) => x.id === id);
+    return u ? (lang === "ar" ? u.nameAr : u.nameEn) : id;
+  };
+
+  const chk = checked ?? h.checklist;
+  const isAccepted =
+    accepted || h.status === "accepted" || h.status === "completed";
+  const tl = timeline ?? h.timeline;
 
   const toggleCheck = (k: string) =>
-    setChecked((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]));
+    setChecked((c) => {
+      const cur = c ?? h.checklist;
+      return cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
+    });
 
-  const allChecked = CHECKLIST.every((k) => checked.includes(k));
+  const allChecked = CHECKLIST.every((k) => chk.includes(k));
 
   const accept = () => {
-    setAccepted(true);
-    setTimeline((tl) => [
-      ...tl,
-      { t: new Date().toTimeString().slice(0, 5), key: "hftl.accepted" },
-    ]);
+    postJson(`/api/handoffs/${h.id}/accept`, { checklist: chk })
+      .then(() => {
+        setAccepted(true);
+        setTimeline([
+          ...tl,
+          { t: new Date().toTimeString().slice(0, 5), key: "hftl.accepted" },
+        ]);
+        refetch();
+      })
+      .catch(() => {});
   };
 
   const patients = h.patientIds
@@ -76,8 +90,8 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="font-mono text-lg font-bold text-[#13304d]">{h.id}</h1>
-              <span className={`rounded-full border px-3 py-0.5 text-xs font-semibold ${STATUS_STYLE[accepted ? "accepted" : h.status]}`}>
-                {t(`hfst.${accepted ? "accepted" : h.status}`)}
+              <span className={`rounded-full border px-3 py-0.5 text-xs font-semibold ${STATUS_STYLE[isAccepted ? "accepted" : h.status]}`}>
+                {t(`hfst.${isAccepted ? "accepted" : h.status}`)}
               </span>
             </div>
             <p className="mt-1 text-sm text-slate-500">
@@ -87,18 +101,18 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
           <div className="flex items-center gap-6 text-sm">
             <div>
               <div className="text-[11px] font-bold uppercase text-slate-400">{t("hf.outgoing")}</div>
-              <div className="font-semibold text-[#13304d]">{userName(h.outgoingId, lang)}</div>
+              <div className="font-semibold text-[#13304d]">{userName(h.outgoingId)}</div>
             </div>
             <span className="text-xl text-[#0e9bb5]">→</span>
             <div>
               <div className="text-[11px] font-bold uppercase text-slate-400">{t("hf.incoming")}</div>
-              <div className="font-semibold text-[#13304d]">{userName(h.incomingId, lang)}</div>
+              <div className="font-semibold text-[#13304d]">{userName(h.incomingId)}</div>
             </div>
           </div>
         </div>
         <div className="mt-4 flex gap-5 border-t border-[#eef2f7] pt-3 text-sm">
           <span className="text-slate-500"><b className="text-[#13304d]">{h.patientIds.length}</b> {t("hf.patients")}</span>
-          <span className="text-slate-500"><b className="text-emerald-600">{reviewed + (accepted ? patients.length - reviewed : 0)}</b> {t("hf.completed")}</span>
+          <span className="text-slate-500"><b className="text-emerald-600">{reviewed + (isAccepted ? patients.length - reviewed : 0)}</b> {t("hf.completed")}</span>
           <span className="text-slate-500"><b className="text-red-600">{criticalCount}</b> {t("hf.critical")}</span>
         </div>
       </Card>
@@ -182,9 +196,9 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                 <label key={k} className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
                   <input
                     type="checkbox"
-                    checked={checked.includes(k)}
+                    checked={chk.includes(k)}
                     onChange={() => toggleCheck(k)}
-                    disabled={accepted}
+                    disabled={isAccepted}
                     className="h-4 w-4 accent-[#0e9bb5]"
                   />
                   {t(`hfc.${k}`)}
@@ -193,23 +207,23 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
             </div>
             <button
               onClick={accept}
-              disabled={!allChecked || accepted || !can("handoff_accept")}
+              disabled={!allChecked || isAccepted || !can("handoff_accept")}
               className={`mt-4 w-full rounded-lg py-2.5 text-sm font-bold transition-colors ${
-                accepted
+                isAccepted
                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                   : allChecked && can("handoff_accept")
                     ? "bg-[#13304d] text-white hover:bg-[#1b5fad]"
                     : "bg-[#f0f4f8] text-slate-400 cursor-not-allowed"
               }`}
             >
-              {accepted ? `✓ ${t("hf.accepted")}` : t("hf.accept")}
+              {isAccepted ? `✓ ${t("hf.accepted")}` : t("hf.accept")}
             </button>
           </Card>
 
           <Card>
             <SectionTitle>{t("hf.timeline")}</SectionTitle>
             <ol className="relative space-y-3 border-s-2 border-[#d5dee9] ps-4">
-              {timeline.map((e, i) => (
+              {tl.map((e, i) => (
                 <li key={i} className="relative">
                   <span className="absolute -start-[1.32rem] top-1 h-2.5 w-2.5 rounded-full bg-[#0e9bb5]" />
                   <div className="font-mono text-[11px] text-[#0e9bb5]">{e.t}</div>

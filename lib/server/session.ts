@@ -1,0 +1,119 @@
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/server/prisma";
+import { can, type PermKey } from "@/lib/permissions";
+import type { User } from "@/lib/types";
+
+/**
+ * Session layer — signed JWT in an httpOnly cookie + a DB Session row
+ * (revocation + audit trail). Structured so an SSO/Keycloak provider can
+ * later issue the same session after an OIDC exchange.
+ */
+export const SESSION_COOKIE = "cs_session";
+const TTL_MS = 8 * 60 * 60 * 1000; // 8h
+
+const secret = () =>
+  new TextEncoder().encode(
+    process.env.SESSION_SECRET || "careshift-dev-secret",
+  );
+
+export interface SessionPayload {
+  sub: string; // user id
+  sid: string; // session row id
+  role: User["role"];
+  imp?: string; // impersonator user id (admin view-as)
+}
+
+export async function signSession(p: SessionPayload): Promise<string> {
+  return new SignJWT({ sid: p.sid, role: p.role, imp: p.imp })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(p.sub)
+    .setIssuedAt()
+    .setExpirationTime(new Date(Date.now() + TTL_MS))
+    .sign(secret());
+}
+
+export async function verifyToken(token: string): Promise<SessionPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, secret());
+    return {
+      sub: payload.sub as string,
+      sid: payload.sid as string,
+      role: payload.role as User["role"],
+      imp: payload.imp as string | undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface AuthContext {
+  user: Omit<User, "password">;
+  sid: string;
+  impersonator?: Omit<User, "password">;
+}
+
+function toSessionUser(r: {
+  id: string; username: string; nameEn: string; nameAr: string;
+  roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
+  email: string; phone: string; employeeId: string; status: string;
+  createdAt: Date;
+}): Omit<User, "password"> {
+  return {
+    id: r.id, username: r.username, nameEn: r.nameEn, nameAr: r.nameAr,
+    role: r.roleKey as User["role"], dept: r.dept,
+    specialty: { en: r.specialtyEn, ar: r.specialtyAr },
+    email: r.email, phone: r.phone, employeeId: r.employeeId,
+    status: r.status as "active" | "suspended",
+    lastLoginMin: 0, createdAt: r.createdAt.toISOString().slice(0, 10),
+  };
+}
+
+/** Reads + validates the session cookie, checks the DB session is live. */
+export async function getAuth(): Promise<AuthContext | null> {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+  const payload = await verifyToken(token);
+  if (!payload) return null;
+
+  const session = await prisma.session.findUnique({
+    where: { id: payload.sid },
+    include: { user: true },
+  });
+  if (!session || session.expiresAt < new Date()) return null;
+
+  const user = toSessionUser(session.user);
+  let impersonator: Omit<User, "password"> | undefined;
+  if (session.impersonatorId) {
+    const imp = await prisma.user.findUnique({
+      where: { id: session.impersonatorId },
+    });
+    if (imp) impersonator = toSessionUser(imp);
+  }
+  return { user, sid: session.id, impersonator };
+}
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** requireAuth + requirePerm — the server-side enforcement for every handler. */
+export async function requireAuth(): Promise<AuthContext> {
+  const auth = await getAuth();
+  if (!auth) throw new ApiError(401, "unauthenticated");
+  return auth;
+}
+
+export async function requirePerm(perm: PermKey): Promise<AuthContext> {
+  const auth = await requireAuth();
+  if (!can(auth.user.role, perm)) throw new ApiError(403, "forbidden");
+  return auth;
+}
+
+export const sessionTtlMs = TTL_MS;
