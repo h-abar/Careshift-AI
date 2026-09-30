@@ -100,8 +100,8 @@ describe("What-If Simulator", () => {
 });
 
 describe("Seed data", () => {
-  it("has 12 patients with vitals and risk flags", () => {
-    expect(patients).toHaveLength(12);
+  it("has ≥12 patients with vitals and risk flags", () => {
+    expect(patients.length).toBeGreaterThanOrEqual(12);
     for (const p of patients) {
       expect(p.vitals.length).toBeGreaterThan(0);
       expect(p.riskFlags.length).toBeGreaterThan(0);

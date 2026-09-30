@@ -39,9 +39,9 @@ export default function InsurancePage() {
   const org = orgStats();
 
   const exposure = {
-    highRisk: snaps.filter((s) => s.risk.level !== "low").length + 14,
-    icu: snaps.filter((s) => s.risk.level === "critical").length + 3,
-    docGaps: snaps.filter((s) => s.insurance.docCompleteness < 85).length + 4,
+    highRisk: snaps.filter((s) => s.risk.level !== "low").length,
+    icu: snaps.filter((s) => s.risk.level === "critical").length,
+    docGaps: snaps.filter((s) => s.insurance.docCompleteness < 85).length,
     claimsAtRisk: org.financial.claimsAtRisk,
     total: snaps.reduce((s, x) => s + x.insurance.exposureSar, 0),
   };

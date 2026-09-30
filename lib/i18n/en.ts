@@ -84,6 +84,8 @@ const en: Record<string, string> = {
   "dx.falls": "Fall — observation",
   "dx.dka": "DKA",
   "dx.sepsis": "Sepsis",
+  "dx.copd": "COPD exacerbation",
+  "dx.observation": "Observation — post-reaction",
 
   // ── Conditions (AI hypothesis labels) ──
   "condition.dka": "Potential DKA deterioration — high-risk metabolic pattern",

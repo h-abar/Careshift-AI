@@ -84,6 +84,8 @@ const ar: Record<string, string> = {
   "dx.falls": "سقوط — مراقبة",
   "dx.dka": "حماض كيتوني",
   "dx.sepsis": "إنتان",
+  "dx.copd": "تفاقم انسداد رئوي مزمن",
+  "dx.observation": "مراقبة — بعد تفاعل",
 
   // ── Conditions ──
   "condition.dka": "تدهور محتمل نحو الحماض الكيتوني — نمط استقلابي عالي الخطورة",
