@@ -12,10 +12,27 @@ import type { User } from "@/lib/types";
 export const SESSION_COOKIE = "cs_session";
 const TTL_MS = 8 * 60 * 60 * 1000; // 8h
 
-const secret = () =>
-  new TextEncoder().encode(
-    process.env.SESSION_SECRET || "careshift-dev-secret",
-  );
+/**
+ * Session signing key — no hard-coded fallback.
+ * Production: SESSION_SECRET is mandatory (≥32 chars) or startup throws.
+ * Dev: a fixed dev key is used with a loud warning so sign/verify stay
+ * stable across restarts without a .env.
+ */
+const secret = () => {
+  const s = process.env.SESSION_SECRET;
+  if (!s || s.length < 32) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "SESSION_SECRET is missing or shorter than 32 chars — set it in the environment before starting Careshift AI.",
+      );
+    }
+    console.warn(
+      "[SECURITY] SESSION_SECRET is missing/short — using an insecure dev key. DO NOT deploy like this.",
+    );
+    return new TextEncoder().encode("careshift-INSECURE-dev-key-000");
+  }
+  return new TextEncoder().encode(s);
+};
 
 export interface SessionPayload {
   sub: string; // user id
