@@ -45,6 +45,35 @@ export const PATCH = handle(
       return Response.json({ error: "cannot suspend self" }, { status: 400 });
     }
 
+    // Never allow demoting or suspending the LAST active admin — that
+    // would brick all user administration. Attempts are audited.
+    const wouldDemote =
+      b.roleKey !== undefined && b.roleKey !== "admin" && user.roleKey === "admin";
+    const wouldSuspend =
+      b.status === "suspended" && user.status !== "suspended";
+    if ((wouldDemote || wouldSuspend) && user.roleKey === "admin") {
+      const activeAdmins = await prisma.user.count({
+        where: { roleKey: "admin", status: "active" },
+      });
+      if (activeAdmins <= 1) {
+        await audit(
+          {
+            userId: auth.user.id,
+            action: "user.last_admin_blocked",
+            entityType: "user",
+            entityId: id,
+            next: { attemptedRole: b.roleKey, attemptedStatus: b.status },
+            sessionId: auth.sid,
+          },
+          req,
+        );
+        return Response.json(
+          { error: "cannot modify the last active admin" },
+          { status: 400 },
+        );
+      }
+    }
+
     const suspending = b.status === "suspended" && user.status !== "suspended";
     const roleChanged = b.roleKey !== undefined && b.roleKey !== user.roleKey;
 

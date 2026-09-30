@@ -472,6 +472,20 @@ describe("user admin", () => {
     const r = await userPatch(patch({ status: "suspended" }), ctx({ id: "U-008" }));
     expect(r.status).toBe(400);
   });
+
+  it("A3: demoting the last active admin → 400 + audited attempt", async () => {
+    await loginAs("admin");
+    const r = await userPatch(patch({ roleKey: "physician" }), ctx({ id: "U-008" }));
+    expect(r.status).toBe(400);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "user.last_admin_blocked", entityId: "U-008" },
+      }),
+    ).toBeTruthy();
+    // Still an admin.
+    const u = await prisma.user.findUnique({ where: { id: "U-008" } });
+    expect(u!.roleKey).toBe("admin");
+  });
 });
 
 /* ── A2: suspended users + session revocation ── */
