@@ -86,7 +86,7 @@ export function UserProfile({ userId }: { userId: string }) {
                 <span className={perms[k] ? "text-emerald-600" : "text-slate-300"}>
                   {perms[k] ? "✓" : "✗"}
                 </span>
-                <span className={perms[k] ? "text-slate-700" : "text-slate-400"}>
+                <span className={perms[k] ? "text-slate-700" : "text-slate-500"}>
                   {t(`perm.${k}`)}
                 </span>
               </li>

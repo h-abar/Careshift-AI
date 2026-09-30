@@ -60,7 +60,7 @@ export default function DemoPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-[#13304d]">{t("demo.title")}</h1>
-          <p className="text-xs text-slate-400">{t("demo.simNotice")}</p>
+          <p className="text-xs text-slate-500">{t("demo.simNotice")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -103,7 +103,7 @@ export default function DemoPage() {
           <div className="rounded-2xl border border-[#e2e9f2] bg-white p-6 shadow-[0_2px_12px_rgba(19,48,77,0.08)]">
             <div className="flex items-start justify-between">
               <div>
-                <span className="font-mono text-sm text-slate-400">{p.id}</span>
+                <span className="font-mono text-sm text-slate-500">{p.id}</span>
                 <h2 className="text-2xl font-bold text-[#13304d]">
                   {lang === "ar" ? p.nameAr : p.nameEn}
                 </h2>
@@ -124,7 +124,7 @@ export default function DemoPage() {
                 >
                   {riskNow}
                 </div>
-                <div className="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-400">
+                <div className="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">
                   {t("demo.risk")} %
                 </div>
               </div>
@@ -139,7 +139,7 @@ export default function DemoPage() {
                   <span className="w-36 truncate text-xs text-slate-600">{t(`factor.${f.key}`)}</span>
                 </div>
               ))}
-              <p className="pt-1 text-center text-[10px] text-slate-400">{t("why.note")}</p>
+              <p className="pt-1 text-center text-[10px] text-slate-500">{t("why.note")}</p>
             </div>
           </div>
 
@@ -201,7 +201,7 @@ export default function DemoPage() {
               {i < 5 && <div className="my-1.5 text-[#0e9bb5]">↓</div>}
             </div>
           ))}
-          <p className="mt-6 text-xs text-slate-400">{t("app.tagline")} · {t("demo.simNotice")}</p>
+          <p className="mt-6 text-xs text-slate-500">{t("app.tagline")} · {t("demo.simNotice")}</p>
         </div>
       )}
     </div>

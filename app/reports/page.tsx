@@ -25,7 +25,7 @@ export default function ReportsPage() {
   const { data: s, loading, error, refetch } = useOrg();
 
   if (!can("reports_view"))
-    return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
   if (loading && !s) return <Skeleton rows={5} />;
   if (error && !s) return <ErrorState onRetry={refetch} />;
   if (!s) return <Loading />;

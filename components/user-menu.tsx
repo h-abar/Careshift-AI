@@ -36,7 +36,7 @@ export function UserMenu() {
           <span className="block text-xs font-semibold text-[#13304d] leading-tight">
             {lang === "ar" ? user.nameAr : user.nameEn}
           </span>
-          <span className="block text-[10px] text-slate-400 leading-tight">
+          <span className="block text-[10px] text-slate-500 leading-tight">
             {t(`userRole.${user.role}`)}
           </span>
         </span>
@@ -60,7 +60,7 @@ export function UserMenu() {
 
           {usersData && !impersonator && (
             <div className="px-4 py-2.5">
-              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 {t("usr.viewAs")} (admin)
               </div>
               <div className="max-h-44 space-y-0.5 overflow-y-auto">
@@ -81,7 +81,7 @@ export function UserMenu() {
                     <span className="flex-1 truncate">
                       {lang === "ar" ? u.nameAr : u.nameEn}
                     </span>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-500">
                       {t(`userRole.${u.role}`)}
                     </span>
                   </button>

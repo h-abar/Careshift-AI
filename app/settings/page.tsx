@@ -16,7 +16,7 @@ export default function SettingsPage() {
   const { can } = useAuth();
 
   if (!can("settings_manage"))
-    return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
 
   return (
     <div className="space-y-5">
@@ -69,7 +69,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <div className="my-2 text-center text-[#0e9bb5]">
-            <div className="text-[10px] text-slate-400">{t("arch.systems")}</div>
+            <div className="text-[10px] text-slate-500">{t("arch.systems")}</div>
             ▼
           </div>
           <div className="rounded-xl border-2 border-[#0e9bb5]/30 bg-gradient-to-l from-[#13304d] to-[#1b5fad] px-4 py-3 text-center text-sm font-bold text-white shadow-sm">

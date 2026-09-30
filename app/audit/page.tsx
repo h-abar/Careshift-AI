@@ -24,7 +24,7 @@ export default function AuditPage() {
   const [fAction, setFAction] = useState("");
 
   if (!can("audit_view"))
-    return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
   if (loading && !data) return <Skeleton rows={6} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
@@ -58,18 +58,20 @@ export default function AuditPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <input
+          aria-label={t("audit.filterUser")}
           value={fUser}
           onChange={(e) => setFUser(e.target.value)}
           placeholder={t("audit.filterUser")}
           className="rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-sm outline-none focus:border-[#0e9bb5]/50"
         />
         <input
+          aria-label={t("audit.filterAction")}
           value={fAction}
           onChange={(e) => setFAction(e.target.value)}
           placeholder={t("audit.filterAction")}
           className="rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-sm outline-none focus:border-[#0e9bb5]/50"
         />
-        <span className="ms-auto self-center text-xs text-slate-400">
+        <span className="ms-auto self-center text-xs text-slate-500">
           {entries.length} / {data.entries.length}
         </span>
       </div>
@@ -101,7 +103,7 @@ export default function AuditPage() {
               >
                 <td className="px-4 py-3 font-medium text-[#13304d]">
                   {lang === "ar" ? e.userNameAr : e.userName}
-                  <div className="font-mono text-[10px] text-slate-400">
+                  <div className="font-mono text-[10px] text-slate-500">
                     {e.userId}
                   </div>
                 </td>
@@ -116,7 +118,7 @@ export default function AuditPage() {
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">
                   {fmt(e.createdAt)}
                 </td>
-                <td className="px-4 py-3 font-mono text-[11px] text-slate-400">
+                <td className="px-4 py-3 font-mono text-[11px] text-slate-500">
                   {e.ip ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500">{kv(e.prev)}</td>

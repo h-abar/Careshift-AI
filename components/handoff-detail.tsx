@@ -150,12 +150,12 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
           </div>
           <div className="flex items-center gap-6 text-sm">
             <div>
-              <div className="text-[11px] font-bold uppercase text-slate-400">{t("hf.outgoing")}</div>
+              <div className="text-[11px] font-bold uppercase text-slate-500">{t("hf.outgoing")}</div>
               <div className="font-semibold text-[#13304d]">{userName(h.outgoingId)}</div>
             </div>
             <span className="text-xl text-[#0e9bb5]">→</span>
             <div>
-              <div className="text-[11px] font-bold uppercase text-slate-400">{t("hf.incoming")}</div>
+              <div className="text-[11px] font-bold uppercase text-slate-500">{t("hf.incoming")}</div>
               <div className="font-semibold text-[#13304d]">{userName(h.incomingId)}</div>
             </div>
           </div>
@@ -221,18 +221,18 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
 
                 <div className="mt-2.5 grid grid-cols-3 gap-2 text-[11px]">
                   <div className="rounded-lg bg-[#f8fafc] border border-[#eef2f7] p-2">
-                    <div className="font-bold text-slate-400">{t("hf.pendingIv")}</div>
+                    <div className="font-bold text-slate-500">{t("hf.pendingIv")}</div>
                     <div className="mt-0.5 text-sm font-bold text-[#13304d]">{pending.length}</div>
                   </div>
                   <div className="rounded-lg bg-[#f8fafc] border border-[#eef2f7] p-2">
-                    <div className="font-bold text-slate-400">{t("hf.insDocs")}</div>
+                    <div className="font-bold text-slate-500">{t("hf.insDocs")}</div>
                     <div className="mt-0.5 flex items-center gap-1.5">
                       <Meter pct={insurance.docCompleteness} className="!h-1.5 flex-1" />
                       <span className="font-mono text-xs font-bold text-[#13304d]">{insurance.docCompleteness}%</span>
                     </div>
                   </div>
                   <div className="rounded-lg bg-[#f8fafc] border border-[#eef2f7] p-2">
-                    <div className="font-bold text-slate-400">{t("common.exposure")}</div>
+                    <div className="font-bold text-slate-500">{t("common.exposure")}</div>
                     <div className="mt-0.5 font-mono text-sm font-bold text-red-600">
                       {fmtSar(insurance.exposureSar, lang)}
                     </div>
@@ -282,7 +282,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                   className={`w-full rounded-lg py-2.5 text-sm font-bold transition-colors ${
                     allReviewed && allChecked
                       ? "bg-[#13304d] text-white hover:bg-[#1b5fad]"
-                      : "bg-[#f0f4f8] text-slate-400 cursor-not-allowed"
+                      : "bg-[#f0f4f8] text-slate-500 cursor-not-allowed"
                   }`}
                 >
                   {t("hf.signoff")}
@@ -292,6 +292,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
               {(isPending || isSignedOff) && (isIncoming || isManager) && (
                 <div className="space-y-2">
                   <textarea
+                    aria-label={t("hf.rejectReason")}
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     placeholder={t("hf.rejectReason")}
@@ -305,7 +306,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                       className={`flex-1 rounded-lg py-2.5 text-sm font-bold transition-colors ${
                         isSignedOff
                           ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "bg-[#f0f4f8] text-slate-400 cursor-not-allowed"
+                          : "bg-[#f0f4f8] text-slate-500 cursor-not-allowed"
                       }`}
                     >
                       {isDone ? `✓ ${t("hf.accepted")}` : t("hf.accept")}
@@ -316,7 +317,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                       className={`flex-1 rounded-lg border py-2.5 text-sm font-bold transition-colors ${
                         rejectReason.trim()
                           ? "border-red-300 text-red-600 hover:bg-red-50"
-                          : "border-[#e2e9f2] text-slate-400 cursor-not-allowed"
+                          : "border-[#e2e9f2] text-slate-500 cursor-not-allowed"
                       }`}
                     >
                       {t("hf.reject")}
@@ -350,7 +351,7 @@ export function HandoffDetail({ handoffId }: { handoffId: string }) {
                   <div className="text-sm text-slate-600">
                     {t(EVENT_LABEL[e.action] ?? "hftl.created")}
                     {e.detail ? ` — ${e.detail}` : ""}
-                    <span className="text-slate-400"> · {userName(e.actorId)}</span>
+                    <span className="text-slate-500"> · {userName(e.actorId)}</span>
                   </div>
                 </li>
               )) ??

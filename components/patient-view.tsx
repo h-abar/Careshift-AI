@@ -102,7 +102,7 @@ export function PatientView({ patientId }: { patientId: string }) {
               {p.id}
             </span>
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-slate-500">
             {p.age} {t("common.years")} ·{" "}
             {t(p.sex === "M" ? "common.male" : "common.female")} · {p.room} ·{" "}
             {t(`dx.${p.dxKey}`)} · {t("common.attending")}: {p.attending}
@@ -139,7 +139,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           </SectionTitle>
           {/* trajectory chips */}
           <div className="mb-4 flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">{t("pt.trajectory")}:</span>
+            <span className="text-[11px] text-slate-500">{t("pt.trajectory")}:</span>
             {journey
               .filter((e) => e.riskScore !== undefined)
               .map((e, i, arr) => (
@@ -204,7 +204,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                 key={l.key}
                 className="flex items-center justify-between rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-2 text-sm"
               >
-                <span className="text-slate-400">{t(`lab.${l.key}`)}</span>
+                <span className="text-slate-500">{t(`lab.${l.key}`)}</span>
                 <span className="flex items-center gap-2 font-mono text-slate-700">
                   {l.value}
                   <span
@@ -234,7 +234,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           <div className="space-y-2">
             {risk.factors.map((f) => (
               <div key={f.key} className="flex items-center gap-2">
-                <span className="w-9 shrink-0 text-end font-mono text-[11px] text-slate-400">
+                <span className="w-9 shrink-0 text-end font-mono text-[11px] text-slate-500">
                   {f.weight}%
                 </span>
                 <div className="flex-1">
@@ -248,7 +248,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           </div>
           <div className="mt-4 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 {t("why.confidence")}
               </span>
               <span className="font-mono text-sm font-bold text-[#1b5fad]">
@@ -256,10 +256,10 @@ export function PatientView({ patientId }: { patientId: string }) {
               </span>
             </div>
             <Meter pct={risk.confidence} color="bg-[#1b5fad]" className="mt-1.5" />
-            <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">
+            <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">
               {t("why.note")}
             </p>
-            <div className="mt-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+            <div className="mt-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
               {t("common.meds")}
             </div>
             <div className="mt-1 flex flex-wrap gap-1.5">
@@ -272,14 +272,14 @@ export function PatientView({ patientId }: { patientId: string }) {
                 </span>
               ))}
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-slate-400">
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">
               {lang === "ar" ? p.noteAr : p.noteEn}
             </p>
           </div>
           {/* Persisted RiskAssessment history — chart + rows */}
           {riskHistory.length > 0 && (
             <div className="mt-4 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
-              <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 {t("why.history")}
               </div>
               {riskHistory.length > 1 && (
@@ -308,7 +308,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                     key={r.assessedAt}
                     className="flex items-center justify-between text-xs"
                   >
-                    <span className="font-mono text-slate-400">
+                    <span className="font-mono text-slate-500">
                       {r.assessedAt.slice(5, 16).replace("T", " ")}
                     </span>
                     <span className="flex items-center gap-2">
@@ -325,7 +325,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                 {riskHistory.length > 1 &&
                   riskHistory[0].score !==
                     riskHistory[riskHistory.length - 1].score && (
-                    <div className="pt-1 text-end font-mono text-[11px] text-slate-400">
+                    <div className="pt-1 text-end font-mono text-[11px] text-slate-500">
                       Δ {riskHistory[0].score - riskHistory[riskHistory.length - 1].score > 0 ? "+" : ""}
                       {riskHistory[0].score - riskHistory[riskHistory.length - 1].score}
                     </div>
@@ -341,7 +341,7 @@ export function PatientView({ patientId }: { patientId: string }) {
 
           {/* What happens next — the closed-loop contract */}
           <div className="mb-3 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3">
-            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
               {t("whn.title")}
             </div>
             <ol className="space-y-1.5 text-xs">
@@ -361,7 +361,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                       className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
                         i === 0
                           ? "bg-[#0e9bb5] text-white"
-                          : "bg-white border border-[#e2e9f2] text-slate-400"
+                          : "bg-white border border-[#e2e9f2] text-slate-500"
                       }`}
                     >
                       {i + 1}
@@ -420,17 +420,17 @@ export function PatientView({ patientId }: { patientId: string }) {
                   {t(key)}
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                  <span className="text-slate-400">{t("pt.icuRisk")}</span>
+                  <span className="text-slate-500">{t("pt.icuRisk")}</span>
                   <b className="text-end text-slate-700">{s.icuRiskPct}%</b>
-                  <span className="text-slate-400">{t("pt.extraLos")}</span>
+                  <span className="text-slate-500">{t("pt.extraLos")}</span>
                   <b className="text-end text-slate-700">
                     +{s.extraLosDays} {t("cmd.days")}
                   </b>
-                  <span className="text-slate-400">{t("pt.exposureLabel")}</span>
+                  <span className="text-slate-500">{t("pt.exposureLabel")}</span>
                   <b className="text-end text-slate-700">
                     {t("common.sar")} {fmtSar(s.exposureSar, lang)}
                   </b>
-                  <span className="text-slate-400">{t("pt.docLabel")}</span>
+                  <span className="text-slate-500">{t("pt.docLabel")}</span>
                   <b className="text-end text-slate-700">{s.docCompleteness}%</b>
                 </div>
               </div>
@@ -546,7 +546,7 @@ export function PatientView({ patientId }: { patientId: string }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-slate-400">
+                <span className="text-slate-500">
                   {t("ins.linkedClaim")}:{" "}
                   <span className="font-mono text-[#0e9bb5]">{linkedClaim.id}</span>
                 </span>
@@ -571,7 +571,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                 ))}
               </ul>
             </div>
-            <div className="rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3 text-xs leading-relaxed text-slate-400">
+            <div className="rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-3 text-xs leading-relaxed text-slate-500">
               {journey.map((e, i) => (
                 <div key={i} className="flex gap-2 py-0.5">
                   <span className="font-mono text-[#0e9bb5]">{e.t}</span>
@@ -581,7 +581,7 @@ export function PatientView({ patientId }: { patientId: string }) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             {journey.length} {t("pt.evidenceSub")}
           </p>
         )}

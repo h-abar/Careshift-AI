@@ -184,7 +184,7 @@ export function ClaimDetail({
                   </button>
                   <button
                     onClick={() => setPendingDenied(false)}
-                    className={`${btnCls} border-[#e2e9f2] text-slate-400`}
+                    className={`${btnCls} border-[#e2e9f2] text-slate-500`}
                   >
                     {t("usr.cancel")}
                   </button>
@@ -212,6 +212,7 @@ export function ClaimDetail({
           {appealMode && (
             <div className="flex flex-wrap items-center gap-2">
               <input
+                aria-label={t("claim.appealReason")}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder={t(
@@ -236,7 +237,7 @@ export function ClaimDetail({
               </button>
               <button
                 onClick={() => setAppealMode(null)}
-                className={`${btnCls} border-[#e2e9f2] text-slate-400`}
+                className={`${btnCls} border-[#e2e9f2] text-slate-500`}
               >
                 {t("usr.cancel")}
               </button>
@@ -293,13 +294,13 @@ export function ClaimDetail({
                 className="flex items-center justify-between rounded-md border border-[#e2e9f2] bg-white px-2.5 py-1.5 text-xs text-slate-600 hover:border-[#0e9bb5]/40"
               >
                 <span className="truncate">{d.fileName}</span>
-                <span className="ms-2 shrink-0 font-mono text-[10px] text-slate-400">
+                <span className="ms-2 shrink-0 font-mono text-[10px] text-slate-500">
                   {Math.ceil(d.sizeBytes / 1024)} KB
                 </span>
               </a>
             ))}
             {detail.documents.length === 0 && (
-              <p className="text-[11px] text-slate-400">—</p>
+              <p className="text-[11px] text-slate-500">—</p>
             )}
           </div>
 
@@ -314,7 +315,7 @@ export function ClaimDetail({
                   key={e.id}
                   className="flex items-baseline gap-2 text-[11px] text-slate-500"
                 >
-                  <span className="font-mono text-[10px] text-slate-400">
+                  <span className="font-mono text-[10px] text-slate-500">
                     {new Date(e.createdAt).toLocaleString()}
                   </span>
                   <span className="font-semibold text-[#13304d]">
@@ -324,7 +325,7 @@ export function ClaimDetail({
                 </li>
               ))}
               {detail.events.length === 0 && (
-                <li className="text-[11px] text-slate-400">—</li>
+                <li className="text-[11px] text-slate-500">—</li>
               )}
             </ul>
           </div>

@@ -102,7 +102,7 @@ export function KpiCard({
       <div className={`mt-1 text-[28px] leading-8 font-bold tabular-nums ${accent}`}>
         {value}
         {unit && (
-          <span className="ms-1 text-xs font-medium text-slate-400">{unit}</span>
+          <span className="ms-1 text-xs font-medium text-slate-500">{unit}</span>
         )}
       </div>
       {(sub || trend) && (
@@ -112,7 +112,7 @@ export function KpiCard({
               {trendUp ? "▲" : "▼"} {trend}
             </span>
           )}
-          {sub && <span className="text-slate-400">{sub}</span>}
+          {sub && <span className="text-slate-500">{sub}</span>}
         </div>
       )}
     </div>
@@ -189,7 +189,7 @@ export function Countdown({
       }`}
     >
       {over ? `−${fmtTime(-secs)}` : fmtTime(secs)}
-      <span className="text-[10px] font-medium text-slate-400">
+      <span className="text-[10px] font-medium text-slate-500">
         {over ? t("common.overdue") : t("common.dueIn")}
       </span>
     </span>
@@ -241,7 +241,7 @@ export function Empty({ title, hint }: { title?: string; hint?: string }) {
       <p className="text-sm font-semibold text-slate-500">
         {title ?? t("common.empty")}
       </p>
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
     </div>
   );
 }
@@ -295,9 +295,56 @@ export function Gate({
 export function Loading() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center">
-      <div className="flex items-center gap-3 text-sm font-semibold text-slate-400">
+      <div className="flex items-center gap-3 text-sm font-semibold text-slate-500">
         <span className="h-2.5 w-2.5 animate-ping rounded-full bg-[#0e9bb5]" />
         Careshift AI
+      </div>
+    </div>
+  );
+}
+
+/** Accessible modal: dialog role, Escape to close, backdrop click, focus restore. */
+export function Modal({
+  title,
+  onClose,
+  children,
+  className = "",
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null;
+    ref.current
+      ?.querySelector<HTMLElement>("input, select, textarea, button")
+      ?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      prev?.focus();
+    };
+  }, [onClose]);
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`w-full rounded-2xl bg-white shadow-2xl ${className}`}
+      >
+        {children}
       </div>
     </div>
   );
@@ -321,6 +368,13 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
   return (
     <div
       role="dialog"

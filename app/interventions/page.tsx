@@ -99,7 +99,7 @@ export default function InterventionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#13304d]">{t("inv.title")}</h1>
-        <p className="mt-1 text-sm text-slate-400">{t("inv.subtitle")}</p>
+        <p className="mt-1 text-sm text-slate-500">{t("inv.subtitle")}</p>
       </div>
 
       {/* Closed-loop lifecycle strip */}
@@ -126,7 +126,7 @@ export default function InterventionsPage() {
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
               filter === f
                 ? "bg-[#0e9bb5]/10 text-[#0e9bb5]"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-500 hover:text-slate-200"
             }`}
           >
             {t(f === "active" ? "inv.activeOnly" : "inv.completed")} (
@@ -147,7 +147,7 @@ export default function InterventionsPage() {
                   <div className="text-sm font-semibold text-[#13304d]">
                     {t(`action.${step.actionKey}`)}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
                     <Link
                       href={`/patient/${patient.id}`}
                       className="font-mono text-[#0e9bb5] hover:underline"
@@ -215,7 +215,7 @@ export default function InterventionsPage() {
                 {status === "in_progress" && (
                   <button
                     onClick={() => simulateOverdue(step.id, patient.id)}
-                    className="rounded-lg border border-[#e2e9f2] px-3 py-1 text-xs text-slate-400 hover:text-slate-200"
+                    className="rounded-lg border border-[#e2e9f2] px-3 py-1 text-xs text-slate-500 hover:text-slate-200"
                   >
                     ⏱ {t("common.simulateDelay")}
                   </button>

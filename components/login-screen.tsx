@@ -139,7 +139,7 @@ export function LoginScreen() {
               <span className="block text-base font-bold text-[#13304d]">
                 Careshift <span className="text-[#0e9bb5]">AI</span>
               </span>
-              <span className="block text-[10px] font-medium tracking-wide text-slate-400">
+              <span className="block text-[10px] font-medium tracking-wide text-slate-500">
                 Predict. Intervene. Prove.
               </span>
             </span>
@@ -156,7 +156,7 @@ export function LoginScreen() {
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
           <h1 className="text-3xl font-bold text-[#13304d]">{t("login.title")}</h1>
           <p className="mt-1.5 text-base text-slate-500">{t("login.sub")}</p>
-          <p className="mt-0.5 text-sm text-slate-400">{t("login.access")}</p>
+          <p className="mt-0.5 text-sm text-slate-500">{t("login.access")}</p>
 
           <div className="mt-8 rounded-3xl border border-[#eef2f7] bg-white p-7 shadow-[0_8px_40px_rgba(19,48,77,0.07)]">
             <form
@@ -183,7 +183,7 @@ export function LoginScreen() {
                   />
                   <Icon
                     name="user"
-                    className="absolute end-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+                    className="absolute end-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
                   />
                 </div>
               </div>
@@ -206,7 +206,7 @@ export function LoginScreen() {
                   <button
                     type="button"
                     onClick={() => setShowPw((s) => !s)}
-                    className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-[#0e9bb5]"
+                    className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-[#0e9bb5]"
                     aria-label={showPw ? t("login.hide") : t("login.show")}
                   >
                     <Icon name={showPw ? "eyeOff" : "eye"} className="h-5 w-5" />
@@ -251,7 +251,7 @@ export function LoginScreen() {
             {/* Divider */}
             <div className="mt-7 flex items-center gap-3">
               <span className="h-px flex-1 bg-[#eef2f7]" />
-              <span className="text-xs font-semibold text-slate-400">{t("login.orDemo")}</span>
+              <span className="text-xs font-semibold text-slate-500">{t("login.orDemo")}</span>
               <span className="h-px flex-1 bg-[#eef2f7]" />
             </div>
 
@@ -268,7 +268,7 @@ export function LoginScreen() {
                 <span className="block text-base font-bold text-[#13304d] transition-colors group-hover:text-[#0e9bb5]">
                   {t("login.runDemo")}
                 </span>
-                <span className="mt-0.5 block text-xs text-slate-400">
+                <span className="mt-0.5 block text-xs text-slate-500">
                   {t("login.demoSub")}
                 </span>
               </span>
@@ -280,11 +280,11 @@ export function LoginScreen() {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
           <span className="flex items-center gap-1.5">🛡 {t("login.secure")}</span>
           <span className="text-end leading-tight">
             <span dir="ltr" className="block">{t("login.version")}</span>
-            <span className="block text-[10px] text-slate-300">{t("login.tags")}</span>
+            <span className="block text-[10px] text-slate-500">{t("login.tags")}</span>
           </span>
         </div>
       </div>

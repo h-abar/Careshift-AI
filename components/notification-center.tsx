@@ -111,7 +111,7 @@ export function NotificationCenter() {
                     <span className="block truncate text-sm text-slate-700">
                       {text(n)}
                     </span>
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-slate-500">
                       {minutesAgo(n)} {t("usr.minAgo")}
                     </span>
                   </span>
@@ -126,7 +126,7 @@ export function NotificationCenter() {
               </li>
             ))}
             {items.length === 0 && (
-              <li className="px-4 py-6 text-center text-sm text-slate-400">
+              <li className="px-4 py-6 text-center text-sm text-slate-500">
                 {t("ntf.empty")}
               </li>
             )}

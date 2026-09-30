@@ -18,7 +18,7 @@ export default function PatientsPage() {
     data?.assignments.find((a) => a.patientId === pid);
 
   if (!can("patients_view"))
-    return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
   if (loading && !data) return <Skeleton rows={6} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
@@ -51,7 +51,7 @@ export default function PatientsPage() {
                     <Link href={`/patient/${patient.id}`} className="font-semibold text-[#13304d] hover:text-[#0e9bb5]">
                       {lang === "ar" ? patient.nameAr : patient.nameEn}
                     </Link>
-                    <div className="font-mono text-[11px] text-slate-400">{patient.id}</div>
+                    <div className="font-mono text-[11px] text-slate-500">{patient.id}</div>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{patient.room}</td>
                   <td className="px-4 py-3 text-slate-600">{t(`dx.${patient.dxKey}`)}</td>
@@ -88,7 +88,7 @@ export default function PatientsPage() {
             <Card className="!p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="font-mono text-[11px] text-slate-400">{patient.id}</span>
+                  <span className="font-mono text-[11px] text-slate-500">{patient.id}</span>
                   <div className="text-sm font-semibold text-[#13304d]">
                     {lang === "ar" ? patient.nameAr : patient.nameEn}
                   </div>

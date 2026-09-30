@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { postJson, useHandoffs, useSnapshots } from "@/lib/api";
 import { useToast } from "@/components/toast";
-import { Card, Empty, ErrorState, Loading, Skeleton, RiskBadge, SectionTitle } from "@/components/ui";
+import { Card, Empty, ErrorState, Loading, Modal, Skeleton, RiskBadge, SectionTitle } from "@/components/ui";
 import type { HandoffStatus, User } from "@/lib/types";
 
 type SafeUser = Omit<User, "password">;
@@ -33,7 +33,7 @@ export default function HandoffsPage() {
   const riskOf = (pid: string) => snaps.find((s) => s.patient.id === pid)?.risk;
 
   if (!can("handoff_view"))
-    return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
   if (loading && !data) return <Skeleton rows={4} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data || !snapData) return <Loading />;
@@ -152,9 +152,8 @@ function HandoffWizard({
     "w-full rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0e9bb5]/50";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#13304d]/40" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+    <Modal title={t("hf.wizard")} onClose={onClose} className="max-w-lg !p-0">
+      <div>
         <div className="border-b border-[#eef2f7] px-5 py-4">
           <h3 className="font-bold text-[#13304d]">{t("hf.wizard")}</h3>
           <div className="mt-2 flex gap-1.5">
@@ -166,7 +165,7 @@ function HandoffWizard({
                     ? "bg-[#0e9bb5] text-white"
                     : i < step
                       ? "bg-emerald-100 text-emerald-700"
-                      : "bg-[#f0f4f8] text-slate-400"
+                      : "bg-[#f0f4f8] text-slate-500"
                 }`}
               >
                 {s}
@@ -183,7 +182,7 @@ function HandoffWizard({
           ) : step === 0 ? (
             <>
               <label className="block text-xs font-semibold text-slate-500">{t("hf.selectDept")}</label>
-              <select value={dept} onChange={(e) => setDept(e.target.value)} className={select}>
+              <select aria-label={t("hf.selectDept")} value={dept} onChange={(e) => setDept(e.target.value)} className={select}>
                 {["icu", "er", "medical", "surgical"].map((d) => (
                   <option key={d} value={d}>{t(`dept.${d}`)}</option>
                 ))}
@@ -208,7 +207,7 @@ function HandoffWizard({
           ) : step === 1 ? (
             <>
               <label className="block text-xs font-semibold text-slate-500">{t("hf.selectOutgoing")}</label>
-              <select value={outgoing} onChange={(e) => setOutgoing(e.target.value)} className={select}>
+              <select aria-label={t("hf.selectOutgoing")} value={outgoing} onChange={(e) => setOutgoing(e.target.value)} className={select}>
                 <option value="">—</option>
                 {staff.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -217,7 +216,7 @@ function HandoffWizard({
                 ))}
               </select>
               <label className="block text-xs font-semibold text-slate-500">{t("hf.selectIncoming")}</label>
-              <select value={incoming} onChange={(e) => setIncoming(e.target.value)} className={select}>
+              <select aria-label={t("hf.selectIncoming")} value={incoming} onChange={(e) => setIncoming(e.target.value)} className={select}>
                 <option value="">—</option>
                 {staff.filter((u) => u.id !== outgoing).map((u) => (
                   <option key={u.id} value={u.id}>
@@ -244,11 +243,12 @@ function HandoffWizard({
                     <span className="flex items-center gap-2.5">
                       <input
                         type="checkbox"
+                        aria-label={s.patient.id}
                         checked={selected.has(s.patient.id)}
                         onChange={() => toggle(s.patient.id)}
                         className="accent-[#0e9bb5]"
                       />
-                      <span className="font-mono text-xs text-slate-400">{s.patient.id}</span>
+                      <span className="font-mono text-xs text-slate-500">{s.patient.id}</span>
                       <span className="text-sm text-slate-700">
                         {lang === "ar" ? s.patient.nameAr : s.patient.nameEn}
                       </span>
@@ -303,6 +303,6 @@ function HandoffWizard({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

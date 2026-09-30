@@ -332,7 +332,7 @@ function MyWork() {
       <Card>
         <SectionTitle sub={t("ho.subtitle")}>{t("my.patients")}</SectionTitle>
         {myPatients.length === 0 && (
-          <p className="py-6 text-center text-sm text-slate-400">{t("my.nothing")}</p>
+          <p className="py-6 text-center text-sm text-slate-500">{t("my.nothing")}</p>
         )}
         <div className="space-y-2.5">
           {myPatients.map(({ patient, risk, insurance, plan }) => {
@@ -348,7 +348,7 @@ function MyWork() {
                   <div>
                     <div className="text-sm font-semibold text-[#13304d]">
                       {lang === "ar" ? patient.nameAr : patient.nameEn}
-                      <span className="ms-2 font-mono text-xs text-slate-400">{patient.id}</span>
+                      <span className="ms-2 font-mono text-xs text-slate-500">{patient.id}</span>
                     </div>
                     <div className="text-xs text-slate-500">{t(`condition.${risk.conditionKey}`)}</div>
                   </div>

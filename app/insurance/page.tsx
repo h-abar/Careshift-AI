@@ -82,7 +82,7 @@ export default function InsurancePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#13304d]">{t("ins.title")}</h1>
-        <p className="mt-1 text-sm text-slate-400">{t("ins.subtitle")}</p>
+        <p className="mt-1 text-sm text-slate-500">{t("ins.subtitle")}</p>
       </div>
 
       {/* Current exposure KPIs */}
@@ -90,23 +90,23 @@ export default function InsurancePage() {
         <SectionTitle>{t("ins.exposure")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-400">{t("ins.highRisk")}</div>
+            <div className="text-xs text-slate-500">{t("ins.highRisk")}</div>
             <div className="mt-1 text-2xl font-bold text-[#13304d]">{exposure.highRisk}</div>
           </div>
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-400">{t("ins.potentialIcu")}</div>
+            <div className="text-xs text-slate-500">{t("ins.potentialIcu")}</div>
             <div className="mt-1 text-2xl font-bold text-orange-400">{exposure.icu}</div>
           </div>
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-400">{t("ins.docGaps")}</div>
+            <div className="text-xs text-slate-500">{t("ins.docGaps")}</div>
             <div className="mt-1 text-2xl font-bold text-amber-600">{exposure.docGaps}</div>
           </div>
           <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
-            <div className="text-xs text-slate-400">{t("ins.claimsRisk")}</div>
+            <div className="text-xs text-slate-500">{t("ins.claimsRisk")}</div>
             <div className="mt-1 text-2xl font-bold text-red-400">{exposure.claimsAtRisk}</div>
           </div>
           <div className="col-span-2 rounded-xl border border-red-200 bg-red-50 p-4 lg:col-span-1">
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-slate-500">
               {t("ins.estExposure")}{" "}
               <span className="text-[10px]">({t("common.simulated")})</span>
             </div>
@@ -258,7 +258,7 @@ export default function InsurancePage() {
                   {c.patientId && (
                     <Link
                       href={`/patient/${c.patientId}`}
-                      className="font-mono text-[11px] text-slate-400 hover:text-[#0e9bb5]"
+                      className="font-mono text-[11px] text-slate-500 hover:text-[#0e9bb5]"
                     >
                       → {c.patientId}
                     </Link>
@@ -293,7 +293,7 @@ export default function InsurancePage() {
                   <span
                     key={item.key}
                     className={`flex items-center gap-1.5 ${
-                      item.ok ? "text-slate-400" : "text-amber-300"
+                      item.ok ? "text-slate-500" : "text-amber-300"
                     }`}
                   >
                     <span className={item.ok ? "text-emerald-600" : "text-amber-600"}>

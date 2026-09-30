@@ -32,7 +32,7 @@ export default function HandoffPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#13304d]">{t("ho.title")}</h1>
-          <p className="mt-1 text-sm text-slate-400">{t("ho.subtitle")}</p>
+          <p className="mt-1 text-sm text-slate-500">{t("ho.subtitle")}</p>
         </div>
         <div className="rounded-xl border border-[#e2e9f2] bg-white px-4 py-2 text-xs">
           <div className="flex items-center gap-3 text-slate-600">
@@ -56,7 +56,7 @@ export default function HandoffPage() {
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-[#e2e9f2] bg-white px-4 py-3 text-sm shadow-sm">
         <span className="font-bold text-[#13304d]">{t("dept.icu")}</span>
         <span className="text-slate-500">{t("hf.shift.day")}</span>
-        <span className="text-slate-400">29 Sep 2026</span>
+        <span className="text-slate-500">29 Sep 2026</span>
         <span className="mx-1 hidden h-4 w-px bg-[#e2e9f2] sm:block" />
         <span className="text-slate-500">
           <b className="text-[#13304d]">{snaps.length}</b> {t("ho.count")}
@@ -98,7 +98,7 @@ export default function HandoffPage() {
                       {lang === "ar" ? patient.nameAr : patient.nameEn}
                     </Link>
                   </div>
-                  <div className="mt-0.5 text-xs text-slate-400">
+                  <div className="mt-0.5 text-xs text-slate-500">
                     {patient.age} {t("common.years")} · {patient.room} ·{" "}
                     {t(`dx.${patient.dxKey}`)}
                   </div>
@@ -115,13 +115,13 @@ export default function HandoffPage() {
 
               {/* WHY — explainable factors */}
               <div className="mt-3">
-                <div className="mb-1.5 text-[11px] font-bold tracking-wide text-slate-400">
+                <div className="mb-1.5 text-[11px] font-bold tracking-wide text-slate-500">
                   {t("common.why")}
                 </div>
                 <div className="space-y-1.5">
                   {risk.factors.slice(0, 4).map((f) => (
                     <div key={f.key} className="flex items-center gap-2">
-                      <span className="w-8 shrink-0 text-end font-mono text-[11px] text-slate-400">
+                      <span className="w-8 shrink-0 text-end font-mono text-[11px] text-slate-500">
                         {f.weight}%
                       </span>
                       <div className="flex-1">
@@ -145,7 +145,7 @@ export default function HandoffPage() {
                     <div className="text-sm font-semibold text-[#13304d]">
                       {t(`action.${next.actionKey}`)}
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-slate-500">
                       {t("common.assignedTo")}: {t(`role.${next.role}`)}
                     </div>
                   </div>
@@ -156,7 +156,7 @@ export default function HandoffPage() {
               {/* Insurance + documentation */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-2.5">
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
                     {t("common.exposure")}
                   </div>
                   <div className="font-mono text-base font-bold text-red-600">
@@ -164,7 +164,7 @@ export default function HandoffPage() {
                   </div>
                 </div>
                 <div className="rounded-lg border border-[#e2e9f2] bg-[#f8fafc] p-2.5">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide text-slate-500">
                     <span>{t("common.documentation")}</span>
                     <span className="text-slate-200">{insurance.docCompleteness}%</span>
                   </div>
@@ -185,7 +185,7 @@ export default function HandoffPage() {
                   {(["s", "b", "a", "r"] as const).map((k) => (
                     <div key={k}>
                       <dt className="font-bold text-slate-600">{t(`sbar.${k}`)}</dt>
-                      <dd className="text-slate-400">{sbar[k]}</dd>
+                      <dd className="text-slate-500">{sbar[k]}</dd>
                     </div>
                   ))}
                 </dl>

@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { patchJson, postJson, useUsers } from "@/lib/api";
 import { useToast } from "@/components/toast";
-import { Avatar, Card, ConfirmDialog, Empty, ErrorState, Loading, SectionTitle, Skeleton } from "@/components/ui";
+import { Avatar, Card, ConfirmDialog, Empty, ErrorState, Loading, Modal, SectionTitle, Skeleton } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import type { RoleKey, User } from "@/lib/types";
 
@@ -56,7 +56,7 @@ export default function UsersPage() {
   const [tempPw, setTempPw] = useState<string | null>(null);
 
   if (!can("users_manage"))
-    return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
+    return <p className="py-20 text-center text-slate-500">{t("common.noAccess")}</p>;
   if (loading && !data) return <Skeleton rows={6} />;
   if (error && !data) return <ErrorState onRetry={refetch} />;
   if (!data) return <Loading />;
@@ -160,27 +160,28 @@ export default function UsersPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <div className="relative">
-          <Icon name="search" className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Icon name="search" className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
+            aria-label={t("usr.search")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("usr.search")}
             className="w-56 rounded-lg border border-[#e2e9f2] bg-white py-2 ps-9 pe-3 text-sm outline-none focus:border-[#0e9bb5]/50"
           />
         </div>
-        <select value={role} onChange={(e) => setRole(e.target.value)} className={select}>
+        <select aria-label={t("usr.allRoles")} value={role} onChange={(e) => setRole(e.target.value)} className={select}>
           <option value="">{t("usr.allRoles")}</option>
           {ROLES.map((r) => (
             <option key={r} value={r}>{t(`userRole.${r}`)}</option>
           ))}
         </select>
-        <select value={dept} onChange={(e) => setDept(e.target.value)} className={select}>
+        <select aria-label={t("usr.allDepts")} value={dept} onChange={(e) => setDept(e.target.value)} className={select}>
           <option value="">{t("usr.allDepts")}</option>
           {DEPTS.map((d) => (
             <option key={d} value={d}>{t(`dept.${d}`)}</option>
           ))}
         </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={select}>
+        <select aria-label={t("usr.allStatus")} value={status} onChange={(e) => setStatus(e.target.value)} className={select}>
           <option value="">{t("usr.allStatus")}</option>
           <option value="active">{t("ustatus.active")}</option>
           <option value="suspended">{t("ustatus.suspended")}</option>
@@ -207,7 +208,7 @@ export default function UsersPage() {
                       <div className="font-semibold text-[#13304d]">
                         {lang === "ar" ? u.nameAr : u.nameEn}
                       </div>
-                      <div className="font-mono text-[11px] text-slate-400">{u.employeeId}</div>
+                      <div className="font-mono text-[11px] text-slate-500">{u.employeeId}</div>
                     </div>
                   </div>
                 </td>
@@ -335,8 +336,8 @@ export default function UsersPage() {
 
       {/* Create-user modal */}
       {showNew && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <Modal title={t("usr.newUser")} onClose={() => { setShowNew(false); setErr(""); }} className="max-w-md p-6">
+          <div>
             <h3 className="mb-4 text-base font-bold text-[#13304d]">
               {t("usr.newUser")}
             </h3>
@@ -419,7 +420,7 @@ export default function UsersPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Confirmation for role change / suspend / reactivate */}
@@ -449,8 +450,8 @@ export default function UsersPage() {
 
       {/* Edit specialty / contact */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <Modal title={t("usr.edit")} onClose={() => setEditing(null)} className="max-w-md p-6">
+          <div>
             <h3 className="mb-4 text-base font-bold text-[#13304d]">
               {t("usr.edit")} — {userName(editing)}
             </h3>
@@ -492,13 +493,13 @@ export default function UsersPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* One-time temporary password */}
       {tempPw && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#13304d]/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <Modal title={t("usr.tempPw")} onClose={() => setTempPw(null)} className="max-w-sm p-6">
+          <div>
             <h3 className="text-base font-bold text-[#13304d]">
               {t("usr.tempPw")}
             </h3>
@@ -523,7 +524,7 @@ export default function UsersPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
