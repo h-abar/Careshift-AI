@@ -1803,3 +1803,64 @@ describe("7: compliance controls", () => {
     expect(purgeAudit).toBeTruthy();
   });
 });
+
+/* ── 8: observability — health/ready/metrics + instrumentation ── */
+
+describe("8: observability", () => {
+  it("GET /api/health is unauthenticated and returns ok", async () => {
+    cookieStore.clear();
+    const { GET } = await import("@/app/api/health/route");
+    const res = await GET(new Request("http://test/api/health"));
+    expect(res.status).toBe(200);
+    expect((await res.json()).status).toBe("ok");
+  });
+
+  it("GET /api/ready reports db up + migrations applied on test.db", async () => {
+    cookieStore.clear();
+    const { GET } = await import("@/app/api/ready/route");
+    const res = await GET(new Request("http://test/api/ready"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.db).toBe("up");
+    expect(body.migrations).toBe("applied");
+  });
+
+  it("handle() stamps x-request-id, records metrics, and metrics route is admin-gated", async () => {
+    const { __resetMetricsForTests, metricsText } = await import(
+      "@/lib/server/metrics"
+    );
+    __resetMetricsForTests();
+    await loginAs("admin");
+    await consentPost(post({})); // any wrapped handler call
+    const text = metricsText();
+    expect(text).toContain("careshift_http_requests_total");
+    expect(text).toContain("/api"); // route label present
+    // nurse lacks audit_view → metrics 403
+    await loginAs("nurse");
+    const { GET } = await import("@/app/api/metrics/route");
+    expect((await GET(new Request("http://test/api/metrics"))).status).toBe(403);
+    await loginAs("admin");
+    const res = await GET(new Request("http://test/api/metrics"));
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("careshift_http_requests_total");
+  });
+
+  it("logger redacts secrets and PHI-ish fields", async () => {
+    const { createLogger } = await import("@/lib/server/log");
+    const { Writable } = await import("node:stream");
+    const chunks: string[] = [];
+    const sink = new Writable({
+      write: (c, _e, cb) => (chunks.push(String(c)), cb()),
+    });
+    const testLogger = createLogger(sink);
+    testLogger.info(
+      { password: "hunter2", nested: { token: "abc" }, route: "/x" },
+      "t",
+    );
+    const line = chunks.join("");
+    expect(line).toContain("[redacted]");
+    expect(line).not.toContain("hunter2");
+    expect(line).not.toContain('"abc"');
+    expect(line).toContain("/x");
+  });
+});

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { ApiError } from "@/lib/server/session";
+import { logger, requestId, routeLabel } from "@/lib/server/log";
+import { recordRequest } from "@/lib/server/metrics";
+import { captureError } from "@/lib/server/errors";
 import type { ZodType } from "zod";
 
 export function ok<T>(data: T, init?: ResponseInit) {
@@ -49,19 +52,45 @@ export async function parseBody<T>(
   return { data: r.data };
 }
 
-/** Wrap a handler: turns ApiError into proper status, everything else 500. */
+/**
+ * Wrap a handler: turns ApiError into proper status, everything else 500.
+ * Also the single instrumentation point (item 8): request id, latency,
+ * structured log line, in-process metrics, error reporting. Logged fields
+ * are method/route/status/ms only — no PHI, no headers, no bodies.
+ */
 export function handle<Args extends unknown[]>(
   fn: (...args: Args) => Promise<Response>,
 ) {
   return async (...args: Args) => {
+    const req = args[0] instanceof Request ? args[0] : undefined;
+    const rid = req ? requestId(req) : crypto.randomUUID();
+    const route = req ? routeLabel(req) : "unknown";
+    const start = performance.now();
     try {
-      return await fn(...args);
-    } catch (e) {
-      if (e instanceof ApiError) {
-        return NextResponse.json({ error: e.message }, { status: e.status });
+      const res = await fn(...args);
+      const ms = performance.now() - start;
+      recordRequest(route, res.status, ms);
+      logger.info({ rid, method: req?.method, route, status: res.status, ms: Math.round(ms) }, "request");
+      if (!res.headers.get("x-request-id")) {
+        res.headers.set("x-request-id", rid);
       }
-      console.error(e);
-      return NextResponse.json({ error: "internal" }, { status: 500 });
+      return res;
+    } catch (e) {
+      const ms = performance.now() - start;
+      if (e instanceof ApiError) {
+        recordRequest(route, e.status, ms);
+        logger.info({ rid, method: req?.method, route, status: e.status, ms: Math.round(ms) }, "request");
+        return NextResponse.json(
+          { error: e.message },
+          { status: e.status, headers: { "x-request-id": rid } },
+        );
+      }
+      recordRequest(route, 500, ms);
+      captureError(e, { rid, route, method: req?.method });
+      return NextResponse.json(
+        { error: "internal" },
+        { status: 500, headers: { "x-request-id": rid } },
+      );
     }
   };
 }
