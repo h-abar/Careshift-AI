@@ -45,6 +45,9 @@ export const PATCH = handle(
       return Response.json({ error: "cannot suspend self" }, { status: 400 });
     }
 
+    const suspending = b.status === "suspended" && user.status !== "suspended";
+    const roleChanged = b.roleKey !== undefined && b.roleKey !== user.roleKey;
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
@@ -55,6 +58,27 @@ export const PATCH = handle(
         status: b.status ?? undefined,
       },
     });
+
+    // Suspension or role change kills all of the user's live sessions so
+    // the new permissions/status apply immediately (getAuth would 401 a
+    // suspended user anyway — this also covers JWT role staleness).
+    if (suspending || roleChanged) {
+      const del = await prisma.session.deleteMany({ where: { userId: id } });
+      await audit(
+        {
+          userId: auth.user.id,
+          action: "user.sessions_revoked",
+          entityType: "user",
+          entityId: id,
+          next: {
+            revoked: del.count,
+            reason: suspending ? "suspended" : "role_changed",
+          },
+          sessionId: auth.sid,
+        },
+        req,
+      );
+    }
 
     await audit(
       {

@@ -473,3 +473,81 @@ describe("user admin", () => {
     expect(r.status).toBe(400);
   });
 });
+
+/* ── A2: suspended users + session revocation ── */
+
+describe("A2 suspended-user session revocation", () => {
+  it("suspend → all sessions die; next request 401; both audited", async () => {
+    // Nurse holds a live session cookie.
+    const lr = await login(USERS.nurse.u, USERS.nurse.p, "10.9.9.1");
+    expect(lr.status).toBe(200);
+    const nurseCookie = cookieStore.get("cs_session")!;
+    const nurse = await prisma.user.findUnique({
+      where: { username: USERS.nurse.u },
+    });
+
+    await loginAs("admin");
+    const pr = await userPatch(
+      patch({ status: "suspended" }),
+      ctx({ id: nurse!.id }),
+    );
+    expect(pr.status).toBe(200);
+    expect(
+      await prisma.session.count({ where: { userId: nurse!.id } }),
+    ).toBe(0);
+
+    // The dead cookie gets a 401 — and the rejection itself is audited.
+    cookieStore.clear();
+    cookieStore.set("cs_session", nurseCookie);
+    expect((await patientsGet(get())).status).toBe(401);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "user.sessions_revoked", entityId: nurse!.id },
+      }),
+    ).toBeTruthy();
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { action: "auth.suspended_reject", entityId: nurse!.id },
+      }),
+    ).toBeTruthy();
+
+    // Restore for the rest of the suite.
+    await loginAs("admin");
+    await userPatch(patch({ status: "active" }), ctx({ id: nurse!.id }));
+  });
+
+  it("role change → sessions revoked; old cookie 401s", async () => {
+    const lr = await login(USERS.nurse2.u, USERS.nurse2.p, "10.9.9.2");
+    expect(lr.status).toBe(200);
+    const nurseCookie = cookieStore.get("cs_session")!;
+    const nurse = await prisma.user.findUnique({
+      where: { username: USERS.nurse2.u },
+    });
+
+    await loginAs("admin");
+    expect(
+      (
+        await userPatch(patch({ roleKey: "physician" }), ctx({ id: nurse!.id }))
+      ).status,
+    ).toBe(200);
+    expect(
+      await prisma.session.count({ where: { userId: nurse!.id } }),
+    ).toBe(0);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: {
+          action: "user.sessions_revoked",
+          entityId: nurse!.id,
+        },
+      }),
+    ).toBeTruthy();
+
+    cookieStore.clear();
+    cookieStore.set("cs_session", nurseCookie);
+    expect((await patientsGet(get())).status).toBe(401);
+
+    // Restore.
+    await loginAs("admin");
+    await userPatch(patch({ roleKey: "nurse" }), ctx({ id: nurse!.id }));
+  });
+});

@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/server/prisma";
+import { audit } from "@/lib/server/audit";
 import { can, type PermKey } from "@/lib/permissions";
 import type { User } from "@/lib/types";
 
@@ -98,7 +99,38 @@ export async function getAuth(): Promise<AuthContext | null> {
     where: { id: payload.sid },
     include: { user: true },
   });
-  if (!session || session.expiresAt < new Date()) return null;
+
+  // A suspended account's sessions are deleted by the admin action, so a
+  // stale cookie arrives with NO session row — audit the rejection once
+  // here instead of silently 401-ing.
+  if (!session || session.expiresAt < new Date()) {
+    const u = await prisma.user.findUnique({ where: { id: payload.sub } });
+    if (u && u.status !== "active") {
+      await audit({
+        userId: u.id,
+        action: "auth.suspended_reject",
+        entityType: "user",
+        entityId: u.id,
+        sessionId: payload.sid,
+      }).catch(() => {});
+    }
+    return null;
+  }
+
+  // Belt and braces — suspended but session row somehow still live.
+  if (session.user.status !== "active") {
+    await prisma.session.delete({ where: { id: session.id } }).catch(() => {});
+    await audit(
+      {
+        userId: session.user.id,
+        action: "auth.suspended_reject",
+        entityType: "user",
+        entityId: session.user.id,
+        sessionId: session.id,
+      },
+    ).catch(() => {});
+    return null;
+  }
 
   const user = toSessionUser(session.user);
   let impersonator: Omit<User, "password"> | undefined;
