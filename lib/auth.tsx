@@ -30,6 +30,8 @@ interface Auth {
   logout: () => Promise<void>;
   /** Admin "view as" — server-issued impersonation session, audit-logged. */
   switchUser: (id: string) => Promise<boolean>;
+  /** Ends impersonation — restores the original admin session. */
+  stopSwitch: () => Promise<boolean>;
   can: (perm: PermKey) => boolean;
 }
 
@@ -41,6 +43,7 @@ const Ctx = createContext<Auth>({
   login: async () => "invalid",
   logout: async () => {},
   switchUser: async () => false,
+  stopSwitch: async () => false,
   can: () => false,
 });
 
@@ -99,6 +102,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const stopSwitch = useCallback(async () => {
+    try {
+      const d = await postJson<{ user: SessionUser }>(
+        "/api/auth/switch/stop",
+        {},
+      );
+      setUser(d.user);
+      setImpersonator(null);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const value = useMemo<Auth>(
     () => ({
       user,
@@ -108,9 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       switchUser,
+      stopSwitch,
       can: (p) => (user ? can(user.role, p) : false),
     }),
-    [user, impersonator, loading, login, logout, switchUser],
+    [user, impersonator, loading, login, logout, switchUser, stopSwitch],
   );
 
   if (loading) return null;

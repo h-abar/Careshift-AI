@@ -20,8 +20,24 @@ export const POST = handle(async (req: Request) => {
     return Response.json({ error: "incomplete" }, { status: 400 });
   }
 
-  const count = await prisma.handoff.count();
-  const id = `HF-${2600 + count + 1}`;
+  // Referential validation — staff must exist and be active, patients real.
+  const [out, inc, patients] = await Promise.all([
+    prisma.user.findUnique({ where: { id: body.outgoingId } }),
+    prisma.user.findUnique({ where: { id: body.incomingId } }),
+    prisma.patient.findMany({ where: { id: { in: body.patientIds } } }),
+  ]);
+  if (
+    !out || !inc ||
+    out.status !== "active" || inc.status !== "active" ||
+    patients.length !== body.patientIds.length
+  ) {
+    return Response.json(
+      { error: "invalid staff or patient references" },
+      { status: 400 },
+    );
+  }
+
+  const id = `HF-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const h = await prisma.handoff.create({
     data: {
       id,

@@ -59,6 +59,7 @@ export function useApi<T>(path: string | null, deps: unknown[] = []) {
 
 export interface OrgStats {
   snaps: PatientSnapshot[];
+  savingsTrend: { month: string; monthAr: string; avoided: number; exposure: number }[];
   clinical: {
     monitored: number;
     highRisk: number;
@@ -70,11 +71,13 @@ export interface OrgStats {
     overdue: number;
     escalations: number;
     closedLoopCompletion: number;
+    handoffs: number;
   };
   financial: {
     claimsMonitored: number;
     claimsDocPct: number;
     claimsAtRisk: number;
+    claimsDenied: number;
     exposureSar: number;
   };
   value: {

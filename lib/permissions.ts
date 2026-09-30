@@ -19,6 +19,7 @@ export type PermKey =
   | "journey_view"
   | "evidence_view"
   | "insurance_view"
+  | "claims_edit"
   | "command_view"
   | "reports_view"
   | "users_manage"
@@ -39,6 +40,7 @@ export const PERMISSION_KEYS: PermKey[] = [
   "journey_view",
   "evidence_view",
   "insurance_view",
+  "claims_edit",
   "command_view",
   "reports_view",
   "users_manage",
@@ -97,6 +99,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, Record<PermKey, boolean>> = {
 
   insurance: build([
     "insurance_view",
+    "claims_edit",
     "journey_view",
     "evidence_view",
     "reports_view",

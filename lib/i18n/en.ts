@@ -380,6 +380,8 @@ const en: Record<string, string> = {
   "usr.createdAt": "Created",
   "usr.permissions": "Permissions",
   "usr.viewAs": "View as",
+  "usr.viewingAs": "Viewing as",
+  "usr.returnAdmin": "Return to admin",
   "usr.minAgo": "min ago",
   "usr.hrAgo": "hr ago",
   "usr.dayAgo": "days ago",

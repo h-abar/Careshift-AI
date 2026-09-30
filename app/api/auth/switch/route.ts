@@ -17,6 +17,10 @@ import type { User } from "@/lib/types";
  */
 export const POST = handle(async (req: Request) => {
   const auth = await requirePerm("users_manage"); // admins only
+  if (auth.impersonator) {
+    // Already viewing as someone — end that session before starting a new one.
+    return Response.json({ error: "already_impersonating" }, { status: 409 });
+  }
   const { userId } = (await req.json()) as { userId?: string };
   if (!userId) return Response.json({ error: "userId required" }, { status: 400 });
 

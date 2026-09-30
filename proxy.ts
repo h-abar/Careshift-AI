@@ -9,6 +9,11 @@ import type { RoleKey } from "@/lib/types";
  *    Fine-grained permission checks run per-handler via requirePerm().
  *  - Page routes: pages that need a role permission are redirected to "/"
  *    when the JWT role lacks it (menu-hiding alone is NOT enforcement).
+ *
+ * Defense in depth: this gate only inspects the *JWT role claim* (fast, no
+ * DB hit). It is NOT the source of truth for page data — every API route a
+ * page calls re-authorizes against the *live DB role* through getAuth() →
+ * requirePerm(), so a stale JWT role can never leak server data.
  */
 const PAGE_PERMS: { prefix: string; perm: PermKey }[] = [
   { prefix: "/users", perm: "users_manage" },

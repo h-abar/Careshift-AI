@@ -14,6 +14,7 @@ import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { computeCareValue } from "@/lib/engines/care-value";
 import { simulateWhatIf } from "@/lib/engines/simulator";
 import { journeys } from "@/lib/data/journeys";
+import { savingsTrend } from "@/lib/data/claims";
 
 const J = <T>(s: string | null | undefined, fb: T): T =>
   s ? (JSON.parse(s) as T) : fb;
@@ -134,6 +135,7 @@ export async function dbSnapshots(): Promise<PatientSnapshot[]> {
 export async function dbOrgStats() {
   const snaps = await dbSnapshots();
   const claims = await dbClaims();
+  const handoffsCount = await prisma.handoff.count();
   const steps = snaps.flatMap((s) => s.plan);
   const pendingSteps = steps.filter(
     (i) => i.status === "pending" || i.status === "in_progress",
@@ -209,17 +211,25 @@ export async function dbOrgStats() {
 
   return {
     snaps,
+    savingsTrend,
     clinical: {
       monitored: snaps.length,
       highRisk: snaps.filter((s) => s.risk.level === "high").length,
       critical: snaps.filter((s) => s.risk.level === "critical").length,
       interventionsPending: pendingSteps.length,
     },
-    operational: { avgInterventionMin, overdue, escalations, closedLoopCompletion },
+    operational: {
+      avgInterventionMin,
+      overdue,
+      escalations,
+      closedLoopCompletion,
+      handoffs: handoffsCount,
+    },
     financial: {
       claimsMonitored: claims.length,
       claimsDocPct: avgReadiness,
       claimsAtRisk,
+      claimsDenied: claims.filter((c) => c.status === "denied").length,
       exposureSar: totalExposure,
     },
     value: { icuAvoided, losDaysReduced, docImprovement, careValue },

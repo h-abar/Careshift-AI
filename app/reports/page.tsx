@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
-import { useClaims, useHandoffs, useOrg } from "@/lib/api";
+import { useOrg } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
 import { Card, KpiCard, Loading, Meter, SectionTitle } from "@/components/ui";
 import {
@@ -19,17 +19,18 @@ import {
 export default function ReportsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
+  // Reports-safe aggregates — /api/snapshots carries handoff/claim counts and
+  // the savings trend, so roles without handoff_view / insurance_view (e.g.
+  // physician, insurance) never hit a 403 endpoint from this page.
   const { data: s } = useOrg();
-  const { data: claimsData } = useClaims();
-  const { data: handoffsData } = useHandoffs();
 
   if (!can("reports_view"))
     return <p className="py-20 text-center text-slate-400">{t("common.noAccess")}</p>;
-  if (!s || !claimsData || !handoffsData) return <Loading />;
+  if (!s) return <Loading />;
 
-  const savingsTrend = claimsData.savingsTrend;
-  const deniedCount = claimsData.claims.filter((c) => c.status === "denied").length;
-  const handoffCount = handoffsData.handoffs.length;
+  const savingsTrend = s.savingsTrend;
+  const deniedCount = s.financial.claimsDenied;
+  const handoffCount = s.operational.handoffs;
 
   const trend = savingsTrend.map((m) => ({
     name: lang === "ar" ? m.monthAr : m.month,

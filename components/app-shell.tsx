@@ -38,7 +38,7 @@ const MOBILE_NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, toggle } = useI18n();
-  const { user, can } = useAuth();
+  const { user, impersonator, stopSwitch, can } = useAuth();
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
 
@@ -148,8 +148,24 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* ── Main column ── */}
       <div className="flex min-h-screen flex-1 flex-col lg:ps-60">
+        {/* Impersonation banner — persistent while an admin views as a user */}
+        {impersonator && (
+          <div className="sticky top-0 z-40 flex h-8 items-center justify-center gap-3 bg-purple-700 px-4 text-xs font-semibold text-white">
+            <span>
+              {t("usr.viewingAs")}: {lang === "ar" ? user.nameAr : user.nameEn}
+              <span className="mx-2 opacity-50">·</span>
+              {t(`userRole.${user.role}`)}
+            </span>
+            <button
+              onClick={stopSwitch}
+              className="rounded-md bg-white/15 px-2.5 py-1 font-bold hover:bg-white/25"
+            >
+              ← {t("usr.returnAdmin")}
+            </button>
+          </div>
+        )}
         {/* Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[#e2e9f2] bg-white/95 px-4 backdrop-blur sm:px-6">
+        <header className={`sticky ${impersonator ? "top-8" : "top-0"} z-30 flex h-16 items-center gap-3 border-b border-[#e2e9f2] bg-white/95 px-4 backdrop-blur sm:px-6`}>
           <button
             onClick={() => setDrawer(true)}
             className="rounded-lg border border-[#e2e9f2] p-2 text-slate-500 lg:hidden"

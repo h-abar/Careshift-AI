@@ -2,6 +2,7 @@ import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
+import { can } from "@/lib/permissions";
 
 /** Incoming staff accepts the handoff — WHO/WHEN/FROM/TO recorded. */
 export const POST = handle(
@@ -16,6 +17,13 @@ export const POST = handle(
     if (!h) return Response.json({ error: "not found" }, { status: 404 });
     if (h.status === "accepted" || h.status === "completed") {
       return Response.json({ error: "already accepted" }, { status: 409 });
+    }
+
+    // Only the assigned incoming staff member — or admin/charge nurse —
+    // may accept a handoff on their behalf.
+    const isManager = can(auth.user.role, "handoff_manage");
+    if (!isManager && auth.user.id !== h.incomingId) {
+      return Response.json({ error: "forbidden" }, { status: 403 });
     }
 
     const timeline = JSON.parse(h.timelineJson) as { t: string; key: string }[];

@@ -380,6 +380,8 @@ const ar: Record<string, string> = {
   "usr.createdAt": "تاريخ الإنشاء",
   "usr.permissions": "الصلاحيات",
   "usr.viewAs": "عرض كـ",
+  "usr.viewingAs": "تعرض الآن بصلاحية",
+  "usr.returnAdmin": "العودة لحساب المدير",
   "usr.minAgo": "دقيقة",
   "usr.hrAgo": "ساعة",
   "usr.dayAgo": "يوم",

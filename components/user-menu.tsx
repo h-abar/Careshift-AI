@@ -58,7 +58,7 @@ export function UserMenu() {
             )}
           </div>
 
-          {usersData && (
+          {usersData && !impersonator && (
             <div className="px-4 py-2.5">
               <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
                 {t("usr.viewAs")} (admin)
