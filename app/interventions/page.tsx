@@ -1,0 +1,186 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useI18n } from "@/lib/i18n/provider";
+import { buildSnapshots } from "@/lib/aggregate";
+import { fmtSar } from "@/lib/format";
+import {
+  Card,
+  Countdown,
+  IvStatusChip,
+  RiskBadge,
+} from "@/components/ui";
+import type { InterventionStatus, Role } from "@/lib/types";
+
+interface StepState {
+  status: InterventionStatus;
+  escalatedTo?: Role;
+}
+
+const LOOP_STAGES = ["Alert", "Assigned", "Action", "Verify", "Outcome"];
+const LOOP_STAGES_AR = ["تنبيه", "إسناد", "تنفيذ", "تحقق", "نتيجة"];
+
+export default function InterventionsPage() {
+  const { t, lang } = useI18n();
+  const snaps = buildSnapshots();
+
+  // local interactive state: stepId → overrides
+  const [overrides, setOverrides] = useState<Record<string, StepState>>({});
+  const [filter, setFilter] = useState<"active" | "done">("active");
+
+  const steps = snaps
+    .flatMap((s) =>
+      s.plan.map((step) => ({
+        step,
+        patient: s.patient,
+        risk: s.risk,
+        insurance: s.insurance,
+      })),
+    )
+    .map((row) => {
+      const ov = overrides[row.step.id];
+      return {
+        ...row,
+        status: (ov?.status ?? row.step.status) as InterventionStatus,
+        escalatedTo: ov?.escalatedTo,
+      };
+    });
+
+  const active = steps.filter((s) => s.status !== "done");
+  const done = steps.filter((s) => s.status === "done");
+  const shown = filter === "active" ? active : done;
+
+  const markDone = (id: string) =>
+    setOverrides((o) => ({ ...o, [id]: { ...o[id], status: "done" } }));
+  const simulateOverdue = (id: string) =>
+    setOverrides((o) => ({ ...o, [id]: { ...o[id], status: "overdue" } }));
+  const escalate = (id: string, chain: Role[]) =>
+    setOverrides((o) => ({
+      ...o,
+      [id]: { status: "escalated", escalatedTo: chain[0] },
+    }));
+
+  const stages = lang === "ar" ? LOOP_STAGES_AR : LOOP_STAGES;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-[#13304d]">{t("inv.title")}</h1>
+        <p className="mt-1 text-sm text-slate-400">{t("inv.subtitle")}</p>
+      </div>
+
+      {/* Closed-loop lifecycle strip */}
+      <Card>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {stages.map((s, i) => (
+            <div key={s} className="flex items-center gap-2">
+              <span className="rounded-lg border border-[#0e9bb5]/30 bg-[#0e9bb5]/5 px-3 py-1.5 text-xs font-bold text-[#0e9bb5]">
+                {i + 1}. {s}
+              </span>
+              {i < stages.length - 1 && (
+                <span className="text-slate-600">→</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div className="flex gap-2">
+        {(["active", "done"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+              filter === f
+                ? "bg-[#0e9bb5]/10 text-[#0e9bb5]"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            {t(f === "active" ? "inv.activeOnly" : "inv.completed")} (
+            {f === "active" ? active.length : done.length})
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        {shown.map(({ step, patient, risk, insurance, status, escalatedTo }) => (
+          <Card key={step.id} className="!p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-4">
+                <span className="w-12 font-mono text-sm text-[#0e9bb5]">
+                  +{step.offsetMin}m
+                </span>
+                <div>
+                  <div className="text-sm font-semibold text-[#13304d]">
+                    {t(`action.${step.actionKey}`)}
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+                    <Link
+                      href={`/patient/${patient.id}`}
+                      className="font-mono text-[#0e9bb5] hover:underline"
+                    >
+                      {patient.id}
+                    </Link>
+                    <span>{lang === "ar" ? patient.nameAr : patient.nameEn}</span>
+                    <span>· {t(`role.${step.role}`)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <RiskBadge level={risk.level} />
+                {status !== "done" && status !== "escalated" && (
+                  <Countdown
+                    seedMin={step.dueInMin}
+                    onExpire={() => simulateOverdue(step.id)}
+                  />
+                )}
+                {status === "escalated" && escalatedTo && (
+                  <span className="rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-[11px] font-semibold text-purple-700">
+                    {t("common.escalatedTo")}: {t(`role.${escalatedTo}`)}
+                  </span>
+                )}
+                <IvStatusChip status={status} />
+              </div>
+            </div>
+
+            {/* actions row */}
+            {status !== "done" && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#e2e9f2] pt-3">
+                <button
+                  onClick={() => markDone(step.id)}
+                  className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                >
+                  ✓ {t("common.markDone")}
+                </button>
+                {status === "overdue" && (
+                  <button
+                    onClick={() => escalate(step.id, step.escalationChain)}
+                    className="rounded-lg bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100"
+                  >
+                    🔺 {t("common.escalate")} → {t(`role.${step.escalationChain[0]}`)}
+                  </button>
+                )}
+                {status === "in_progress" && (
+                  <button
+                    onClick={() => simulateOverdue(step.id)}
+                    className="rounded-lg border border-[#e2e9f2] px-3 py-1 text-xs text-slate-400 hover:text-slate-200"
+                  >
+                    ⏱ {t("common.simulateDelay")}
+                  </button>
+                )}
+                <span className="ms-auto text-[11px] text-slate-500">
+                  {t("common.exposure")}: {t("common.sar")} {fmtSar(insurance.exposureSar)}
+                </span>
+              </div>
+            )}
+          </Card>
+        ))}
+        {shown.length === 0 && (
+          <p className="py-10 text-center text-sm text-slate-500">—</p>
+        )}
+      </div>
+    </div>
+  );
+}

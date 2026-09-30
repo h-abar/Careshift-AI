@@ -1,0 +1,224 @@
+"use client";
+
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useI18n } from "@/lib/i18n/provider";
+import { fmtTime } from "@/lib/format";
+import type { InterventionStatus, RiskLevel } from "@/lib/types";
+
+// ── Light clinical palette per risk level ────────────────────────────────────
+export const LEVEL_STYLES: Record<
+  RiskLevel,
+  { badge: string; dot: string; text: string; ring: string; bar: string }
+> = {
+  critical: {
+    badge: "bg-red-50 text-red-700 border-red-200",
+    dot: "bg-red-500",
+    text: "text-red-600",
+    ring: "border-red-300",
+    bar: "bg-red-500",
+  },
+  high: {
+    badge: "bg-orange-50 text-orange-700 border-orange-200",
+    dot: "bg-orange-500",
+    text: "text-orange-600",
+    ring: "border-orange-300",
+    bar: "bg-orange-500",
+  },
+  medium: {
+    badge: "bg-amber-50 text-amber-700 border-amber-200",
+    dot: "bg-amber-500",
+    text: "text-amber-600",
+    ring: "border-amber-300",
+    bar: "bg-amber-400",
+  },
+  low: {
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    dot: "bg-emerald-500",
+    text: "text-emerald-600",
+    ring: "border-emerald-200",
+    bar: "bg-emerald-500",
+  },
+};
+
+export function RiskBadge({ level, score }: { level: RiskLevel; score?: number }) {
+  const { t } = useI18n();
+  const s = LEVEL_STYLES[level];
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${s.badge}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot} animate-pulse`} />
+      {t(`risk.${level}`)}
+      {score !== undefined && <span className="opacity-70">· {score}</span>}
+    </span>
+  );
+}
+
+export function Card({
+  className = "",
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`rounded-xl border border-[#e2e9f2] bg-white p-5 shadow-[0_1px_3px_rgba(19,48,77,0.06)] ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function SectionTitle({ children, sub }: { children: ReactNode; sub?: string }) {
+  return (
+    <div className="mb-4">
+      <h2 className="text-base font-bold text-[#13304d]">{children}</h2>
+      {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
+    </div>
+  );
+}
+
+export function KpiCard({
+  label,
+  value,
+  unit,
+  accent = "text-[#13304d]",
+  sub,
+  trend,
+  trendUp,
+}: {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  accent?: string;
+  sub?: string;
+  trend?: string;
+  trendUp?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-[#e2e9f2] bg-white p-4 shadow-[0_1px_3px_rgba(19,48,77,0.06)]">
+      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className={`mt-1 text-[28px] leading-8 font-bold tabular-nums ${accent}`}>
+        {value}
+        {unit && (
+          <span className="ms-1 text-xs font-medium text-slate-400">{unit}</span>
+        )}
+      </div>
+      {(sub || trend) && (
+        <div className="mt-1 flex items-center gap-1 text-[11px]">
+          {trend && (
+            <span className={`font-semibold ${trendUp ? "text-emerald-600" : "text-red-500"}`}>
+              {trendUp ? "▲" : "▼"} {trend}
+            </span>
+          )}
+          {sub && <span className="text-slate-400">{sub}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Meter({
+  pct,
+  color = "bg-[#0e9bb5]",
+  className = "",
+}: {
+  pct: number;
+  color?: string;
+  className?: string;
+}) {
+  return (
+    <div className={`h-2 w-full overflow-hidden rounded-full bg-[#eef2f7] ${className}`}>
+      <div
+        className={`h-full rounded-full ${color} transition-all`}
+        style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+      />
+    </div>
+  );
+}
+
+export function IvStatusChip({ status }: { status: InterventionStatus }) {
+  const { t } = useI18n();
+  const map: Record<InterventionStatus, string> = {
+    done: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    in_progress: "bg-sky-50 text-sky-700 border-sky-200",
+    pending: "bg-slate-100 text-slate-600 border-slate-200",
+    overdue: "bg-red-50 text-red-700 border-red-200",
+    escalated: "bg-purple-50 text-purple-700 border-purple-200",
+  };
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${map[status]}`}
+    >
+      {t(`iv.${status}`)}
+    </span>
+  );
+}
+
+/** Live ticking countdown; calls onExpire once when it hits zero. */
+export function Countdown({
+  seedMin,
+  onExpire,
+}: {
+  seedMin: number;
+  onExpire?: () => void;
+}) {
+  const [secs, setSecs] = useState(seedMin * 60);
+  const { t } = useI18n();
+  const fired = useRef(false);
+
+  useEffect(() => {
+    if (secs <= 0) return;
+    const id = setInterval(() => setSecs((s) => s - 1), 1000);
+    return () => clearInterval(id);
+  }, [secs <= 0]);
+
+  useEffect(() => {
+    if (secs <= 0 && onExpire && !fired.current) {
+      fired.current = true;
+      onExpire();
+    }
+  }, [secs <= 0]);
+
+  const over = secs <= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 font-mono text-sm font-bold tabular-nums ${
+        over ? "text-red-600" : secs <= 300 ? "text-amber-600" : "text-[#0e9bb5]"
+      }`}
+    >
+      {over ? `−${fmtTime(-secs)}` : fmtTime(secs)}
+      <span className="text-[10px] font-medium text-slate-400">
+        {over ? t("common.overdue") : t("common.dueIn")}
+      </span>
+    </span>
+  );
+}
+
+/** Avatar circle with initials — brand navy. */
+export function Avatar({ name, size = "h-9 w-9", className = "" }: { name: string; size?: string; className?: string }) {
+  const initials = name
+    .replace(/^(د\.|Dr\.)\s*/, "")
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("");
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[#1b5fad] to-[#0e9bb5] text-xs font-bold text-white ${size} ${className}`}
+    >
+      {initials}
+    </span>
+  );
+}
+
+/** Brand logo tile — the dark "C" mark in a rounded card. */
+export function Logo({ size = "h-9 w-9", className = "" }: { size?: string; className?: string }) {
+  return (
+    <span className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-sm ${size} ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="Careshift AI" className="h-full w-full object-cover" />
+    </span>
+  );
+}
