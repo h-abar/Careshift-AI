@@ -14,6 +14,12 @@ import type { RoleKey } from "@/lib/types";
  * DB hit). It is NOT the source of truth for page data — every API route a
  * page calls re-authorizes against the *live DB role* through getAuth() →
  * requirePerm(), so a stale JWT role can never leak server data.
+ *
+ * Phase 3 item 2 — security headers on every response:
+ *  - nonce-based strict CSP on documents (no unsafe-inline for scripts),
+ *    restrictive `default-src 'none'` CSP on API responses,
+ *  - HSTS, X-Frame-Options DENY + frame-ancestors 'none', nosniff,
+ *    Referrer-Policy, Permissions-Policy, COOP/CORP.
  */
 const PAGE_PERMS: { prefix: string; perm: PermKey }[] = [
   { prefix: "/users", perm: "users_manage" },
@@ -28,63 +34,113 @@ const PAGE_PERMS: { prefix: string; perm: PermKey }[] = [
   { prefix: "/interventions", perm: "patients_view" },
 ];
 
-const PUBLIC_API = ["/api/auth/login"];
+const PUBLIC_API = ["/api/auth/login", "/api/health", "/api/ready"];
 
 /** Public GET-only endpoints — the route itself still re-validates. */
 const PUBLIC_API_GET = ["/api/auth/session"];
 
+function pageCsp(nonce: string): string {
+  const isDev = process.env.NODE_ENV === "development";
+  return [
+    "default-src 'self'",
+    // strict-dynamic lets nonce'd bootstrap scripts load the bundles;
+    // unsafe-eval only in dev (React debugging needs it).
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    // unsafe-inline is required for React style attributes; scripts stay strict.
+    `style-src 'self' 'unsafe-inline'`,
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    ...(isDev ? [] : ["upgrade-insecure-requests"]),
+  ].join("; ");
+}
+
+const API_CSP = "default-src 'none'; frame-ancestors 'none'";
+
+/** Baseline hardening headers applied to every response. */
+function applySecurityHeaders(res: NextResponse, nonce: string, isApi: boolean) {
+  res.headers.set("Content-Security-Policy", isApi ? API_CSP : pageCsp(nonce));
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+  );
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  if (process.env.NODE_ENV === "production") {
+    res.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload",
+    );
+  }
+  return res;
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const isApi = pathname.startsWith("/api");
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+
+  // Forward the nonce + CSP to the renderer so SSR can stamp script tags.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", isApi ? API_CSP : pageCsp(nonce));
+  const next = () =>
+    applySecurityHeaders(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+      nonce,
+      isApi,
+    );
+  const redirectHome = () =>
+    applySecurityHeaders(
+      NextResponse.redirect(new URL("/", req.url)),
+      nonce,
+      isApi,
+    );
+  const deny401 = () =>
+    applySecurityHeaders(
+      NextResponse.json({ error: "unauthenticated" }, { status: 401 }),
+      nonce,
+      isApi,
+    );
+
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const payload = token ? await verifyToken(token) : null;
 
-  if (pathname.startsWith("/api")) {
-    if (PUBLIC_API.some((p) => pathname.startsWith(p))) return NextResponse.next();
-    if (
-      req.method === "GET" &&
-      PUBLIC_API_GET.some((p) => pathname.startsWith(p))
-    ) {
-      return NextResponse.next();
+  if (isApi) {
+    if (PUBLIC_API.some((p) => pathname.startsWith(p))) return next();
+    if (req.method === "GET" && PUBLIC_API_GET.some((p) => pathname.startsWith(p))) {
+      return next();
     }
-    if (!payload) {
-      return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-    }
-    return NextResponse.next();
+    if (!payload) return deny401();
+    return next();
   }
 
   // Public demo route stays reachable without a session.
-  if (pathname.startsWith("/demo")) return NextResponse.next();
+  if (pathname.startsWith("/demo")) return next();
 
   // Page routes: enforce the permission map against the JWT role claim.
   const rule = PAGE_PERMS.find((r) => pathname.startsWith(r.prefix));
-  if (rule) {
-    if (!payload) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-    if (!can(payload.role as RoleKey, rule.perm)) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
+  if (rule && (!payload || !can(payload.role as RoleKey, rule.perm))) {
+    return redirectHome();
   }
-  return NextResponse.next();
+  return next();
 }
 
 export const config = {
   matcher: [
-    "/api/:path*",
-    "/users/:path*",
-    "/audit/:path*",
-    "/settings/:path*",
-    "/insurance/:path*",
-    "/reports/:path*",
-    "/handoff/:path*",
-    "/handoffs/:path*",
-    "/patients/:path*",
-    "/patient/:path*",
-    "/interventions/:path*",
-    "/demo/:path*",
+    /*
+     * Run on everything EXCEPT static assets — pages need the CSP nonce,
+     * APIs need auth + security headers. Excluded:
+     *  - _next/static, _next/image (hashed public assets)
+     *  - files with an extension (favicon.ico, /logo.png, uploads…)
+     */
+    "/((?!_next/static|_next/image|.*\\..*).*)",
   ],
 };

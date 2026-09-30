@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { AuthProvider } from "@/lib/auth";
 import { ToastProvider } from "@/components/toast";
@@ -30,7 +31,10 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Dynamic rendering is REQUIRED for the per-request CSP nonce set by
+  // proxy.ts — Next.js injects it into framework scripts during SSR.
+  await connection();
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className="min-h-full antialiased">
