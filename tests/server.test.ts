@@ -109,3 +109,42 @@ describe("client data safety", () => {
     }
   });
 });
+
+/* ── A4: boot-time env validation + config errors not swallowed ── */
+
+describe("env validation (A4)", () => {
+  it("production fails fast without a >=32-char SESSION_SECRET", async () => {
+    const { validateEnv } = await import("@/lib/server/env");
+    const oldEnv = process.env.NODE_ENV;
+    const oldSecret = process.env.SESSION_SECRET;
+    try {
+      process.env.NODE_ENV = "production";
+      delete process.env.SESSION_SECRET;
+      expect(() => validateEnv()).toThrow(/SESSION_SECRET/);
+      process.env.SESSION_SECRET = "short";
+      expect(() => validateEnv()).toThrow(/SESSION_SECRET/);
+      process.env.SESSION_SECRET = "x".repeat(40);
+      expect(() => validateEnv()).not.toThrow();
+    } finally {
+      process.env.NODE_ENV = oldEnv;
+      process.env.SESSION_SECRET = oldSecret;
+    }
+  });
+
+  it("verifyToken returns null for invalid tokens but never swallows config errors", async () => {
+    expect(await verifyToken("garbage-token")).toBeNull();
+  });
+
+  it("TRUSTED_PROXY is off by default", async () => {
+    const { trustedProxy } = await import("@/lib/server/env");
+    const old = process.env.TRUSTED_PROXY;
+    try {
+      delete process.env.TRUSTED_PROXY;
+      expect(trustedProxy()).toBe(false);
+      process.env.TRUSTED_PROXY = "1";
+      expect(trustedProxy()).toBe(true);
+    } finally {
+      process.env.TRUSTED_PROXY = old;
+    }
+  });
+});

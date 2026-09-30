@@ -52,8 +52,11 @@ export async function signSession(p: SessionPayload): Promise<string> {
 }
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
+  // Resolve the key OUTSIDE the try — a missing/weak SESSION_SECRET is a
+  // configuration error and must propagate, not be swallowed as "bad token".
+  const key = secret();
   try {
-    const { payload } = await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, key);
     return {
       sub: payload.sub as string,
       sid: payload.sid as string,
