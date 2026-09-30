@@ -8,7 +8,7 @@ const en: Record<string, string> = {
   "nav.command": "Command Center",
   "nav.handoff": "Smart Handoff",
   "nav.interventions": "Closed-Loop",
-  "nav.insurance": "Health Claims",
+  "nav.insurance": "Health Insurance Claims",
 
   // ── Common ──
   "common.patient": "Patient",
@@ -353,7 +353,7 @@ const en: Record<string, string> = {
   "perm.intervention_escalate": "Escalate interventions",
   "perm.journey_view": "View patient journey",
   "perm.evidence_view": "View evidence",
-  "perm.insurance_view": "View insurance intelligence",
+  "perm.insurance_view": "View health insurance claims",
   "perm.command_view": "View command center",
   "perm.reports_view": "View reports",
   "perm.users_manage": "Manage users",

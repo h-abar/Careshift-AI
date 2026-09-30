@@ -76,10 +76,10 @@ function CommandCenter() {
 
       {/* KPI row — hierarchy level 1 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label={t("cmd.monitored")} value={s.clinical.monitored} trend="+12%" trendUp />
-        <KpiCard label={t("cmd.highRisk")} value={s.clinical.highRisk} accent="text-orange-600" trend="+25%" trendUp />
-        <KpiCard label={t("cmd.critical")} value={s.clinical.critical} accent="text-red-600" trend="+33%" trendUp />
-        <KpiCard label={t("cmd.pending")} value={s.clinical.interventionsPending} accent="text-sky-700" trend="-18%" />
+        <KpiCard label={t("cmd.monitored")} value={s.clinical.monitored} />
+        <KpiCard label={t("cmd.highRisk")} value={s.clinical.highRisk} accent="text-orange-600" />
+        <KpiCard label={t("cmd.critical")} value={s.clinical.critical} accent="text-red-600" />
+        <KpiCard label={t("cmd.pending")} value={s.clinical.interventionsPending} accent="text-sky-700" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
