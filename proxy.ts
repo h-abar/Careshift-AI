@@ -25,6 +25,9 @@ const PAGE_PERMS: { prefix: string; perm: PermKey }[] = [
 
 const PUBLIC_API = ["/api/auth/login"];
 
+/** Public GET-only endpoints — the route itself still re-validates. */
+const PUBLIC_API_GET = ["/api/auth/session"];
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get(SESSION_COOKIE)?.value;
@@ -32,6 +35,12 @@ export async function proxy(req: NextRequest) {
 
   if (pathname.startsWith("/api")) {
     if (PUBLIC_API.some((p) => pathname.startsWith(p))) return NextResponse.next();
+    if (
+      req.method === "GET" &&
+      PUBLIC_API_GET.some((p) => pathname.startsWith(p))
+    ) {
+      return NextResponse.next();
+    }
     if (!payload) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
