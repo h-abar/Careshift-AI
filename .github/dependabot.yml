@@ -1,0 +1,23 @@
+# Phase 3 item 5 — automated dependency updates + security fixes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    # Security updates bypass grouping so criticals land alone/fast.
+    groups:
+      minor-patch:
+        update-types: ["minor", "patch"]
+    labels: [dependencies]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: [dependencies, ci]
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
