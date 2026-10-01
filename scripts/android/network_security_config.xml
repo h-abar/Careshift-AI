@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  HTTPS-only network security config (item 12). After `npx cap add android`,
+  copy to android/app/src/main/res/xml/network_security_config.xml and
+  reference it from AndroidManifest.xml:
+
+    <application
+        android:networkSecurityConfig="@xml/network_security_config"
+        ...>
+
+  Cleartext is denied everywhere; only the system CA store is trusted —
+  the API_ORIGIN endpoint must present a publicly trusted TLS cert.
+-->
+<network-security-config>
+  <base-config cleartextTrafficPermitted="false">
+    <trust-anchors>
+      <certificates src="system" />
+    </trust-anchors>
+  </base-config>
+</network-security-config>
