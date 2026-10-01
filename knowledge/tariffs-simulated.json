@@ -1,0 +1,12 @@
+{
+  "label": "Simulated",
+  "note": "Sample tariffs for the demo ONLY. These are NOT real SBS prices and must never be presented as official tariffs.",
+  "currency": "SAR",
+  "tariffs": {
+    "medication": { "unitPriceSar": 45 },
+    "lab": { "unitPriceSar": 90 },
+    "procedure": { "unitPriceSar": 400 },
+    "bed_day": { "unitPriceSar": 800 },
+    "service": { "unitPriceSar": 250 }
+  }
+}

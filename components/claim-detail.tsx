@@ -7,6 +7,7 @@ import { patchJson, postJson, useApi } from "@/lib/api";
 import { useToast } from "@/components/toast";
 import { Skeleton } from "@/components/ui";
 import { DENIAL_CODES } from "@/lib/denial";
+import { ClaimLines } from "@/components/claim-lines";
 import { EVIDENCE_KEYS } from "@/lib/data/claims";
 import type { Claim, ClaimStatus } from "@/lib/types";
 
@@ -243,6 +244,9 @@ export function ClaimDetail({
               </button>
             </div>
           )}
+
+          {/* C3 — event-backed claim lines */}
+          <ClaimLines claimId={claim.id} canEdit={canEdit} />
 
           {/* documents */}
           <div>

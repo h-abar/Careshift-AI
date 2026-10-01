@@ -142,6 +142,58 @@
           ]}
         }
       }
+    },
+    {
+      "key": "claim-line-map",
+      "nameEn": "Event → claim-line mapping (C3)",
+      "nameAr": "ربط الأحداث بسطور المطالبة",
+      "status": "approved",
+      "category": "claim-map",
+      "version": 1,
+      "units": {},
+      "noteEn": "Declarative mapping rows — NOT evaluated as json-logic; read via lib/server/claim-assembly.ts getClaimMap(). Each output key is a line kind; the row says which event types support it and which payload field supplies the code. Missing code → flagged, never guessed. Tariffs live in knowledge/seed/tariffs-simulated.json (Simulated samples only).",
+      "noteAr": "صفوف ربط تعريفية — لا تُقيَّم كمنطق JSON؛ تُقرأ عبر getClaimMap(). كل مفتاح مخرج هو نوع سطر، والصف يحدد أنواع الأحداث الداعمة وحقل الكود. الكود المفقود يُعلَّم ولا يُخمَّن.",
+      "refs": ["nphies-ig"],
+      "logic": {
+        "outputs": {
+          "medication": {
+            "eventTypes": ["medication_administered", "order"],
+            "lineKind": "medication",
+            "codeFields": ["payload.code", "payload.medCode"],
+            "match": "orderKind=medication",
+            "qtyPer": "event",
+            "tariffKey": "medication"
+          },
+          "lab": {
+            "eventTypes": ["lab_result"],
+            "lineKind": "lab",
+            "codeFields": ["payload.loinc", "payload.code"],
+            "qtyPer": "event",
+            "tariffKey": "lab"
+          },
+          "procedure": {
+            "eventTypes": ["procedure"],
+            "lineKind": "procedure",
+            "codeFields": ["payload.code"],
+            "qtyPer": "event",
+            "tariffKey": "procedure"
+          },
+          "bed_day": {
+            "eventTypes": ["transfer"],
+            "lineKind": "bed_day",
+            "codeFields": ["payload.sbs", "payload.code"],
+            "qtyPer": "span_day",
+            "tariffKey": "bed_day"
+          },
+          "intervention": {
+            "eventTypes": ["intervention_completed"],
+            "lineKind": "service",
+            "codeFields": ["payload.code"],
+            "qtyPer": "event",
+            "tariffKey": "service"
+          }
+        }
+      }
     }
   ],
   "kpis": [
