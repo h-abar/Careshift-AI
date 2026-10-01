@@ -72,6 +72,27 @@ Audit page → filter by `a.salem`, export CSV (`/api/audit/export`).
 - `docs/compliance.md` maps controls to PDPL/NCA ECC ("oriented", honest).
 - `/api/health` + `/api/ready` + `/api/metrics`, pino JSON logs, redaction.
 
+### 9:00 — Event-based claims (P-1042)
+*"The claim is built from what the patient actually lived, not from a
+report."*
+1. Patient page → **Journey timeline**: the deterioration story as
+   hash-chained events (vitals → NEWS2 → alert → escalation →
+   intervention), filterable by clinical/nursing/physician/medication/
+   billing.
+2. Insurance → open the P-1042 claim → **Assemble claim**: every line
+   appears with its supporting event ids and evidence chain. A manual
+   line with no events stays flagged — no events, no line.
+3. **Checks**: readiness %, one billed-not-lived and one lived-not-billed
+   finding — fix them, watch readiness climb.
+4. **Package**: insurer view shows lines + event summaries (no patient
+   name), click **verify** — hash proof passes. FHIR JSON / PDF export.
+5. **Adjudicate (simulated)**: a denial comes back with an official
+   NPHIES code → **appeal evidence** shows which existing events answer
+   it → appeal carries those event ids only → resubmit creates `CL-x-v2`,
+   the denied original stays untouched.
+6. **Claim Integrity KPIs**: event-backed %, denials by NPHIES category,
+   late-entry rate — all computed live from the registry.
+
 **Closing line:** *"Careshift AI closes the gap between detecting danger,
 acting on it, and proving the outcome — clinically and to the payer."*
 
@@ -97,6 +118,13 @@ acting on it, and proving the outcome — clinically and to the payer."*
 8. **الأمان والامتثال**: رفض الدخول للحساب الموقوف `r.farouk`، CSP بنونس،
    حماية CSRF، حدود معدل بقاعدة البيانات، قفل مع Retry-After، و
    `docs/compliance.md` يربط الضوابط بـPDPL/NCA ECC (توجّه وليس اعتمادًا).
+
+9. **مطالبات مبنية على الأحداث** (P-1042): «المطالبة تُبنى مما عاشه
+   المريض فعلًا» — الجدول الزمني للأحداث المقيّدة بالتجزئة، «جمّع
+   المطالبة» يبني كل سطر من أحداث حقيقية، فحص الاتساق الاتجاهي، حزمة
+   التأمين بأقل بيانات لازمة مع زر «تحقق» للتجزئة، تحكيم محاكى برمز نفيس
+   رسمي → استئناف من الأحداث الموجودة فقط → إعادة تقديم كنسخة جديدة،
+   ومؤشرات سلامة المطالبات الحية.
 
 **الخاتمة:** «كيرشيفت AI يسد الفجوة بين اكتشاف الخطر وتنفيذ التدخل وإثبات
 أثره — سريريًا وتأمينيًا.»
