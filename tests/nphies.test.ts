@@ -54,8 +54,16 @@ const CLAIM = {
   diagnosis: [{ code: "E10.10", display: "T1DM with ketoacidosis" }],
 };
 
+type Res = {
+  resourceType: string;
+  eventCoding?: { system: string; code: string };
+  focus?: { reference: string }[];
+  use?: string;
+  item?: unknown[];
+  payload?: { contentString?: string }[];
+};
 type Bundle = {
-  entry: { resource: Record<string, never> & { [k: string]: unknown } }[];
+  entry: { resource: Res }[];
   resourceType: string; type: string;
 };
 
@@ -87,14 +95,14 @@ describe("message bundles", () => {
       buildClaimRequest(CLAIM).bundle, buildEligibilityRequest({ id: "P-1042" }, "cov-1"),
       buildPollRequest(), buildCancelRequest("CL-T1"), buildStatusRequest("CL-T1"),
       buildPaymentReconciliation({ claimId: "CL-T1", patientId: "P-1042" }),
-    ] as Bundle[]) {
+    ] as unknown as Bundle[]) {
       expect(b.resourceType).toBe("Bundle");
       expect(b.type).toBe("message");
       const mh = b.entry[0].resource;
       expect(mh.resourceType).toBe("MessageHeader");
-      expect(MESSAGE_EVENTS).toContain(mh.eventCoding.code);
-      expect(mh.eventCoding.system).toBe(SYSTEMS.messageEvents);
-      expect(mh.focus[0].reference).toBeTruthy();
+      expect(MESSAGE_EVENTS).toContain(mh.eventCoding!.code);
+      expect(mh.eventCoding!.system).toBe(SYSTEMS.messageEvents);
+      expect(mh.focus![0].reference).toBeTruthy();
     }
   });
 
@@ -105,9 +113,9 @@ describe("message bundles", () => {
   });
 
   it("priorauth-request flips event code and use", () => {
-    const { bundle } = buildPriorauthRequest(CLAIM) as { bundle: Bundle };
+    const { bundle } = buildPriorauthRequest(CLAIM) as unknown as { bundle: Bundle };
     const mh = bundle.entry[0].resource;
-    expect(mh.eventCoding.code).toBe("priorauth-request");
+    expect(mh.eventCoding!.code).toBe("priorauth-request");
     const claim = bundle.entry.find((e) => e.resource.resourceType === "Claim")!.resource;
     expect(claim.use).toBe("preauthorization");
   });
@@ -118,7 +126,7 @@ describe("message bundles", () => {
       lines: [...CLAIM.lines, { seq: 2, code: "", codeSystem: "procedures", quantity: 1, unitPriceSar: null, simulatedPrice: false }],
     });
     expect(out.skippedLines).toEqual([2]);
-    const claim = (out.bundle as Bundle).entry.find((e) => e.resource.resourceType === "Claim")!.resource;
+    const claim = (out.bundle as unknown as Bundle).entry.find((e) => e.resource.resourceType === "Claim")!.resource;
     expect(claim.item).toHaveLength(1);
   });
 });
@@ -151,10 +159,10 @@ describe("communication replies use existing events only", () => {
     const b = buildCommunicationReply({
       claimId: "CL-T1", patientId: "P-1042",
       communicationRequestId: "CR-9", events: EVENTS, note: "see events",
-    }) as Bundle;
+    }) as unknown as Bundle;
     const comm = b.entry.find((e) => e.resource.resourceType === "Communication")!.resource;
-    expect(comm.payload[1].contentString).toContain("ev-v1");
-    expect(comm.payload[1].contentString).not.toContain("ev-fake");
+    expect(comm.payload![1].contentString).toContain("ev-v1");
+    expect(comm.payload![1].contentString).not.toContain("ev-fake");
   });
 });
 
