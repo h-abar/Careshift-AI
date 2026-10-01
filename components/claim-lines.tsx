@@ -49,6 +49,26 @@ export function ClaimLines({ claimId, canEdit }: { claimId: string; canEdit: boo
     }
   };
 
+  const verify = async () => {
+    setBusy(true);
+    try {
+      const r = await postJson<{
+        ok: boolean; checkedEvents: number;
+        missingEvents: string[]; unsupportedLines: string[];
+      }>(`/api/claims/${claimId}/package`, {});
+      toast(
+        r.ok
+          ? `${t("cln.verified")} (${r.checkedEvents} ${t("cln.eventsN")})`
+          : t("cln.verifyFail"),
+        r.ok ? "success" : "error",
+      );
+    } catch {
+      toast(t("common.failed"), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const addManual = async () => {
     setBusy(true);
     try {
@@ -94,6 +114,29 @@ export function ClaimLines({ claimId, canEdit }: { claimId: string; canEdit: boo
             >
               {t("cln.manual")}
             </button>
+          </div>
+        )}
+        {lines.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={verify}
+              disabled={busy}
+              className="rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+            >
+              {t("cln.verify")}
+            </button>
+            <a
+              href={`/api/claims/${claimId}/package?format=fhir`}
+              className="text-xs font-semibold text-[#1b5fad] underline underline-offset-2"
+            >
+              {t("cln.fhir")}
+            </a>
+            <a
+              href={`/api/claims/${claimId}/package?format=pdf`}
+              className="text-xs font-semibold text-[#1b5fad] underline underline-offset-2"
+            >
+              {t("cln.pdf")}
+            </a>
           </div>
         )}
       </div>

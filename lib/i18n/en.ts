@@ -529,6 +529,8 @@ const en: Record<string, string> = {
   "auditAction.claim.assemble": "Assembled claim from events",
   "auditAction.claim.line.manual": "Added manual claim line (not event-backed)",
   "auditAction.claim.checks": "Ran pre-submission consistency checks",
+  "auditAction.claim.package.view": "Viewed insurer claim package",
+  "auditAction.claim.package.verify": "Verified claim package integrity",
   "auditAction.users.list": "Viewed users list",
   "auditAction.audit.list": "Viewed audit log",
   "auditAction.org.view": "Viewed org metrics",
@@ -798,6 +800,13 @@ const en: Record<string, string> = {
   "chk.k.timing_event_after_claim": "Event recorded after claim",
   "chk.k.timing_late_entry": "Late documentation entry",
   "chk.k.missing_code": "Missing code",
+
+  // C5 — insurer package
+  "cln.verify": "Verify package",
+  "cln.verified": "Package verified — hashes intact",
+  "cln.verifyFail": "Verification FAILED — evidence altered",
+  "cln.fhir": "FHIR JSON",
+  "cln.pdf": "PDF",
 };
 
 export default en;

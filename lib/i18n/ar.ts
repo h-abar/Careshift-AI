@@ -529,6 +529,8 @@ const ar: Record<string, string> = {
   "auditAction.claim.assemble": "تجميع المطالبة من الأحداث",
   "auditAction.claim.line.manual": "إضافة سطر يدوي للمطالبة (غير مدعوم بأحداث)",
   "auditAction.claim.checks": "تشغيل فحوص الاتساق قبل الإرسال",
+  "auditAction.claim.package.view": "عرض حزمة مطالبة التأمين",
+  "auditAction.claim.package.verify": "التحقق من سلامة حزمة المطالبة",
   "auditAction.users.list": "عرض قائمة المستخدمين",
   "auditAction.audit.list": "عرض سجل التدقيق",
   "auditAction.org.view": "عرض مؤشرات المنشأة",
@@ -798,6 +800,13 @@ const ar: Record<string, string> = {
   "chk.k.timing_event_after_claim": "حدث سُجّل بعد المطالبة",
   "chk.k.timing_late_entry": "مدخل توثيق متأخر",
   "chk.k.missing_code": "كود مفقود",
+
+  // C5 — حزمة التأمين
+  "cln.verify": "التحقق من الحزمة",
+  "cln.verified": "تم التحقق من الحزمة — التجزئات سليمة",
+  "cln.verifyFail": "فشل التحقق — الأدلة معدَّلة",
+  "cln.fhir": "FHIR JSON",
+  "cln.pdf": "PDF",
 };
 
 export default ar;
