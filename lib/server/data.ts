@@ -244,35 +244,38 @@ export async function dbSnapshots(): Promise<PatientSnapshot[]> {
     triggerMinutes(),
   ]);
   const ov = new Map(overrides.map((o) => [o.stepId, o]));
-  const data: PatientSnapshot[] = [];
-  for (const patient of rows.map(toPatient)) {
-    const risk = assessClinicalRisk(patient);
-    const now = Date.now();
-    const plan = buildInterventionPlan(patient, risk).map((s) => {
-      const o = ov.get(s.id);
-      if (!o) return s;
-      // Overdue is DERIVED from the real dueAt timestamp, never stored.
-      const derived =
-        o.dueAt && o.dueAt.getTime() < now &&
-        (o.status === "pending" || o.status === "in_progress")
-          ? "overdue"
-          : o.status;
-      return {
-        ...s,
-        status: derived as InterventionStatus,
-        escalatedTo: (o.escalatedTo ?? undefined) as InterventionStep["escalatedTo"],
-        assigneeId: o.assigneeId ?? undefined,
-        dueAt: o.dueAt?.toISOString(),
-        dueInMin: o.dueAt
-          ? Math.max(0, Math.round((o.dueAt.getTime() - now) / 60000))
-          : s.dueInMin,
-        note: o.note || undefined,
-        resolvedAt: o.resolvedAt?.toISOString(),
-      };
-    });
-    const priority = await priorityViaRules(patient, plan, triggers.get(patient.id) ?? 0);
-    data.push({ patient, risk, insurance: assessInsuranceRisk(patient, risk), plan, priority });
-  }
+  const now = Date.now();
+  // Rule evaluations are independent per patient — run them in parallel
+  // (real Postgres pools connections; local PGlite serializes safely).
+  const data = await Promise.all(
+    rows.map(toPatient).map(async (patient): Promise<PatientSnapshot> => {
+      const risk = assessClinicalRisk(patient);
+      const plan = buildInterventionPlan(patient, risk).map((s) => {
+        const o = ov.get(s.id);
+        if (!o) return s;
+        // Overdue is DERIVED from the real dueAt timestamp, never stored.
+        const derived =
+          o.dueAt && o.dueAt.getTime() < now &&
+          (o.status === "pending" || o.status === "in_progress")
+            ? "overdue"
+            : o.status;
+        return {
+          ...s,
+          status: derived as InterventionStatus,
+          escalatedTo: (o.escalatedTo ?? undefined) as InterventionStep["escalatedTo"],
+          assigneeId: o.assigneeId ?? undefined,
+          dueAt: o.dueAt?.toISOString(),
+          dueInMin: o.dueAt
+            ? Math.max(0, Math.round((o.dueAt.getTime() - now) / 60000))
+            : s.dueInMin,
+          note: o.note || undefined,
+          resolvedAt: o.resolvedAt?.toISOString(),
+        };
+      });
+      const priority = await priorityViaRules(patient, plan, triggers.get(patient.id) ?? 0);
+      return { patient, risk, insurance: assessInsuranceRisk(patient, risk), plan, priority };
+    }),
+  );
   // Ordering = validated indicators ONLY (NEWS2 tier → score → shock →
   // bundle delay). risk.score, nurse concern, overdue tasks, stale vitals
   // are displayed as information and do NOT change the order.
