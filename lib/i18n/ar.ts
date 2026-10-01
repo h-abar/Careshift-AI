@@ -696,6 +696,8 @@ const ar: Record<string, string> = {
   "prio.qsofa": "qSOFA {n} (سياق)",
   "prio.charlson": "Charlson: غير محسوب (المصاحبات غير مجمّعة)",
   "prio.basis": "الترتيب حسب مستوى NEWS2 ثم الدرجة ثم الصدمة/اللاكتات ثم تأخر الحزمة فقط",
+  "data.asof": "البيانات المرجعية حتى {d}",
+  "data.unsynced": "البيانات المرجعية غير متزامنة — شغّل scripts/sync-terminology",
 };
 
 export default ar;

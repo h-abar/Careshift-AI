@@ -5,7 +5,7 @@
  * so unit tests run without a DB.
  */
 import { prisma } from "@/lib/server/prisma";
-import { ExtOfflineError, type ExtProvider } from "./http";
+import { ExtHttpError, ExtOfflineError, type ExtProvider } from "./http";
 
 if (typeof window !== "undefined") {
   throw new Error("lib/server/ext is server-only");
@@ -56,7 +56,11 @@ export async function cachedCall<T>(
     const data = await fetcher();
     const fetchedAt = await adapter.set(provider, key, data);
     return { data, fresh: true, fetchedAt };
-  } catch {
+  } catch (e) {
+    // Deterministic 4xx (except 429) = a real answer ("no data") — do not
+    // mask it with stale cache; only transport/5xx failures fall back.
+    if (e instanceof ExtHttpError && e.status >= 400 && e.status < 500 && e.status !== 429)
+      throw e;
     const cached = await adapter.get(provider, key);
     if (cached) return { data: cached.data as T, fresh: false, fetchedAt: cached.fetchedAt };
     throw new ExtOfflineError(

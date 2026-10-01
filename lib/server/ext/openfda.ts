@@ -39,7 +39,7 @@ export async function labelMentions(
     key,
     async () => {
       const params: Record<string, string> = {
-        search: `openfda.generic_name:"${drugName}"+openfda.brand_name:"${drugName}"`,
+        search: `openfda.generic_name:"${drugName}"`,
         limit: "1",
       };
       const k = env().OPENFDA_API_KEY;

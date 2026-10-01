@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import type { PermKey } from "@/lib/permissions";
@@ -245,11 +245,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
 
-        {/* Disclaimer */}
+        {/* Disclaimer + reference-data freshness (A4) */}
         <footer className="border-t border-[#e2e9f2] bg-white">
           <p className="mx-auto max-w-7xl px-4 py-2.5 text-center text-[11px] text-slate-600 sm:px-6">
             {t("app.disclaimer")}
           </p>
+          <DataFreshness />
         </footer>
       </div>
 
@@ -276,5 +277,27 @@ export function AppShell({ children }: { children: ReactNode }) {
         </button>
       </nav>
     </div>
+  );
+}
+
+/** Oldest fetch date across synced providers → "data as of" (A4). */
+function DataFreshness() {
+  const { t } = useI18n();
+  const [asOf, setAsOf] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/freshness")
+      .then((r) => r.json())
+      .then((j) => live && setAsOf(j.asOf ?? null))
+      .catch(() => live && setAsOf(null));
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (asOf === undefined) return null;
+  return (
+    <p className="pb-2 text-center text-[10px] text-slate-500">
+      {asOf ? t("data.asof").replace("{d}", asOf) : t("data.unsynced")}
+    </p>
   );
 }

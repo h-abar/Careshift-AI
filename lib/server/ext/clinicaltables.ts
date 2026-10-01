@@ -14,14 +14,23 @@ export type ClinicalTable = "conditions" | "icd10cm" | "rxterms" | "loinc_items"
 const BASE = "https://clinicaltables.nlm.nih.gov/api";
 
 export interface TableHit {
-  /** primary display string */
+  /** the table's key field — RxCUI, LOINC num, HPO id, ICD-10-CM code, conditions key_id */
+  key: string;
+  /** display fields joined (e.g. "E11.10 — Type 2 diabetes …") */
   display: string;
-  /** code-like extra fields when the table provides them */
-  extra: string[];
 }
 
-// Response shape: [total, items[], extraFields{}, fields[][]]
+// Response shape: [total, key_ids[], extra_fields{}, display_fields[][]]
 type CtRes = [number, string[], Record<string, string[]> | null, ...(string[][])[]];
+
+/** Per-table request params (icd10cm must search `name`, default is code only). */
+const TABLE_PARAMS: Record<ClinicalTable, Record<string, string>> = {
+  conditions: {},
+  icd10cm: { sf: "code,name" },
+  rxterms: {},
+  loinc_items: {},
+  hpo: {},
+};
 
 /** Search one clinical table. `terms` must be a clinical term, never an identifier. */
 export async function searchTable(
@@ -39,11 +48,14 @@ export async function searchTable(
       const j = await extFetch<CtRes>(
         "clinicaltables",
         `${BASE}/${table}/v3/search`,
-        { params: { terms, maxList: String(maxList) }, ...opts },
+        {
+          params: { terms, maxList: String(maxList), ...TABLE_PARAMS[table] },
+          ...opts,
+        },
       );
-      const displays = j[1] ?? [];
+      const keys = j[1] ?? [];
       const fields = j[3] ?? [];
-      return displays.map((display, i) => ({ display, extra: fields[i] ?? [] }));
+      return keys.map((k, i) => ({ key: k, display: (fields[i] ?? []).join(" — ") }));
     },
     cache,
   );

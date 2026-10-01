@@ -696,6 +696,8 @@ const en: Record<string, string> = {
   "prio.qsofa": "qSOFA {n} (context)",
   "prio.charlson": "Charlson: not computed (comorbidities not collected)",
   "prio.basis": "Ordered by NEWS2 tier → score → shock/lactate → bundle delay only",
+  "data.asof": "Reference data as of {d}",
+  "data.unsynced": "Reference data not synced — run scripts/sync-terminology",
 };
 
 export default en;
