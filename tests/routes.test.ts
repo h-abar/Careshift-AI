@@ -706,9 +706,13 @@ describe("B4 claims lifecycle", () => {
 
   it("GET claim detail → documents + events + readiness", async () => {
     await loginAs("insurance");
+    // Deterministic: pick a review claim that actually has documents —
+    // Postgres findFirst order is arbitrary without orderBy.
     const claims = await prisma.insuranceClaim.findFirst({
-      where: { status: "review" },
+      where: { status: "review", documents: { some: {} } },
+      orderBy: { id: "asc" },
     });
+    expect(claims).toBeTruthy();
     const r = await claimGet(get(), ctx({ id: claims!.id }));
     expect(r.status).toBe(200);
     const body = await r.json();
