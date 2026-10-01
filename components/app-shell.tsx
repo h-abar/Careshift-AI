@@ -299,7 +299,7 @@ function DataFreshness() {
     <p className="pb-2 text-center text-[10px] text-slate-500">
       {asOf ? t("data.asof").replace("{d}", asOf) : t("data.unsynced")}
       {" · "}
-      <Link href="/references" className="text-[#1b5fad] hover:underline">
+      <Link href="/references" className="text-[#1b5fad] underline">
         {t("data.sources")}
       </Link>
       {" — NLM · openFDA · WHO ICD-11 (CC BY-ND 3.0 IGO) · MedlinePlus · NPHIES · PhysioNet/MIMIC"}
