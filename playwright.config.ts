@@ -1,10 +1,12 @@
+import "dotenv/config";
 import { defineConfig } from "@playwright/test";
+import { schemaUrl } from "./tests/db-url";
 
 const PORT = 3100;
 
 /**
  * E2E runs against a PRODUCTION build (`npm run build` first) serving a
- * dedicated seeded DB (prisma/e2e.db, prepared by global-setup.ts).
+ * dedicated seeded Postgres schema ("e2e", prepared by global-setup.ts).
  * Serial workers — the suite shares one DB.
  */
 export default defineConfig({
@@ -21,7 +23,7 @@ export default defineConfig({
     timeout: 180_000,
     reuseExistingServer: false,
     env: {
-      DATABASE_URL: "file:./e2e.db",
+      DATABASE_URL: schemaUrl("e2e"),
       SESSION_SECRET: "e2e-test-secret-0123456789abcdef0123456789",
       UPLOAD_DIR: "./e2e-uploads",
     },

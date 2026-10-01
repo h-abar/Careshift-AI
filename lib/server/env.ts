@@ -55,7 +55,10 @@ const envSchema = z.object({
   RETENTION_RATEBUCKET_DAYS: optionalPort,
   DORMANT_DAYS: optionalPort,
   // Seed only when explicitly requested (compose sets it for demo envs).
+  // APP_ENV gates it separately so a real production NODE_ENV build can
+  // still run as a demo container when SEED_DEMO=1 AND APP_ENV=demo.
   SEED_DEMO: z.enum(["", "0", "1", "true"]).optional(),
+  APP_ENV: z.enum(["", "development", "demo", "production"]).optional(),
   // Observability (item 8).
   LOG_LEVEL: z.enum(["", "debug", "info", "warn", "error"]).optional(),
   SENTRY_DSN: z.string().optional(),

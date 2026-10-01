@@ -1,0 +1,49 @@
+# Careshift AI demo stack (item 9): Postgres + app.
+#   docker compose up --build
+# App on http://localhost:3000 — seeds demo data (APP_ENV=demo).
+# For production deployment see docs/deployment.md (APP_ENV=production,
+# SEED_DEMO unset, real secrets, reverse proxy with TRUSTED_PROXY=1).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: careshift
+      POSTGRES_PASSWORD: careshift
+      POSTGRES_DB: careshift
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U careshift -d careshift"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      APP_ENV: demo                 # demo stack — seed allowed
+      SEED_DEMO: "1"
+      DATABASE_URL: postgres://careshift:careshift@db:5432/careshift
+      SESSION_SECRET: demo-secret-replace-me-0123456789abcdef
+      UPLOAD_DIR: /app/uploads
+      TRUSTED_PROXY: "0"
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  pgdata:
+  uploads:

@@ -15,9 +15,13 @@ import { handoffRecords, assignments, notifications } from "../lib/data/handoffs
 import { handoffs as shiftHandoffs } from "../lib/data/shifts";
 import { journeys } from "../lib/data/journeys";
 
-if (process.env.NODE_ENV === "production") {
+// Never seed a real production environment. APP_ENV marks deployment
+// intent (production/demo/development); NODE_ENV=production is also used
+// for the demo container build, so APP_ENV takes precedence when set.
+const appEnv = process.env.APP_ENV || process.env.NODE_ENV;
+if (appEnv === "production") {
   console.error(
-    "Refusing to seed — demo data/passwords are development-only and must never run in production.",
+    "Refusing to seed — demo data/passwords are development/demo-only and must never run in production.",
   );
   process.exit(1);
 }

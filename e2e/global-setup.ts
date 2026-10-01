@@ -1,15 +1,21 @@
 import { execSync } from "node:child_process";
 import { rmSync } from "node:fs";
+import { migrateUrl, schemaUrl } from "../tests/db-url";
 
-/** Fresh migrated + seeded e2e database before the suite starts. */
+/** Fresh migrated + seeded e2e schema ("e2e") before the suite starts. */
 export default function globalSetup() {
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    DATABASE_URL: "file:./e2e.db",
-    NODE_ENV: "development" as const,
-  };
-  rmSync("prisma/e2e.db", { force: true });
   rmSync("e2e-uploads", { recursive: true, force: true });
-  execSync("npx prisma migrate deploy", { env, stdio: "inherit" });
-  execSync("npx tsx prisma/seed.ts", { env, stdio: "inherit" });
+  // PGlite leaks prepared statements — clear them before migrate deploy.
+  execSync("npx tsx scripts/deallocate.ts", {
+    env: { ...process.env, DATABASE_URL: schemaUrl("e2e"), NODE_ENV: "development" },
+    stdio: "inherit",
+  });
+  execSync("npx prisma migrate deploy", {
+    env: { ...process.env, DATABASE_URL: migrateUrl("e2e"), NODE_ENV: "development" },
+    stdio: "inherit",
+  });
+  execSync("npx tsx prisma/seed.ts", {
+    env: { ...process.env, DATABASE_URL: schemaUrl("e2e"), NODE_ENV: "development" },
+    stdio: "inherit",
+  });
 }

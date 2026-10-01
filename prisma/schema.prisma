@@ -1,14 +1,15 @@
-// Careshift AI — Prisma schema
-// Dev: SQLite (file:./dev.db). Postgres-ready: swap provider + DATABASE_URL.
-// Rich nested demo data is stored as JSON strings for portability.
+// Careshift AI — Prisma schema. PostgreSQL only (item 9): dev/tests use a
+// local `prisma dev` (PGlite) server or compose; production uses Postgres.
+// Rich nested demo data stays as JSON strings for query portability.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Role {

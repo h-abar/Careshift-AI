@@ -5,8 +5,8 @@
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { execSync } from "node:child_process";
-import { rmSync } from "node:fs";
 import path from "node:path";
+import { migrateUrl, schemaUrl } from "./db-url";
 
 const cookieStore = vi.hoisted(() => new Map<string, string>());
 
@@ -94,12 +94,22 @@ async function loginAs(who: keyof typeof USERS) {
 }
 
 beforeAll(async () => {
-  // Reset the dedicated test DB and re-seed it — via COMMITTED migrations
-  // (migrate deploy), so tests exercise exactly what production runs.
-  rmSync("prisma/test.db", { force: true });
-  const env = { ...process.env, DATABASE_URL: "file:./test.db" };
-  execSync("npx prisma migrate deploy", { env, stdio: "ignore" });
-  execSync("npx tsx prisma/seed.ts", { env, stdio: "ignore" });
+  // Reset the dedicated "test" schema and re-seed it — via COMMITTED
+  // migrations (migrate deploy), so tests exercise what production runs.
+  // The seed truncates every table, which is the reset.
+  // PGlite leaks prepared statements — clear them before migrate deploy.
+  execSync("npx tsx scripts/deallocate.ts", {
+    env: { ...process.env, DATABASE_URL: schemaUrl("test") },
+    stdio: "ignore",
+  });
+  execSync("npx prisma migrate deploy", {
+    env: { ...process.env, DATABASE_URL: migrateUrl("test") },
+    stdio: "ignore",
+  });
+  execSync("npx tsx prisma/seed.ts", {
+    env: { ...process.env, DATABASE_URL: schemaUrl("test") },
+    stdio: "ignore",
+  });
   process.env.UPLOAD_DIR = path.join(
     (await import("node:os")).tmpdir(),
     "cs-test-uploads",

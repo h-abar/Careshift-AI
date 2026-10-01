@@ -6,7 +6,7 @@ import { handle } from "@/lib/server/json";
  * Unauthenticated but deliberately shallow: returns only status fields,
  * never connection details. 503 when not ready so orchestrators hold traffic.
  */
-export const GET = handle(async () => {
+export const GET = handle(async (_req: Request) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     const pending = await prisma.$queryRaw<{ n: bigint }[]>`

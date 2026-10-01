@@ -44,27 +44,36 @@ npm run db:migrate     # prisma migrate dev — applies prisma/migrations + seed
 ### Environment variables (`.env`, git-ignored — names in `.env.example`)
 
 ```
-DATABASE_URL="file:./dev.db"          # see "Postgres profile" below
+DATABASE_URL="postgres://…"           # REQUIRED — PostgreSQL only.
+                                      # Local dev: `npx prisma dev` (PGlite)
+                                      # or `docker compose up db`
+SHADOW_DATABASE_URL="postgres://…"    # only for `prisma migrate dev`
 SESSION_SECRET="<random 32+ chars>"   # REQUIRED in production — server
                                       # throws at startup if missing/short
 API_ORIGIN="https://…"                # Capacitor server.url (optional)
 ```
 
-### Database
+### Database — PostgreSQL only
 
-- Dev DB: `prisma/dev.db` (git-ignored). Real migrations live in
-  `prisma/migrations/` — use `npm run db:migrate` (dev) / `npm run db:deploy`
-  (prod) rather than `db push`. `npm run db:reset` wipes + reseeds.
+- The datasource provider is `postgresql`; SQLite is dropped (item 9).
+  Local dev needs a Postgres server — easiest is `npx prisma dev` (local
+  PGlite, prints DATABASE_URL + SHADOW_DATABASE_URL to paste into `.env`).
+- **PGlite quirk**: its single backend leaks prepared statements across
+  pooled connections (42P05 errors). `.env.development` therefore sets
+  `DATABASE_URL` with `pgbouncer=true&connection_limit=1` for `next dev`;
+  the prisma CLI reads the clean `.env` URL. Tests/e2e derive per-schema
+  URLs (`?schema=test|e2e`) via `tests/db-url.ts` and run
+  `scripts/deallocate.ts` before `migrate deploy`.
+- Real migrations live in `prisma/migrations/` — use `npm run db:migrate`
+  (dev) / `npm run db:deploy` (prod) rather than `db push`.
 - Seed: `npm run db:seed` loads the fictional demo set (22 patients,
   50 claims, 10 users, handoffs/shifts/assignments/notifications). It is
-  **dev-only** — it refuses to run with `NODE_ENV=production`, and demo
-  passwords are documented here for development only.
-- **Postgres profile**: in `prisma/schema.prisma` set
-  `provider = "postgresql"` and point `DATABASE_URL` at e.g.
-  `postgresql://user:pass@host:5432/careshift`, then
-  `npm run db:deploy`. The schema avoids SQLite-only types (JSON is stored
-  as strings), so no model changes are needed.
-- Tests use their own `prisma/test.db`, reset + re-seeded per run.
+  **non-production only** — it refuses to run when `APP_ENV=production`
+  (or `NODE_ENV=production` when APP_ENV is unset).
+- Tests use an isolated `test` schema, reset + re-seeded per run;
+  Playwright E2E uses an `e2e` schema.
+- Docker demo: `docker compose up --build` → app on :3000 seeded with the
+  demo set (`APP_ENV=demo`, `SEED_DEMO=1`). Smoke test: `bash scripts/smoke.sh`.
 
 ## Run / verify
 
