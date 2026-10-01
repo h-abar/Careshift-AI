@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { usePatientsTable } from "@/lib/api";
 import { fmtSarK } from "@/lib/format";
-import { Card, Empty, ErrorState, Loading, Skeleton, Meter, RiskBadge, SectionTitle } from "@/components/ui";
+import { Card, Empty, ErrorState, Loading, Skeleton, Meter, RiskBadge, SectionTitle, PriorityChips } from "@/components/ui";
 
 export default function PatientsPage() {
   const { t, lang } = useI18n();
@@ -47,7 +47,7 @@ export default function PatientsPage() {
             </tr>
           </thead>
           <tbody>
-            {snaps.map(({ patient, risk, insurance }) => {
+            {snaps.map(({ patient, risk, insurance, priority }) => {
               const v = patient.vitals[patient.vitals.length - 1];
               const a = getAssignment(patient.id);
               return (
@@ -60,7 +60,10 @@ export default function PatientsPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{patient.room}</td>
                   <td className="px-4 py-3 text-slate-600">{t(`dx.${patient.dxKey}`)}</td>
-                  <td className="px-4 py-3"><RiskBadge level={risk.level} score={risk.score} /></td>
+                  <td className="px-4 py-3">
+                    <RiskBadge level={risk.level} score={risk.score} />
+                    <PriorityChips p={priority} />
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-600">
                     HR {v.hr} · BP {v.sbp} · SpO₂ {v.spo2}%{v.glucose ? ` · Glu ${v.glucose}` : ""}
                   </td>
@@ -88,7 +91,7 @@ export default function PatientsPage() {
 
       {/* Mobile cards */}
       <div className="space-y-2.5 md:hidden">
-        {snaps.map(({ patient, risk, insurance }) => (
+        {snaps.map(({ patient, risk, insurance, priority }) => (
           <Link key={patient.id} href={`/patient/${patient.id}`}>
             <Card className="!p-4">
               <div className="flex items-center justify-between">
@@ -103,6 +106,7 @@ export default function PatientsPage() {
                 </div>
                 <RiskBadge level={risk.level} score={risk.score} />
               </div>
+              <PriorityChips p={priority} />
               <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-600">
                 <span>{t("common.documentation")}: {insurance.docCompleteness}%</span>
                 <span className="font-mono text-red-600">

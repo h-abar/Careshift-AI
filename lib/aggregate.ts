@@ -13,27 +13,41 @@ import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { computeCareValue } from "@/lib/engines/care-value";
 import { simulateWhatIf } from "@/lib/engines/simulator";
+import {
+  byPriority,
+  computePriority,
+  type PrioritySignals,
+} from "@/lib/engines/priority";
 
 export interface PatientSnapshot {
   patient: Patient;
   risk: ClinicalRisk;
   insurance: InsuranceRisk;
   plan: InterventionStep[];
+  /** NEWS2/evidence ordering signals — null when no vitals recorded. */
+  priority: PrioritySignals | null;
 }
 
-/** Runs both engines over the live census, sorted by clinical risk. */
+/**
+ * Static snapshot path (no DB): same evidence ordering as dbSnapshots via
+ * the pure engine. Ordering uses ONLY validated indicators — NEWS2 tier,
+ * shock index/lactate, hour-1 bundle delay (3B2-16); the rule score and
+ * workflow signals are displayed as context, never reordered.
+ */
 export function buildSnapshots(): PatientSnapshot[] {
   return patients
     .map((patient) => {
       const risk = assessClinicalRisk(patient);
+      const plan = buildInterventionPlan(patient, risk);
       return {
         patient,
         risk,
         insurance: assessInsuranceRisk(patient, risk),
-        plan: buildInterventionPlan(patient, risk),
+        plan,
+        priority: computePriority(patient, plan, 0),
       };
     })
-    .sort((a, b) => b.risk.score - a.risk.score);
+    .sort(byPriority);
 }
 
 /**

@@ -558,7 +558,7 @@ const ar: Record<string, string> = {
 
   // ── Patients page ──
   "pts.title": "المرضى",
-  "pts.subtitle": "نزلاء الوحدة مرتبون حسب الخطورة التنبؤية",
+  "pts.subtitle": "نزلاء الوحدة مرتبون حسب مستوى NEWS2 ومؤشر الصدمة وتوقيت الحزمة (مؤشرات موثقة)",
   "pts.vitals": "آخر العلامات الحيوية",
 
   // ── Reports ──
@@ -683,6 +683,19 @@ const ar: Record<string, string> = {
   "login.secure": "منصة آمنة ومتوافقة مع معايير الخصوصية الصحية",
   "login.version": "Careshift AI 2.0 · الإصدار 1.0.0",
   "login.tags": "سريري · ذكاء اصطناعي · تأمين · آمن",
+
+  // Evidence-based ordering (PROMPT A / 3B2-16)
+  "prio.tier3": "طارئ",
+  "prio.tier2": "عاجل",
+  "prio.tier1": "روتيني",
+  "prio.tier0": "مستقر",
+  "prio.bundle": "حزمة الساعة الأولى متأخرة {m}د",
+  "prio.stale": "العلامات قديمة {m}د",
+  "prio.tasks": "{n} مهام متأخرة",
+  "prio.concern": "قلق الممرضة",
+  "prio.qsofa": "qSOFA {n} (سياق)",
+  "prio.charlson": "Charlson: غير محسوب (المصاحبات غير مجمّعة)",
+  "prio.basis": "الترتيب حسب مستوى NEWS2 ثم الدرجة ثم الصدمة/اللاكتات ثم تأخر الحزمة فقط",
 };
 
 export default ar;

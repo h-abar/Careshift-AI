@@ -11,6 +11,15 @@ import type {
 } from "@/lib/types";
 import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
 import { assessInsuranceRisk } from "@/lib/engines/insurance-risk";
+import {
+  byPriority,
+  computePriority,
+  lactateOf,
+  latestVitals,
+  vitalsStaleMin,
+  type PrioritySignals,
+} from "@/lib/engines/priority";
+import { runRule, KbError } from "@/lib/server/kb";
 import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { computeCareValue } from "@/lib/engines/care-value";
@@ -153,44 +162,121 @@ export function invalidateSnapshots() {
   snapsCache = null;
 }
 
+/**
+ * Minutes since the earliest high/critical RiskAssessment per patient —
+ * the hour-1 bundle clock's t0 (SSC 2021 / Seymour 2017). 0 when the
+ * patient never crossed a high tier.
+ */
+async function triggerMinutes(): Promise<Map<string, number>> {
+  const rows = await prisma.riskAssessment.findMany({
+    where: { level: { in: ["high", "critical"] } },
+    orderBy: { assessedAt: "asc" },
+    select: { patientId: true, assessedAt: true },
+  });
+  const first = new Map<string, Date>();
+  for (const r of rows) if (!first.has(r.patientId)) first.set(r.patientId, r.assessedAt);
+  const now = Date.now();
+  const out = new Map<string, number>();
+  for (const [pid, at] of first)
+    out.set(pid, Math.max(0, Math.round((now - at.getTime()) / 60000)));
+  return out;
+}
+
+/**
+ * Compute PrioritySignals via the seeded knowledge-base rules — every run
+ * writes RuleExecution rows (id + version + inputs + output). Falls back
+ * to the pure engine only when the KB is not seeded yet (KbError), so the
+ * ordering contract never silently breaks; parity is asserted in tests.
+ */
+async function priorityViaRules(
+  patient: Patient,
+  plan: InterventionStep[],
+  triggeredMin: number,
+): Promise<PrioritySignals | null> {
+  try {
+    const v = latestVitals(patient);
+    if (!v) return null;
+    const n2 = await runRule("news2-score", v as unknown as Record<string, unknown>, { patientId: patient.id });
+    const tier = await runRule("news2-tier", { score: n2.score, maxSingle: n2.maxSingle }, { patientId: patient.id });
+    const lactate = lactateOf(patient);
+    const shock = await runRule("shock-lactate", {
+      si: v.sbp > 0 ? v.hr / v.sbp : 0,
+      lactate: lactate ?? -1,
+    }, { patientId: patient.id });
+    const bundle = await runRule("sepsis-hour1-bundle", {
+      news2: n2.score as number,
+      shockSuspect: shock.suspect ? 1 : 0,
+      elapsedMin: triggeredMin,
+    }, { patientId: patient.id });
+    const ordering = await runRule("patient-ordering", {
+      tier: tier.tier, news2: n2.score, shock: shock.suspect ? 1 : 0,
+      bundleOverdueMin: bundle.overdueMin,
+    }, { patientId: patient.id });
+    const q = await runRule("qsofa-context", v as unknown as Record<string, unknown>, { patientId: patient.id });
+    return {
+      news2: Number(n2.score), tier: Number(tier.tier) as PrioritySignals["tier"],
+      maxSingle: Number(n2.maxSingle),
+      shockIndex: Math.round((v.sbp > 0 ? v.hr / v.sbp : 0) * 100) / 100,
+      shockSuspect: Boolean(shock.suspect),
+      lactate,
+      bundleIndicated: Boolean(bundle.indicated),
+      bundleOverdueMin: Number(bundle.overdueMin),
+      sortKey: Number(ordering.sortKey),
+      qsofa: Number(q.score),
+      info: {
+        overdueTasks: plan.filter((s) => s.status === "overdue").length,
+        vitalsStaleMin: vitalsStaleMin(patient),
+        nurseConcern: patient.riskFlags.includes("nurse-concern"),
+      },
+    };
+  } catch (e) {
+    if (e instanceof KbError) return computePriority(patient, plan, triggeredMin);
+    throw e;
+  }
+}
+
 export async function dbSnapshots(): Promise<PatientSnapshot[]> {
   if (snapsCache && Date.now() - snapsCache.at < SNAPS_TTL_MS)
     return snapsCache.data;
-  const [rows, overrides] = await Promise.all([
+  const [rows, overrides, triggers] = await Promise.all([
     prisma.patient.findMany(),
     prisma.interventionOverride.findMany(),
+    triggerMinutes(),
   ]);
   const ov = new Map(overrides.map((o) => [o.stepId, o]));
-  const data = rows
-    .map(toPatient)
-    .map((patient) => {
-      const risk = assessClinicalRisk(patient);
-      const now = Date.now();
-      const plan = buildInterventionPlan(patient, risk).map((s) => {
-        const o = ov.get(s.id);
-        if (!o) return s;
-        // Overdue is DERIVED from the real dueAt timestamp, never stored.
-        const derived =
-          o.dueAt && o.dueAt.getTime() < now &&
-          (o.status === "pending" || o.status === "in_progress")
-            ? "overdue"
-            : o.status;
-        return {
-          ...s,
-          status: derived as InterventionStatus,
-          escalatedTo: (o.escalatedTo ?? undefined) as InterventionStep["escalatedTo"],
-          assigneeId: o.assigneeId ?? undefined,
-          dueAt: o.dueAt?.toISOString(),
-          dueInMin: o.dueAt
-            ? Math.max(0, Math.round((o.dueAt.getTime() - now) / 60000))
-            : s.dueInMin,
-          note: o.note || undefined,
-          resolvedAt: o.resolvedAt?.toISOString(),
-        };
-      });
-      return { patient, risk, insurance: assessInsuranceRisk(patient, risk), plan };
-    })
-    .sort((a, b) => b.risk.score - a.risk.score);
+  const data: PatientSnapshot[] = [];
+  for (const patient of rows.map(toPatient)) {
+    const risk = assessClinicalRisk(patient);
+    const now = Date.now();
+    const plan = buildInterventionPlan(patient, risk).map((s) => {
+      const o = ov.get(s.id);
+      if (!o) return s;
+      // Overdue is DERIVED from the real dueAt timestamp, never stored.
+      const derived =
+        o.dueAt && o.dueAt.getTime() < now &&
+        (o.status === "pending" || o.status === "in_progress")
+          ? "overdue"
+          : o.status;
+      return {
+        ...s,
+        status: derived as InterventionStatus,
+        escalatedTo: (o.escalatedTo ?? undefined) as InterventionStep["escalatedTo"],
+        assigneeId: o.assigneeId ?? undefined,
+        dueAt: o.dueAt?.toISOString(),
+        dueInMin: o.dueAt
+          ? Math.max(0, Math.round((o.dueAt.getTime() - now) / 60000))
+          : s.dueInMin,
+        note: o.note || undefined,
+        resolvedAt: o.resolvedAt?.toISOString(),
+      };
+    });
+    const priority = await priorityViaRules(patient, plan, triggers.get(patient.id) ?? 0);
+    data.push({ patient, risk, insurance: assessInsuranceRisk(patient, risk), plan, priority });
+  }
+  // Ordering = validated indicators ONLY (NEWS2 tier → score → shock →
+  // bundle delay). risk.score, nurse concern, overdue tasks, stale vitals
+  // are displayed as information and do NOT change the order.
+  data.sort(byPriority);
   snapsCache = { at: Date.now(), data };
   return data;
 }

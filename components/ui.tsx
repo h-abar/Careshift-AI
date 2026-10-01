@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { fmtTime } from "@/lib/format";
 import type { InterventionStatus, RiskLevel } from "@/lib/types";
+import type { PrioritySignals } from "@/lib/engines/priority";
 
 // ── Light clinical palette per risk level ────────────────────────────────────
 export const LEVEL_STYLES: Record<
@@ -299,6 +300,64 @@ export function Loading() {
         <span className="h-2.5 w-2.5 animate-ping rounded-full bg-[#0e9bb5]" />
         Careshift AI
       </div>
+    </div>
+  );
+}
+
+/* ── Evidence ordering chips (3B2-16) ──
+ * Ordering signals are validated indicators only: NEWS2 tier, shock
+ * index/lactate, hour-1 bundle delay. Everything else renders as
+ * information and NEVER reorders the list.
+ */
+const TIER_BADGE = [
+  "bg-emerald-50 text-emerald-700 border-emerald-200", // 0 stable
+  "bg-sky-50 text-sky-700 border-sky-200",           // 1 routine
+  "bg-amber-50 text-amber-700 border-amber-200",     // 2 urgent
+  "bg-red-50 text-red-700 border-red-200",           // 3 emergency
+];
+const INFO_CHIP = "bg-slate-50 text-slate-600 border-slate-200";
+const WARN_CHIP = "bg-orange-50 text-orange-700 border-orange-200";
+
+export function PriorityChips({ p }: { p: PrioritySignals | null }) {
+  const { t } = useI18n();
+  if (!p) return null;
+  const chip = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold";
+  const fmt = (key: string, m: number) => t(key).replace("{m}", String(m));
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1">
+      <span className={`${chip} ${TIER_BADGE[p.tier]}`} title={t("prio.basis")}>
+        NEWS2 {p.news2} · {t(`prio.tier${p.tier}`)}
+      </span>
+      {p.shockSuspect && (
+        <span className={`${chip} ${WARN_CHIP}`}>
+          SI {p.shockIndex}
+          {p.lactate !== null && p.lactate >= 2.5 ? ` · Lac ${p.lactate}` : ""}
+        </span>
+      )}
+      {p.bundleOverdueMin > 0 && (
+        <span className={`${chip} bg-red-50 text-red-700 border-red-200`}>
+          ⏱ {fmt("prio.bundle", p.bundleOverdueMin)}
+        </span>
+      )}
+      {/* information only — never reorder */}
+      {p.info.overdueTasks > 0 && (
+        <span className={`${chip} ${INFO_CHIP}`}>
+          {t("prio.tasks").replace("{n}", String(p.info.overdueTasks))}
+        </span>
+      )}
+      {p.info.vitalsStaleMin !== null && p.info.vitalsStaleMin >= 60 && (
+        <span className={`${chip} ${INFO_CHIP}`}>
+          {fmt("prio.stale", p.info.vitalsStaleMin)}
+        </span>
+      )}
+      {p.info.nurseConcern && (
+        <span className={`${chip} ${INFO_CHIP}`}>{t("prio.concern")}</span>
+      )}
+      {p.qsofa >= 2 && (
+        <span className={`${chip} ${INFO_CHIP}`} title={t("prio.charlson")}>
+          {t("prio.qsofa").replace("{n}", String(p.qsofa))}
+        </span>
+      )}
     </div>
   );
 }

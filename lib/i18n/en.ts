@@ -558,7 +558,7 @@ const en: Record<string, string> = {
 
   // ── Patients page ──
   "pts.title": "Patients",
-  "pts.subtitle": "Unit census ranked by predictive risk",
+  "pts.subtitle": "Unit census ordered by NEWS2 tier, shock index and bundle timing (validated indicators)",
   "pts.vitals": "Latest vitals",
 
   // ── Reports ──
@@ -683,6 +683,19 @@ const en: Record<string, string> = {
   "login.secure": "A secure platform compliant with healthcare privacy standards",
   "login.version": "Careshift AI 2.0 · Version 1.0.0",
   "login.tags": "Clinical · AI · Insurance · Secure",
+
+  // Evidence-based ordering (PROMPT A / 3B2-16)
+  "prio.tier3": "Emergency",
+  "prio.tier2": "Urgent",
+  "prio.tier1": "Routine",
+  "prio.tier0": "Stable",
+  "prio.bundle": "Hour-1 bundle +{m}m overdue",
+  "prio.stale": "Vitals {m}m old",
+  "prio.tasks": "{n} overdue tasks",
+  "prio.concern": "Nurse concern",
+  "prio.qsofa": "qSOFA {n} (context)",
+  "prio.charlson": "Charlson: not computed (comorbidities not collected)",
+  "prio.basis": "Ordered by NEWS2 tier → score → shock/lactate → bundle delay only",
 };
 
 export default en;
