@@ -1116,6 +1116,76 @@
     }
    },
    "noteEn": "Prototype discharge→claim proxy; no discharge timestamp is modelled."
+  },
+  {
+   "key": "handoff-accepted-pct",
+   "nameEn": "Handoffs accepted %",
+   "nameAr": "نسبة التسليمات المقبولة",
+   "unit": "%",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "handoffAccepted/handoffStarted"
+     }
+    }
+   },
+   "noteEn": "I-PASS completeness enforced by required checklist."
+  },
+  {
+   "key": "action-items-open",
+   "nameEn": "Open carried-over action items",
+   "nameAr": "بنود عمل منقولة مفتوحة",
+   "unit": "count",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "openActionItems"
+     }
+    }
+   },
+   "noteEn": "Carry-over chain: created without a matching completed event."
+  },
+  {
+   "key": "alert-ack-min",
+   "nameEn": "Mean alert→acknowledge (min)",
+   "nameAr": "متوسط تنبيه→إقرار (دقيقة)",
+   "unit": "min",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "mean(ack−alert)"
+     }
+    }
+   },
+   "noteEn": "First alert vs first ack per patient."
+  },
+  {
+   "key": "alert-intervention-min",
+   "nameEn": "Mean alert→intervention (min)",
+   "nameAr": "متوسط تنبيه→تدخل (دقيقة)",
+   "unit": "min",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "mean(iv−alert)"
+     }
+    }
+   },
+   "noteEn": "First alert vs first intervention_started per patient."
+  },
+  {
+   "key": "escalations-per-100pd",
+   "nameEn": "Escalations per 100 patient-days",
+   "nameAr": "تصعيدات لكل 100 يوم-مريض",
+   "unit": "esc/100pd",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "escalations/patientDays*100"
+     }
+    }
+   },
+   "noteEn": "Prototype denominator: demo patient-days are synthetic."
   }
  ]
 }

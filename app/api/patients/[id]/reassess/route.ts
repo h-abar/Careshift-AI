@@ -1,5 +1,8 @@
 import { requirePerm } from "@/lib/server/session";
-import { dbPatient, invalidateSnapshots } from "@/lib/server/data";
+import { dbPatient, dbSnapshots, invalidateSnapshots } from "@/lib/server/data";
+import {
+  emitScoreEvent, emitAlertEvent, emitPrioritySnapshot,
+} from "@/lib/server/chains";
 import { runRiskAssessment } from "@/lib/server/risk";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
@@ -20,6 +23,29 @@ export const POST = handle(
 
     const { risk, crossedUp } = await runRiskAssessment(patient);
     invalidateSnapshots();
+    // C9 — the deterioration story lands in the event store live:
+    // score, alert on upward crossing, and a priority-list snapshot with
+    // the patient's rank in the cohort (validated indicators only).
+    await emitScoreEvent(
+      id,
+      { score: risk.score, level: risk.level, conditionKey: risk.conditionKey },
+      auth.user.id,
+    );
+    if (crossedUp) await emitAlertEvent(id, risk.level, auth.user.id);
+    const snaps = await dbSnapshots();
+    const rank = snaps.findIndex((s) => s.patient.id === id) + 1;
+    const mine = snaps.find((s) => s.patient.id === id);
+    if (mine?.priority) {
+      await emitPrioritySnapshot(
+        id, rank,
+        {
+          news2: mine.priority.news2 ?? null,
+          tier: mine.priority.tier,
+          sortKey: mine.priority.sortKey,
+        },
+        auth.user.id,
+      );
+    }
     await audit(
       {
         userId: auth.user.id,

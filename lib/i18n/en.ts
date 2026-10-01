@@ -825,6 +825,21 @@ const en: Record<string, string> = {
   "kpi.livedNotBilled": "Lived-not-billed",
   "kpi.lateEntry": "Late-entry events",
   "kpi.eventToClaim": "Mean event→claim lag",
+  "ev.chainTitle": "Closed-loop safety chain",
+  "ev.chainGaps": "gaps",
+  "ev.step.risk": "Risk detected",
+  "ev.step.alert": "Alert",
+  "ev.step.acknowledged": "Acknowledged",
+  "ev.step.intervention": "Intervention",
+  "ev.step.completed": "Completed",
+  "ev.step.documented": "Documented",
+  "ev.step.claim": "Claim link",
+  "kpi.safetyTitle": "Safety-chain KPIs",
+  "kpi.handoffAccepted": "Handoffs accepted",
+  "kpi.openItems": "Open action items",
+  "kpi.meanAck": "Mean alert→ack",
+  "kpi.meanIntervention": "Mean alert→intervention",
+  "kpi.escPer100": "Escalations/100 pat-days",
 };
 
 export default en;

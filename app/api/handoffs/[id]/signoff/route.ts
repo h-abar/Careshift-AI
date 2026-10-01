@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
 import { REQUIRED_CHECKLIST, handoffEvent } from "@/lib/server/handoffs";
+import { emitHandoffEvent } from "@/lib/server/chains";
 import { notify } from "@/lib/server/notify";
 import { audit } from "@/lib/server/audit";
 import { can } from "@/lib/permissions";
@@ -59,6 +60,7 @@ export const POST = handle(
       },
     });
     await handoffEvent(id, auth.user.id, "signed_off");
+    await emitHandoffEvent(id, patientIds, "signed_off", auth.user);
     await notify(h.incomingId, "notif.signedOff", "warning", {
       entityType: "handoff",
       entityId: id,

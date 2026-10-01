@@ -249,8 +249,20 @@ export interface TimelineEvent {
   categories: string[];
 }
 
+export interface ChainStep {
+  step: string;
+  status: "ok" | "gap" | "na";
+  eventId?: string;
+  at?: string;
+  note?: string;
+}
+
 export const usePatientEvents = (id: string, category = "") =>
-  useApi<{ scope: string; events: TimelineEvent[] }>(
+  useApi<{
+    scope: string;
+    events: TimelineEvent[];
+    chain?: { steps: ChainStep[]; gaps: number; label: string } | null;
+  }>(
     `/api/patients/${id}/events${category ? `?category=${category}` : ""}`,
     [id, category],
   );

@@ -22,6 +22,14 @@ interface ClaimKpisData {
   lateEntryCount: number;
   eventsTotal: number;
   meanEventToClaimH: number | null;
+  safety: {
+    label: string;
+    handoffAcceptedPct: number | null;
+    openActionItems: number;
+    meanAckMin: number | null;
+    meanInterventionMin: number | null;
+    escalationsPer100Pd: number | null;
+  };
 }
 
 export function ClaimKpis() {
@@ -75,6 +83,35 @@ export function ClaimKpis() {
                   .map((d) => `${d.category}: ${d.count}`)
                   .join(" · ")}
           </div>
+        </div>
+      </div>
+      {/* C9 — safety-chain KPIs from the same registry */}
+      <div className="mt-4">
+        <p className="mb-2 text-xs font-semibold text-[#13304d]">
+          {t("kpi.safetyTitle")}
+        </p>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          {cell(
+            t("kpi.handoffAccepted"),
+            data.safety.handoffAcceptedPct == null
+              ? "—" : `${data.safety.handoffAcceptedPct}%`,
+          )}
+          {cell(t("kpi.openItems"), data.safety.openActionItems)}
+          {cell(
+            t("kpi.meanAck"),
+            data.safety.meanAckMin == null ? "—" : `${data.safety.meanAckMin}m`,
+          )}
+          {cell(
+            t("kpi.meanIntervention"),
+            data.safety.meanInterventionMin == null
+              ? "—" : `${data.safety.meanInterventionMin}m`,
+          )}
+          {cell(
+            t("kpi.escPer100"),
+            data.safety.escalationsPer100Pd == null
+              ? "—" : data.safety.escalationsPer100Pd,
+            true,
+          )}
         </div>
       </div>
     </Card>

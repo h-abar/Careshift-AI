@@ -5,6 +5,7 @@ import { assessClinicalRisk } from "@/lib/engines/clinical-risk";
 import { buildInterventionPlan } from "@/lib/engines/interventions";
 import { notify } from "@/lib/server/notify";
 import { appendJourney } from "@/lib/server/journey";
+import { emitInterventionEvent } from "@/lib/server/chains";
 import { audit } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { interventionSchema } from "@/lib/schemas";
@@ -163,6 +164,12 @@ export const POST = handle(
         key: "interventionDone",
       });
     }
+
+    // C9 — the event store records the intervention lifecycle live.
+    await emitInterventionEvent(
+      body.patientId, stepId, body.status,
+      { id: auth.user.id, role: auth.user.role }, body.note,
+    );
 
     await audit(
       {

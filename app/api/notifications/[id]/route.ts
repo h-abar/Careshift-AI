@@ -3,6 +3,7 @@ import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
 import { notifPatchSchema } from "@/lib/schemas";
+import { appendEvent } from "@/lib/server/events";
 
 /**
  * Acknowledge / dismiss a notification — writes MY receipt only, so one
@@ -45,6 +46,16 @@ export const PATCH = handle(
       },
       req,
     );
+    // C9 — acknowledgement of a patient alert is itself a clinical event.
+    if (action === "ack" && n.patientId) {
+      await appendEvent({
+        patientId: n.patientId, type: "alert_acknowledged",
+        occurredAt: new Date(),
+        actorUserId: auth.user.id, actorRole: auth.user.role,
+        payload: { notificationId: id, simulated: "Simulated" },
+        sourceRecordId: `live:ack:${id}:${auth.user.id}`,
+      });
+    }
     return ok({ id, read: true });
   },
 );

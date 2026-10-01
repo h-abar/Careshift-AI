@@ -73,6 +73,40 @@ export function EventTimeline({ patientId }: { patientId: string }) {
       <p className="mb-3 text-[11px] text-slate-500">
         {data.scope === "full" ? t("ev.scopeFull") : t("ev.scopeSubset")}
       </p>
+      {/* C9 — closed-loop safety chain (clinical scope only) */}
+      {data.chain && (
+        <div className="mb-4 rounded-lg border border-[#e2e9f2] bg-slate-50 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold text-[#13304d]">
+              {t("ev.chainTitle")}
+            </span>
+            {data.chain.gaps > 0 && (
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
+                {data.chain.gaps} {t("ev.chainGaps")}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {data.chain.steps.map((s) => (
+              <span
+                key={s.step}
+                title={s.note ?? s.at ?? ""}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  s.status === "ok"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : s.status === "gap"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-slate-200 text-slate-500"
+                }`}
+              >
+                {t(`ev.step.${s.step}`)}
+                {s.status === "gap" ? " ⚠" : s.status === "ok" ? " ✓" : ""}
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-[10px] text-slate-500">{data.chain.label}</p>
+        </div>
+      )}
       <div className="mb-4 flex flex-wrap gap-1.5" role="tablist">
         {FILTERS.map((f) => (
           <button

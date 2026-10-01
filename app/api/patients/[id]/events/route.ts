@@ -10,6 +10,7 @@ import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 import { BILLING_TYPES, eventCategories } from "@/lib/event-taxonomy";
+import { closedLoopChain } from "@/lib/server/chains";
 
 export const GET = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
@@ -85,6 +86,9 @@ export const GET = handle(
     return ok({
       scope: insurer ? "claim-linked-subset" : "full",
       events,
+      // C9 — closed-loop safety chain (clinical roles only; the insurer
+      // gets claim-linked proof via the package, not the safety chain)
+      chain: insurer ? null : await closedLoopChain(id),
     });
   },
 );

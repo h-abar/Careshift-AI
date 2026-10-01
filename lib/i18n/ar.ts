@@ -825,6 +825,21 @@ const ar: Record<string, string> = {
   "kpi.livedNotBilled": "أحداث بلا فوترة",
   "kpi.lateEntry": "قيود متأخرة",
   "kpi.eventToClaim": "متوسط فاصل حدث→مطالبة",
+  "ev.chainTitle": "سلسلة السلامة المغلقة",
+  "ev.chainGaps": "فجوات",
+  "ev.step.risk": "اكتشاف الخطر",
+  "ev.step.alert": "تنبيه",
+  "ev.step.acknowledged": "إقرار",
+  "ev.step.intervention": "تدخل",
+  "ev.step.completed": "إنجاز",
+  "ev.step.documented": "توثيق",
+  "ev.step.claim": "ربط المطالبة",
+  "kpi.safetyTitle": "مؤشرات سلسلة السلامة",
+  "kpi.handoffAccepted": "تسليمات مقبولة",
+  "kpi.openItems": "بنود عمل مفتوحة",
+  "kpi.meanAck": "متوسط تنبيه→إقرار",
+  "kpi.meanIntervention": "متوسط تنبيه→تدخل",
+  "kpi.escPer100": "تصعيدات/100 يوم-مريض",
 };
 
 export default ar;

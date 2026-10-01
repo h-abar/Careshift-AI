@@ -2,6 +2,7 @@ import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
 import { dbPatients } from "@/lib/server/data";
 import { genSbar, handoffEvent } from "@/lib/server/handoffs";
+import { emitHandoffEvent } from "@/lib/server/chains";
 import { notify } from "@/lib/server/notify";
 import { audit } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
@@ -73,6 +74,7 @@ export const POST = handle(async (req: Request) => {
     }),
   });
   await handoffEvent(id, auth.user.id, "created", `${patients.length} patients`);
+  await emitHandoffEvent(id, body.patientIds, "created", auth.user);
   await notify(inc.id, "notif.handoffForYou", "info", {
     entityType: "handoff",
     entityId: id,

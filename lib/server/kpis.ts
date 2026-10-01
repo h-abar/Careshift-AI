@@ -5,6 +5,7 @@
  */
 import { prisma } from "@/lib/server/prisma";
 import { runClaimChecks } from "@/lib/server/claim-checks";
+import { safetyKpis, type SafetyKpis } from "@/lib/server/chains";
 
 if (typeof window !== "undefined") {
   throw new Error("lib/server/kpis.ts is server-only");
@@ -31,6 +32,8 @@ export interface ClaimKpis {
   /** mean hours from the patient's latest event to claim updatedAt —
    *  prototype discharge→claim proxy (no discharge timestamp modelled) */
   meanEventToClaimH: number | null;
+  /** C9 — safety-chain KPIs from the same registry */
+  safety: SafetyKpis;
 }
 
 export const KPI_LABEL =
@@ -101,6 +104,7 @@ export async function claimKpis(): Promise<ClaimKpis> {
 
   return {
     label: KPI_LABEL,
+    safety: await safetyKpis(),
     eventBackedPct: linesTotal ? Math.round((linesEventBacked / linesTotal) * 100) : 0,
     linesTotal,
     linesEventBacked,

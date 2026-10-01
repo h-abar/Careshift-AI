@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/server/prisma";
 import { requirePerm } from "@/lib/server/session";
-import { handoffEvent } from "@/lib/server/handoffs";
+import { handoffEvent, REQUIRED_CHECKLIST } from "@/lib/server/handoffs";
+import { emitHandoffEvent, carryOverActionItems } from "@/lib/server/chains";
 import { notify } from "@/lib/server/notify";
 import { audit } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
@@ -54,6 +55,19 @@ export const POST = handle(
       },
     });
     await handoffEvent(id, auth.user.id, "accepted");
+    const hPatientIds = JSON.parse(h.patientIdsJson) as string[];
+    await emitHandoffEvent(id, hPatientIds, "accepted", auth.user);
+    // C9 — open checklist items carry over to the receiver as action items
+    const done = new Set(
+      (checklist ?? JSON.parse(h.checklistJson)) as string[],
+    );
+    const openItems = REQUIRED_CHECKLIST.filter((k) => !done.has(k));
+    if (openItems.length) {
+      await carryOverActionItems(
+        id, hPatientIds, { id: auth.user.id, role: auth.user.role },
+        openItems,
+      );
+    }
     await notify(h.outgoingId, "notif.handoffAcceptedNotif", "info", {
       entityType: "handoff",
       entityId: id,
