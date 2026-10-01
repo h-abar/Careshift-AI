@@ -807,6 +807,15 @@ const en: Record<string, string> = {
   "cln.verifyFail": "Verification FAILED — evidence altered",
   "cln.fhir": "FHIR JSON",
   "cln.pdf": "PDF",
+  "cln.adjudicate": "Adjudicate (simulated payer)",
+  "cln.adjLabel": "Simulated payer adjudication — not the real NPHIES platform",
+  "cln.adjApproved": "Adjudicated: approved",
+  "cln.adjDenied": "Adjudicated: denied",
+  "claim.nphiesCode": "NPHIES code",
+  "claim.appealEvidence": "Denial evidence analysis",
+  "claim.evidenceFound": "Existing events that answer it",
+  "claim.missingEvidence": "Missing event types",
+  "auditAction.claim.adjudicate": "Ran simulated payer adjudication",
 };
 
 export default en;

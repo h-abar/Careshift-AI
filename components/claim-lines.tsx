@@ -69,6 +69,26 @@ export function ClaimLines({ claimId, canEdit }: { claimId: string; canEdit: boo
     }
   };
 
+  const adjudicate = async () => {
+    setBusy(true);
+    try {
+      const r = await postJson<{ decision: string; reasonCode: string | null }>(
+        `/api/claims/${claimId}/adjudicate`, {},
+      );
+      toast(
+        r.decision === "approved"
+          ? t("cln.adjApproved")
+          : `${t("cln.adjDenied")} ${r.reasonCode ?? ""}`.trim(),
+        r.decision === "approved" ? "success" : "error",
+      );
+      await refetch();
+    } catch {
+      toast(t("common.failed"), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const addManual = async () => {
     setBusy(true);
     try {
@@ -137,6 +157,16 @@ export function ClaimLines({ claimId, canEdit }: { claimId: string; canEdit: boo
             >
               {t("cln.pdf")}
             </a>
+            {canEdit && (
+              <button
+                onClick={adjudicate}
+                disabled={busy}
+                className="rounded-lg border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+                title={t("cln.adjLabel")}
+              >
+                {t("cln.adjudicate")}
+              </button>
+            )}
           </div>
         )}
       </div>

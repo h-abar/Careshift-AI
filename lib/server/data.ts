@@ -71,12 +71,16 @@ export function toClaim(r: {
   id: string; patientId: string | null; amountSar: number; status: string;
   dxKey: string; losDays: number; icuDays: number;
   evidenceJson: string; frictionJson: string;
+  nphiesCode?: string | null; version?: number; supersedesId?: string | null;
 }): Claim {
   return {
     id: r.id, patientId: r.patientId ?? undefined, amountSar: r.amountSar,
     status: r.status as Claim["status"], dxKey: r.dxKey,
     losDays: r.losDays, icuDays: r.icuDays,
     evidence: J(r.evidenceJson, []), frictionKeys: J(r.frictionJson, []),
+    nphiesCode: r.nphiesCode ?? null,
+    version: r.version ?? 1,
+    supersedesId: r.supersedesId ?? null,
   };
 }
 

@@ -60,7 +60,12 @@ export const claimPatchSchema = z
   .strict();
 
 export const appealSchema = z
-  .object({ reason: z.string().trim().min(1).max(500) })
+  .object({
+    reason: z.string().trim().min(1).max(500),
+    // C6 — appeal evidence: existing ClinicalEvent ids only (validated
+    // server-side against the claim's patient — nothing fabricated).
+    eventIds: z.array(z.string().min(1)).max(200).optional(),
+  })
   .strict();
 
 export const resubmitSchema = z

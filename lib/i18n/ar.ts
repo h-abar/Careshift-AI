@@ -807,6 +807,15 @@ const ar: Record<string, string> = {
   "cln.verifyFail": "فشل التحقق — الأدلة معدَّلة",
   "cln.fhir": "FHIR JSON",
   "cln.pdf": "PDF",
+  "cln.adjudicate": "تحكيم (محاكاة)",
+  "cln.adjLabel": "تحكيم دافع محاكى — ليس منصة نفيس الحقيقية",
+  "cln.adjApproved": "التحكيم: مقبولة",
+  "cln.adjDenied": "التحكيم: مرفوضة",
+  "claim.nphiesCode": "كود نفيس",
+  "claim.appealEvidence": "تحليل أدلة الرفض",
+  "claim.evidenceFound": "أحداث موجودة تُجيب عليه",
+  "claim.missingEvidence": "أنواع أحداث مفقودة",
+  "auditAction.claim.adjudicate": "تشغيل تحكيم الدافع المحاكى",
 };
 
 export default ar;

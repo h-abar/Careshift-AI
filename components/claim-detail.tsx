@@ -64,6 +64,17 @@ export function ClaimDetail({
     open ? `/api/claims/${claim.id}` : null,
     [claim.id, open],
   );
+  // C6 — appeal evidence for denied claims (existing events only)
+  const { data: appealEv } = useApi<{
+    code: string | null; codeLabel: string | null;
+    missingEventTypes: string[];
+    answeringEvents: { id: string; type: string; occurredAt: string }[];
+  }>(
+    open && claim.status === "denied"
+      ? `/api/claims/${claim.id}/appeal-evidence`
+      : null,
+    [claim.id, open, claim.status],
+  );
 
   const run = async (fn: () => Promise<unknown>) => {
     setErr("");
@@ -120,6 +131,11 @@ export function ClaimDetail({
       {claim.denialCode && (
         <span className="ms-3 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] text-red-700">
           {t(`deny.${claim.denialCode}`)}
+        </span>
+      )}
+      {claim.nphiesCode && (
+        <span className="ms-2 rounded-full bg-slate-100 border border-slate-300 px-2 py-0.5 font-mono text-[10px] text-slate-700">
+          {t("claim.nphiesCode")}: {claim.nphiesCode}
         </span>
       )}
       {err && <span className="ms-3 text-[11px] text-red-600">{err}</span>}
@@ -210,6 +226,21 @@ export function ClaimDetail({
             </div>
           )}
 
+          {/* C6 — what events answer the denial code */}
+          {appealEv?.code && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px]">
+              <span className="font-semibold text-amber-900">
+                {t("claim.appealEvidence")}: {appealEv.code}
+                {appealEv.codeLabel ? ` — ${appealEv.codeLabel}` : ""}
+              </span>
+              <p className="mt-1 text-slate-700">
+                {t("claim.evidenceFound")}: {appealEv.answeringEvents.length}
+                {appealEv.missingEventTypes.length > 0 &&
+                  ` · ${t("claim.missingEvidence")}: ${appealEv.missingEventTypes.map((mt) => t(`ev.t.${mt}`)).join(", ")}`}
+              </p>
+            </div>
+          )}
+
           {appealMode && (
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -229,6 +260,9 @@ export function ClaimDetail({
                   run(() =>
                     postJson(`/api/claims/${claim.id}/${appealMode}`, {
                       [appealMode === "appeal" ? "reason" : "note"]: reason,
+                      ...(appealMode === "appeal" && appealEv
+                        ? { eventIds: appealEv.answeringEvents.map((e) => e.id) }
+                        : {}),
                     }),
                   )
                 }

@@ -210,6 +210,13 @@ model InsuranceClaim {
   evidenceJson  String
   frictionJson  String
   denialCode  String?  // canonical denial reason code → i18n deny.*
+  /** C6 — official NPHIES adjudication-reason code set by the
+   *  simulated payer; only codes present in the imported official list. */
+  nphiesCode  String?
+  /** C6 — resubmission versioning: a resubmitted claim is a NEW row
+   *  (version+1) linked back via supersedesId; history never rewrote. */
+  version     Int      @default(1)
+  supersedesId String?
   updatedAt   DateTime @default(now())
   updatedBy   String?
   documents   ClaimDocument[]

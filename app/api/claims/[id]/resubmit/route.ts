@@ -29,12 +29,43 @@ export const POST = handle(
       );
     }
 
-    const updated = await prisma.insuranceClaim.update({
-      where: { id },
-      data: { status: "review", denialCode: null, updatedBy: auth.user.id },
+    // C6 — resubmission is a NEW claim version linked to the old one;
+    // the denied record and its lines stay untouched (history intact).
+    const versions = await prisma.insuranceClaim.count({
+      where: { supersedesId: id },
+    });
+    const newId = `${id}-v${claim.version + versions + 1}`;
+    const lines = await prisma.claimLine.findMany({ where: { claimId: id } });
+    const updated = await prisma.insuranceClaim.create({
+      data: {
+        id: newId,
+        patientId: claim.patientId,
+        amountSar: claim.amountSar,
+        status: "review",
+        dxKey: claim.dxKey,
+        losDays: claim.losDays,
+        icuDays: claim.icuDays,
+        evidenceJson: claim.evidenceJson,
+        frictionJson: claim.frictionJson,
+        version: claim.version + versions + 1,
+        supersedesId: id,
+        updatedBy: auth.user.id,
+        lines: {
+          create: lines.map((l) => ({
+            seq: l.seq, kind: l.kind, code: l.code, codeSystem: l.codeSystem,
+            codeVersion: l.codeVersion, description: l.description,
+            quantity: l.quantity, unitPriceSar: l.unitPriceSar,
+            simulatedPrice: l.simulatedPrice,
+            serviceStart: l.serviceStart, serviceEnd: l.serviceEnd,
+            eventIdsJson: l.eventIdsJson, necessityJson: l.necessityJson,
+            eventBacked: l.eventBacked, manualReason: l.manualReason,
+            flagsJson: l.flagsJson,
+          })),
+        },
+      },
     });
 
-    await claimEvent(id, auth.user.id, "resubmit", note.trim());
+    await claimEvent(id, auth.user.id, "resubmit", `${note.trim()} → ${newId}`);
     await audit(
       {
         userId: auth.user.id,
@@ -42,7 +73,7 @@ export const POST = handle(
         entityType: "claim",
         entityId: id,
         prev: { status: "denied", denialCode: claim.denialCode },
-        next: { status: "review", note: note.trim() },
+        next: { status: "review", note: note.trim(), newClaimId: newId },
         sessionId: auth.sid,
       },
       req,

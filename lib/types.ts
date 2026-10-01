@@ -124,6 +124,10 @@ export interface Claim {
   /** checklist item keys present → contribute to Claim Readiness */
   evidence: string[]; // subset of EVIDENCE_KEYS
   frictionKeys: string[]; // i18n keys → friction.* (only when status != approved)
+  /** C6 — official NPHIES adjudication-reason code (simulated payer). */
+  nphiesCode?: string | null;
+  version?: number;
+  supersedesId?: string | null;
 }
 
 export interface ShiftHandoff {
