@@ -528,6 +528,7 @@ const en: Record<string, string> = {
   "auditAction.timeline_view": "Viewed event timeline (claim-linked subset)",
   "auditAction.claim.assemble": "Assembled claim from events",
   "auditAction.claim.line.manual": "Added manual claim line (not event-backed)",
+  "auditAction.claim.checks": "Ran pre-submission consistency checks",
   "auditAction.users.list": "Viewed users list",
   "auditAction.audit.list": "Viewed audit log",
   "auditAction.org.view": "Viewed org metrics",
@@ -781,6 +782,22 @@ const en: Record<string, string> = {
   "cln.k.lab": "Lab",
   "cln.flag.missing_code": "missing code",
   "cln.flag.not_event_backed": "not event-backed",
+
+  // C4 — pre-submission consistency checks
+  "chk.readiness": "Claim readiness",
+  "chk.bnl": "Billed-not-lived",
+  "chk.lnb": "Lived-not-billed",
+  "chk.docGaps": "Doc gaps",
+  "chk.timing": "Timing",
+  "chk.k.billed_not_lived": "Billed but not lived",
+  "chk.k.quantity_exceeds_events": "Quantity exceeds event support",
+  "chk.k.level_of_care_unsupported": "Level of care unsupported by events",
+  "chk.k.lived_not_billed": "Lived but not billed",
+  "chk.k.doc_gap": "Documentation gap",
+  "chk.k.timing_service_outside_encounter": "Service dates outside encounter",
+  "chk.k.timing_event_after_claim": "Event recorded after claim",
+  "chk.k.timing_late_entry": "Late documentation entry",
+  "chk.k.missing_code": "Missing code",
 };
 
 export default en;

@@ -40,6 +40,7 @@ export function ClaimLines({ claimId, canEdit }: { claimId: string; canEdit: boo
     try {
       await postJson(`/api/claims/${claimId}/assemble`, {});
       await refetch();
+      await refetchChecks();
       toast(t("cln.assembled"), "success");
     } catch {
       toast(t("common.failed"), "error");
@@ -64,6 +65,11 @@ export function ClaimLines({ claimId, canEdit }: { claimId: string; canEdit: boo
   };
 
   const lines = data?.lines ?? [];
+  const { data: checks, refetch: refetchChecks } = useApi<{
+    label: string; readiness: number;
+    issues: { kind: string; seCode: string | null; detail: string; lineId?: string; eventType?: string }[];
+    counts: { billedNotLived: number; livedNotBilled: number; docGaps: number; timing: number };
+  }>(lines.length ? `/api/claims/${claimId}/checks` : null, [claimId, lines.length]);
   const d = (iso: string) =>
     new Date(iso).toLocaleString(lang === "ar" ? "ar-SA" : "en-GB", {
       month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
@@ -130,6 +136,40 @@ export function ClaimLines({ claimId, canEdit }: { claimId: string; canEdit: boo
           >
             {t("usr.save")}
           </button>
+        </div>
+      )}
+
+      {/* C4 — readiness + consistency issues */}
+      {checks && (
+        <div className="mb-3 rounded-md border border-[#e2e9f2] bg-slate-50 p-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-700">
+              {t("chk.readiness")}: {checks.readiness}%
+            </span>
+            <span className="text-[10px] italic text-slate-500">{checks.label}</span>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-slate-600">
+            <span>{t("chk.bnl")}: {checks.counts.billedNotLived}</span>
+            <span>{t("chk.lnb")}: {checks.counts.livedNotBilled}</span>
+            <span>{t("chk.docGaps")}: {checks.counts.docGaps}</span>
+            <span>{t("chk.timing")}: {checks.counts.timing}</span>
+          </div>
+          {checks.issues.slice(0, 6).map((i, n) => (
+            <div key={n} className="mt-1 flex items-start gap-1.5 text-[10px]">
+              <span
+                className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                  i.kind === "lived_not_billed" ? "bg-sky-500" : "bg-red-500"
+                }`}
+              />
+              <span className="text-slate-600">
+                {t(`chk.k.${i.kind}`)}
+                {i.seCode && (
+                  <span className="ms-1 rounded bg-slate-200 px-1 font-mono">{i.seCode}</span>
+                )}
+                {" — "}{i.detail}
+              </span>
+            </div>
+          ))}
         </div>
       )}
 

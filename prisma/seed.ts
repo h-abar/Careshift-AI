@@ -229,6 +229,28 @@ async function main() {
     await loadKbFile(parsed);
   }
 
+  // ── NPHIES adjudication-reason snapshot (static official import,
+  // offline — C4 checks map doc gaps to these codes and nothing else).
+  const { loadNphiesAdjudicationReasons, NPHIES_SOURCE_URL } =
+    await import("../lib/server/ext/nphies");
+  const nphiesSnap = loadNphiesAdjudicationReasons();
+  for (const c of nphiesSnap.concepts) {
+    await prisma.terminology.upsert({
+      where: {
+        provider_system_code: {
+          provider: "nphies", system: "adjudication-reason", code: c.code,
+        },
+      },
+      update: {},
+      create: {
+        provider: "nphies", system: "adjudication-reason",
+        code: c.code, displayEn: c.displayEn, displayAr: c.displayAr,
+        metaJson: JSON.stringify({ sourceUrl: NPHIES_SOURCE_URL }),
+        version: nphiesSnap.version,
+      },
+    });
+  }
+
   // ── Risk-assessment history (3B2-16): seeds P-1042's recorded 87→42→18
   // trajectory so the hour-1 bundle clock and risk chart have real rows.
   const riskHistory: { patientId: string; score: number; level: string; ago: number }[] = [

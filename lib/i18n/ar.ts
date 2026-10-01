@@ -528,6 +528,7 @@ const ar: Record<string, string> = {
   "auditAction.timeline_view": "عرض الجدول الزمني للأحداث (المجموعة المرتبطة بالمطالبة)",
   "auditAction.claim.assemble": "تجميع المطالبة من الأحداث",
   "auditAction.claim.line.manual": "إضافة سطر يدوي للمطالبة (غير مدعوم بأحداث)",
+  "auditAction.claim.checks": "تشغيل فحوص الاتساق قبل الإرسال",
   "auditAction.users.list": "عرض قائمة المستخدمين",
   "auditAction.audit.list": "عرض سجل التدقيق",
   "auditAction.org.view": "عرض مؤشرات المنشأة",
@@ -781,6 +782,22 @@ const ar: Record<string, string> = {
   "cln.k.lab": "مختبر",
   "cln.flag.missing_code": "كود مفقود",
   "cln.flag.not_event_backed": "غير مدعوم بأحداث",
+
+  // C4 — فحوص الاتساق قبل الإرسال
+  "chk.readiness": "جاهزية المطالبة",
+  "chk.bnl": "مُفوتر غير مُعاش",
+  "chk.lnb": "مُعاش غير مُفوتر",
+  "chk.docGaps": "فجوات التوثيق",
+  "chk.timing": "التوقيت",
+  "chk.k.billed_not_lived": "مُفوتر لكنه غير مُعاش",
+  "chk.k.quantity_exceeds_events": "الكمية تتجاوز دعم الأحداث",
+  "chk.k.level_of_care_unsupported": "مستوى الرعاية غير مدعوم بالأحداث",
+  "chk.k.lived_not_billed": "مُعاش لكنه غير مُفوتر",
+  "chk.k.doc_gap": "فجوة توثيق",
+  "chk.k.timing_service_outside_encounter": "تواريخ الخدمة خارج فترة القبول",
+  "chk.k.timing_event_after_claim": "حدث سُجّل بعد المطالبة",
+  "chk.k.timing_late_entry": "مدخل توثيق متأخر",
+  "chk.k.missing_code": "كود مفقود",
 };
 
 export default ar;
