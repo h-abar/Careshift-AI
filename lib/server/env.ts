@@ -62,6 +62,10 @@ const envSchema = z.object({
   // Observability (item 8).
   LOG_LEVEL: z.enum(["", "debug", "info", "warn", "error"]).optional(),
   SENTRY_DSN: z.string().optional(),
+  // External evidence APIs (A3) — optional; demo runs fully offline.
+  OPENFDA_API_KEY: z.string().optional(),
+  ICD11_CLIENT_ID: z.string().optional(),
+  ICD11_CLIENT_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
