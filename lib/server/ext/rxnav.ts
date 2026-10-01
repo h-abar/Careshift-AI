@@ -18,7 +18,7 @@ export interface RxNormConcept {
 }
 
 interface ApproxRes {
-  approxGroup?: { candidate?: { rxcui?: string; name?: string; score?: string }[] };
+  approximateGroup?: { candidate?: { rxcui?: string; name?: string; score?: string }[] };
 }
 
 /** Approximate-match drug search → normalized RxCUIs. No PHI: term only. */
@@ -37,7 +37,7 @@ export async function searchRxnorm(
         params: { term, maxEntries: String(maxEntries) },
         ...opts,
       });
-      return (j.approxGroup?.candidate ?? [])
+      return (j.approximateGroup?.candidate ?? [])
         .filter((c) => c.rxcui && c.name)
         .map((c) => ({ rxcui: c.rxcui!, name: c.name!, score: Number(c.score ?? 0) }));
     },
