@@ -25,6 +25,15 @@ const TABLES = [
 
 // pgbouncer-mode client for the source dump + housekeeping statements —
 // PGlite leaks prepared statements across pooled connections otherwise.
+/** Minimal model surface for dynamic table access. */
+interface Model {
+  findMany(): Promise<Record<string, unknown>[]>;
+  createMany(arg: { data: Record<string, unknown>[] }): Promise<unknown>;
+  count(): Promise<number>;
+}
+const model = (c: object, t: string) =>
+  (c as Record<string, Model>)[t];
+
 const src = new PrismaClient({
   datasourceUrl: (() => {
     const u = new URL(process.env.DATABASE_URL!);
@@ -47,7 +56,7 @@ async function main() {
   const file = `backups/drill-${drillSchema}.json`;
   const dump: Record<string, unknown[]> = {};
   for (const t of TABLES) {
-    dump[t] = await (src as any)[t].findMany();
+    dump[t] = await model(src, t).findMany();
   }
   writeFileSync(file, JSON.stringify(dump));
   const counts = Object.fromEntries(
@@ -69,15 +78,19 @@ async function main() {
   // 3) restore
   const dst = new PrismaClient({ datasourceUrl: dstUrl });
   for (const t of TABLES) {
-    const rows = dump[t] as any[];
-    if (rows.length) await (dst as any)[t].createMany({ data: rows });
+    const rows = dump[t];
+    if (rows.length) {
+      await model(dst, t).createMany({
+        data: rows as Record<string, unknown>[],
+      });
+    }
   }
 
   // 4) verify counts
   let ok = true;
   for (const t of TABLES) {
     const want = counts[t] as number;
-    const got = await (dst as any)[t].count();
+    const got = await model(dst, t).count();
     const mark = got === want ? "OK " : "FAIL";
     if (got !== want) ok = false;
     console.log(`[drill] ${mark} ${t}: ${got}/${want}`);
