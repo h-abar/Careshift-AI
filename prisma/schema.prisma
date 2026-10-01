@@ -399,6 +399,42 @@ model KpiDefinition {
 }
 
 /** One row per rule computation — the reproducibility trail (A6). */
+/**
+ * C1 — immutable clinical event store. Append-only by contract: the
+ * application never updates/deletes rows; corrections are new events
+ * referencing the corrected one. Each row is hash-chained
+ * (sha256(prevHash + canonical content)) so tampering is detectable via
+ * scripts/verify-events.ts. occurredAt = clinical time; recordedAt =
+ * write time; lateEntry flags prototype-late documentation
+ * (LATE_ENTRY_MINUTES env, default 240 — configurable prototype
+ * setting, not a clinical standard).
+ */
+model ClinicalEvent {
+  id               String    @id @default(cuid())
+  patientId        String
+  /** Demo has one encounter per patient — `enc-<patientId>`. */
+  encounterId      String    @default("")
+  type             String    // vital_set|score_computed|alert_*|escalation|intervention_*|order|medication_administered|lab_result|procedure|transfer|handoff_*|documentation_entry|priority_snapshot|claim_*|priority_seen|action_item_*
+  occurredAt       DateTime
+  recordedAt       DateTime  @default(now())
+  actorUserId      String?
+  actorRole        String    @default("")
+  payloadJson      String    @default("{}") // coded values: LOINC/RxNorm/ICD-10-AM/SBS
+  sourceRecordId   String?
+  ruleId           String?   // KB rule that generated this event
+  ruleVersion      Int?
+  prevHash         String    @default("")
+  hash             String    @unique
+  correctsId       String?
+  correctionReason String?
+  lateEntry        Boolean   @default(false)
+
+  @@index([patientId, occurredAt])
+  @@index([encounterId, occurredAt])
+  @@index([type])
+  @@index([sourceRecordId])
+}
+
 model RuleExecution {
   id          String   @id @default(cuid())
   ruleId      String

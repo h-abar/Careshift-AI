@@ -84,6 +84,7 @@ async function main() {
   await prisma.terminology.deleteMany();
   await prisma.kpiDefinition.deleteMany();
   await prisma.extCache.deleteMany();
+  await prisma.clinicalEvent.deleteMany();
 
   await prisma.role.createMany({ data: ROLES });
   await prisma.shift.createMany({ data: SHIFTS });
@@ -263,7 +264,13 @@ async function main() {
     references: await prisma.reference.count(),
     riskAssessments: await prisma.riskAssessment.count(),
   };
-  console.log("Seeded:", counts);
+
+  // C1 — backfill the immutable event store from the seeded tables.
+  // Dynamic import: the shared `prisma` singleton must be created AFTER
+  // the DATABASE_URL bouncer rewrite above.
+  const { backfillEvents } = await import("../lib/server/backfill-events");
+  const bf = await backfillEvents();
+  console.log("Seeded:", { ...counts, clinicalEvents: bf.events });
 }
 
 main()

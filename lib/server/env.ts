@@ -66,6 +66,14 @@ const envSchema = z.object({
   OPENFDA_API_KEY: z.string().optional(),
   ICD11_CLIENT_ID: z.string().optional(),
   ICD11_CLIENT_SECRET: z.string().optional(),
+  // C1 prototype setting — minutes after which a recorded event is
+  // flagged lateEntry. Configurable; not a clinical standard.
+  LATE_ENTRY_MINUTES: optionalPort,
+  // C10 — NPHIES: "sandbox" enables outbound calls; never send real data.
+  NPHIES_ENV: z.enum(["", "sandbox"]).optional(),
+  NPHIES_ENDPOINT: z.string().optional(),
+  NPHIES_CLIENT_CERT: z.string().optional(),
+  NPHIES_CLIENT_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
