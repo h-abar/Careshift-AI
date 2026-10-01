@@ -840,6 +840,7 @@ const ar: Record<string, string> = {
   "kpi.meanAck": "متوسط تنبيه→إقرار",
   "kpi.meanIntervention": "متوسط تنبيه→تدخل",
   "kpi.escPer100": "تصعيدات/100 يوم-مريض",
+  "auditAction.nphies.send": "إرسال حزمة رسائل نفيس (محاكاة ما لم يُهيأ sandbox)",
 };
 
 export default ar;

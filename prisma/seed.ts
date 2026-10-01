@@ -292,6 +292,53 @@ async function main() {
   // the DATABASE_URL bouncer rewrite above.
   const { backfillEvents } = await import("../lib/server/backfill-events");
   const bf = await backfillEvents();
+
+  // C10 — synthetic admission documentation + a coded procedure event so
+  // the demo claim bundle covers the IG-required supportingInfo slices.
+  // Everything below is Simulated demo content, never real codes invented.
+  const { appendEvent } = await import("../lib/server/events");
+  const dbPatients = await prisma.patient.findMany();
+  for (const p of dbPatients) {
+    const docId = `${p.id}:admission-doc`;
+    const exists = await prisma.clinicalEvent.findFirst({
+      where: { sourceRecordId: docId },
+    });
+    if (!exists) {
+      await appendEvent({
+        patientId: p.id, type: "documentation_entry",
+        occurredAt: new Date(`${new Date().toISOString().slice(0, 10)}T${p.admittedAt}:00`),
+        actorRole: "physician",
+        payload: {
+          synthetic: true, simulated: "Simulated",
+          // admission assessment — synthetic demo values
+          dbp: 78, heightCm: 162, weightKg: 58,
+          chiefComplaintText: "Polyuria, vomiting and abdominal pain",
+          history: "Rising glucose with ketones over the last day (simulated)",
+          physicalExam: "Dehydrated, tachypnoeic, alert (simulated)",
+          patientHistory: "Type 1 diabetes on insulin (simulated)",
+          treatmentPlan: "IV insulin + fluids + hourly glucose (simulated)",
+        },
+        sourceRecordId: docId,
+      });
+    }
+  }
+  // P-1042 deterioration story — coded procedure from the IG fragment
+  // (procedures CodeSystem, 13882-00-00 ventilatory support ≤24h).
+  const procId = "P-1042:proc:vent";
+  if (!(await prisma.clinicalEvent.findFirst({ where: { sourceRecordId: procId } }))) {
+    await appendEvent({
+      patientId: "P-1042", type: "procedure",
+      occurredAt: new Date(),
+      actorRole: "physician",
+      payload: {
+        synthetic: true, simulated: "Simulated",
+        code: "13882-00-00",
+        codeSystem: "http://nphies.sa/terminology/CodeSystem/procedures",
+        display: "Management of continuous ventilatory support, <= 24 hours",
+      },
+      sourceRecordId: procId,
+    });
+  }
   console.log("Seeded:", { ...counts, clinicalEvents: bf.events });
 }
 

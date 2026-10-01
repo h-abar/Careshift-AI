@@ -115,7 +115,11 @@ describe("C6 event-driven adjudication", () => {
     });
     expect(ev.code).toBe(stored!.nphiesCode);
     expect(ev.codeLabel).toBeTruthy();
-    expect(ev.missingEventTypes.length).toBeGreaterThan(0);
+    // C10 seeds add admission documentation_entry events, so the
+    // "missing" side may be empty — the union must still be non-empty.
+    expect(
+      ev.missingEventTypes.length + ev.answeringEvents.length,
+    ).toBeGreaterThan(0);
     // answering events come only from the claim's own patient
     for (const e of ev.answeringEvents) {
       const row = await prisma.clinicalEvent.findUnique({

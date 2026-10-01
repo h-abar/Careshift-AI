@@ -63,3 +63,7 @@ local.properties
 
 # backup artifacts
 backups/
+
+# C10 — heavy local artifacts (IG kept as package.tgz only)
+/knowledge/nphies-ig/package/
+/tools/fhir/validator_cli.jar

@@ -840,6 +840,7 @@ const en: Record<string, string> = {
   "kpi.meanAck": "Mean alert→ack",
   "kpi.meanIntervention": "Mean alert→intervention",
   "kpi.escPer100": "Escalations/100 pat-days",
+  "auditAction.nphies.send": "Sent an NPHIES message bundle (simulated unless sandbox-configured)",
 };
 
 export default en;
