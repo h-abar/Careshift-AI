@@ -230,6 +230,31 @@ export interface PatientDetail {
 export const usePatientDetail = (id: string) =>
   useApi<PatientDetail>(`/api/patients/${id}`, [id]);
 
+export interface TimelineEvent {
+  id: string;
+  type: string;
+  occurredAt: string;
+  recordedAt: string;
+  lateEntry: boolean;
+  actorRole: string;
+  actor: string | null;
+  payload: Record<string, unknown>;
+  ruleId: string | null;
+  ruleKey: string | null;
+  ruleVersion: number | null;
+  correctsId: string | null;
+  correctionReason: string | null;
+  claimId: string | null;
+  hash: string;
+  categories: string[];
+}
+
+export const usePatientEvents = (id: string, category = "") =>
+  useApi<{ scope: string; events: TimelineEvent[] }>(
+    `/api/patients/${id}/events${category ? `?category=${category}` : ""}`,
+    [id, category],
+  );
+
 /* ── Mutations ── */
 
 /** Carries the consistent server error shape {error, code?, fields?} to callers. */

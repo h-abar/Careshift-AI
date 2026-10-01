@@ -27,6 +27,7 @@ import {
   YAxis,
 } from "recharts";
 import type { JourneyKind } from "@/lib/types";
+import { EventTimeline } from "@/components/event-timeline";
 
 const KIND_ICON: Record<JourneyKind, string> = {
   admission: "🏥",
@@ -586,6 +587,9 @@ export function PatientView({ patientId }: { patientId: string }) {
           </p>
         )}
       </Card>
+
+      {/* C2 — hash-chained event timeline */}
+      <EventTimeline patientId={p.id} />
     </div>
   );
 }
