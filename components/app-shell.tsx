@@ -146,8 +146,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* ── PDPL demo-data consent — blocks the workspace until acknowledged ── */}
-      {!user.consentAt && (
+      {/* ── PDPL demo-data consent — blocks the workspace until acknowledged.
+           Skipped during admin view-as: the impersonator already consented. ── */}
+      {!user.consentAt && !impersonator && (
         <div
           role="dialog"
           aria-modal="true"

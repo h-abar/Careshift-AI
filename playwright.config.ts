@@ -18,11 +18,14 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   use: { baseURL: `http://127.0.0.1:${PORT}` },
   webServer: {
-    command: `npx next start -p ${PORT}`,
+    // output:standalone → `next start` won't work; run the bundle directly.
+    command: `node .next/standalone/server.js`,
     url: `http://127.0.0.1:${PORT}`,
     timeout: 180_000,
     reuseExistingServer: false,
     env: {
+      PORT: String(PORT),
+      HOSTNAME: "127.0.0.1",
       DATABASE_URL: schemaUrl("e2e"),
       SESSION_SECRET: "e2e-test-secret-0123456789abcdef0123456789",
       UPLOAD_DIR: "./e2e-uploads",
