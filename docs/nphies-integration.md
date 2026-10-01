@@ -128,6 +128,25 @@ certification.
 Any step not confirmed on an official page is marked **unverified**.
 Careshift claims **no certification and no live NPHIES connectivity**.
 
+## NPHIES roadmap alignment
+
+Source: official roadmap on the nphies.sa homepage (status text as
+published; site last updated 2025-12-25 — recorded in this doc).
+Careshift does **not** claim any of these APIs exist or are integrated;
+each row states our readiness only.
+
+| Roadmap item | Quarter | Type | Status (as published) | Careshift readiness |
+|---|---|---|---|---|
+| Claims clearance & verification | 2026 Q4 | new feature | not started | **Prepared** — the hash-sealed, event-backed claim package (C5) + verify button is designed to feed it |
+| Diagnosis-related groups (DRG) | 2026 Q2 | new feature | in development | **Prepared** — encounter data is DRG-ready (principal/secondary ICD-10-AM diagnoses from documentation events, procedures, admission/discharge, ICU & ventilation hours from events). No grouper logic or weights until an official one is published |
+| National e-prescription link | 2026 Q2 | new feature | in development | **Prepared** — medication orders/administration events are coded and ready for linkage |
+| Prescription inquiries | 2026 Q3 | new feature | in development | future work |
+| Drug dictionary | 2026 Q4 | new feature | not started | **Prepared** — the medication terminology layer is swappable; it will switch to the official NPHIES drug dictionary when published |
+| Saudi Billing System (SBS) v3 | — | enhancement | in production | **Prepared** — the SBS version used is stored per claim line in the knowledge base |
+| Health-services side (provider portal, confidential documents, examination history) | phase 2 | — | on site | future fit for the patient-journey timeline only |
+
+Source link: https://nphies.sa/
+
 ## Positioning
 
 Provider-side, NPHIES-ready event source: one adapter serves all
