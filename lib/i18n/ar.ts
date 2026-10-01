@@ -816,6 +816,15 @@ const ar: Record<string, string> = {
   "claim.evidenceFound": "أحداث موجودة تُجيب عليه",
   "claim.missingEvidence": "أنواع أحداث مفقودة",
   "auditAction.claim.adjudicate": "تشغيل تحكيم الدافع المحاكى",
+  "kpi.title": "مؤشرات سلامة المطالبات",
+  "kpi.eventBacked": "سطور مدعومة بأحداث",
+  "kpi.firstPass": "قبول من أول تقديم",
+  "kpi.denialsByCat": "الرفض حسب فئة نفيس",
+  "kpi.readiness": "متوسط الجاهزية",
+  "kpi.billedNotLived": "مفوتر بلا أحداث",
+  "kpi.livedNotBilled": "أحداث بلا فوترة",
+  "kpi.lateEntry": "قيود متأخرة",
+  "kpi.eventToClaim": "متوسط فاصل حدث→مطالبة",
 };
 
 export default ar;

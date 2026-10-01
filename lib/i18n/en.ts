@@ -816,6 +816,15 @@ const en: Record<string, string> = {
   "claim.evidenceFound": "Existing events that answer it",
   "claim.missingEvidence": "Missing event types",
   "auditAction.claim.adjudicate": "Ran simulated payer adjudication",
+  "kpi.title": "Claim Integrity KPIs",
+  "kpi.eventBacked": "Lines event-backed",
+  "kpi.firstPass": "First-pass acceptance",
+  "kpi.denialsByCat": "Denials by NPHIES category",
+  "kpi.readiness": "Mean readiness",
+  "kpi.billedNotLived": "Billed-not-lived",
+  "kpi.livedNotBilled": "Lived-not-billed",
+  "kpi.lateEntry": "Late-entry events",
+  "kpi.eventToClaim": "Mean event→claim lag",
 };
 
 export default en;

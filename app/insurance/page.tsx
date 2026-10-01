@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useClaims, useOrg } from "@/lib/api";
 import { ClaimDetail } from "@/components/claim-detail";
+import { ClaimKpis } from "@/components/claim-kpis";
 import { fmtSar, fmtSarK } from "@/lib/format";
 import {
   Card,
@@ -122,6 +123,9 @@ export default function InsurancePage() {
           </div>
         </div>
       </section>
+
+      {/* C7 — registry-computed claim integrity KPIs */}
+      <ClaimKpis />
 
       {/* Top financial risk cases */}
       <Card>

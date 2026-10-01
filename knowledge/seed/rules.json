@@ -1,225 +1,1121 @@
 {
-  "kbVersion": "2026-10-01",
-  "note": "Rules are DATA: each version is zod-validated JSON-logic evaluated by json-logic-js. Only status=approved executes. Every rule carries >=1 verified reference. NEWS2 bands follow the RCP 2017 scoring table verbatim.",
-  "rules": [
-    {
-      "key": "news2-score",
-      "nameEn": "NEWS2 aggregate score",
-      "nameAr": "مجموع درجة NEWS2",
-      "status": "approved",
-      "category": "ordering",
-      "version": 1,
-      "units": { "rr": "breaths/min", "spo2": "%", "o2": "0|1", "sbp": "mmHg", "hr": "bpm", "temp": "°C", "conscious": "0|3" },
-      "noteEn": "RCP 2017 NEWS2 banding. spo2 = scale 1; scale 2 applies only with documented hypercapnic respiratory failure (Pimentel 2019) — not modelled.",
-      "noteAr": "تقطيع NEWS2 وفق RCP 2017. المقياس 2 لا يُفعّل إلا بفشل تنفسي مرفوع ثاني أكسيد الكربون موثّق — غير مطبق هنا.",
-      "refs": ["rcp-news2-2017", "smith2013", "pimentel2019"],
-      "logic": {
-        "outputs": {
-          "score": { "+": [
-            { "if": [ {"<=": [{"var": "rr"}, 8]}, 3, {"<=": [{"var": "rr"}, 11]}, 1, {"<=": [{"var": "rr"}, 20]}, 0, {"<=": [{"var": "rr"}, 24]}, 2, 3 ] },
-            { "if": [ {"<=": [{"var": "spo2"}, 91]}, 3, {"<=": [{"var": "spo2"}, 93]}, 2, {"<=": [{"var": "spo2"}, 95]}, 1, 0 ] },
-            { "if": [ {"var": "o2"}, 2, 0 ] },
-            { "if": [ {"<=": [{"var": "sbp"}, 90]}, 3, {"<=": [{"var": "sbp"}, 100]}, 2, {"<=": [{"var": "sbp"}, 110]}, 1, {"<=": [{"var": "sbp"}, 219]}, 0, 3 ] },
-            { "if": [ {"<=": [{"var": "hr"}, 40]}, 3, {"<=": [{"var": "hr"}, 50]}, 1, {"<=": [{"var": "hr"}, 90]}, 0, {"<=": [{"var": "hr"}, 110]}, 1, {"<=": [{"var": "hr"}, 130]}, 2, 3 ] },
-            { "if": [ {"<=": [{"var": "temp"}, 35]}, 3, {"<=": [{"var": "temp"}, 36]}, 1, {"<=": [{"var": "temp"}, 38]}, 0, {"<=": [{"var": "temp"}, 39]}, 1, 2 ] },
-            { "if": [ {">": [{"var": "conscious"}, 0]}, 3, 0 ] }
-          ]},
-          "maxSingle": { "max": [
-            { "if": [ {"<=": [{"var": "rr"}, 8]}, 3, {"<=": [{"var": "rr"}, 11]}, 1, {"<=": [{"var": "rr"}, 20]}, 0, {"<=": [{"var": "rr"}, 24]}, 2, 3 ] },
-            { "if": [ {"<=": [{"var": "spo2"}, 91]}, 3, {"<=": [{"var": "spo2"}, 93]}, 2, {"<=": [{"var": "spo2"}, 95]}, 1, 0 ] },
-            { "if": [ {"var": "o2"}, 2, 0 ] },
-            { "if": [ {"<=": [{"var": "sbp"}, 90]}, 3, {"<=": [{"var": "sbp"}, 100]}, 2, {"<=": [{"var": "sbp"}, 110]}, 1, {"<=": [{"var": "sbp"}, 219]}, 0, 3 ] },
-            { "if": [ {"<=": [{"var": "hr"}, 40]}, 3, {"<=": [{"var": "hr"}, 50]}, 1, {"<=": [{"var": "hr"}, 90]}, 0, {"<=": [{"var": "hr"}, 110]}, 1, {"<=": [{"var": "hr"}, 130]}, 2, 3 ] },
-            { "if": [ {"<=": [{"var": "temp"}, 35]}, 3, {"<=": [{"var": "temp"}, 36]}, 1, {"<=": [{"var": "temp"}, 38]}, 0, {"<=": [{"var": "temp"}, 39]}, 1, 2 ] },
-            { "if": [ {">": [{"var": "conscious"}, 0]}, 3, 0 ] }
-          ]}
-        }
-      }
-    },
-    {
-      "key": "news2-tier",
-      "nameEn": "NEWS2 response tier",
-      "nameAr": "مستوى استجابة NEWS2",
-      "status": "approved",
-      "category": "ordering",
-      "version": 1,
-      "units": { "score": "points", "maxSingle": "points" },
-      "noteEn": "RCP clinical response: score>=7 emergency; score 5-6 or any single parameter 3 = urgent ward response; 1-4 routine; 0 minimal.",
-      "noteAr": "استجابة RCP: >=7 طارئ؛ 5-6 أو 3 في معامل واحد = استجابة عاجلة؛ 1-4 روتيني؛ 0 طبيعي.",
-      "refs": ["rcp-news2-2017"],
-      "logic": {
-        "outputs": {
-          "tier": { "if": [
-            {">=": [{"var": "score"}, 7]}, 3,
-            {"or": [ {">=": [{"var": "score"}, 5]}, {">=": [{"var": "maxSingle"}, 3]} ]}, 2,
-            {">=": [{"var": "score"}, 1]}, 1,
-            0
-          ]}
-        }
-      }
-    },
-    {
-      "key": "shock-lactate",
-      "nameEn": "Shock index + lactate screen",
-      "nameAr": "فحص مؤشر الصدمة واللاكتات",
-      "status": "approved",
-      "category": "ordering",
-      "version": 1,
-      "units": { "si": "ratio", "lactate": "mmol/L" },
-      "noteEn": "Shock index >1 and lactate >=2.5 are deterioration signals qSOFA misses (Althunayyan 2025, Riyadh cohort); lactate >2 aligns with Sepsis-3 (Singer 2016).",
-      "noteAr": "مؤشر الصدمة >1 واللاكتات >=2.5 إشارات تدهور يغفلها qSOFA (الثنيان 2025، عينة الرياض)؛ واللاكتات >2 يوافق Sepsis-3.",
-      "refs": ["althunayyan2025", "singer2016"],
-      "logic": {
-        "outputs": {
-          "siHigh": { ">": [{"var": "si"}, 1] },
-          "lactate25": { ">=": [{"var": "lactate"}, 2.5] },
-          "lactate2": { ">": [{"var": "lactate"}, 2] },
-          "suspect": { "or": [ {">": [{"var": "si"}, 1]}, {">=": [{"var": "lactate"}, 2.5]} ] }
-        }
-      }
-    },
-    {
-      "key": "sepsis-hour1-bundle",
-      "nameEn": "Hour-1 sepsis bundle timing",
-      "nameAr": "توقيت حزمة الساعة الأولى للإنتان",
-      "status": "approved",
-      "category": "ordering",
-      "version": 1,
-      "units": { "news2": "points", "elapsedMin": "min" },
-      "noteEn": "SSC 2021 hour-1 bundle: when NEWS2>=7 or shock suspected, bundle elements are due within 60 min of trigger; each hour of delay raised mortality (Seymour 2017, OR 1.04/h).",
-      "noteAr": "حزمة الساعة الأولى SSC 2021: عند NEWS2>=7 أو اشتباه صدمة تستحق عناصر الحزمة خلال 60 دقيقة؛ كل ساعة تأخير رفعت الوفيات (سيمور 2017).",
-      "refs": ["ssc2021", "seymour2017"],
-      "logic": {
-        "outputs": {
-          "indicated": { "or": [ {">=": [{"var": "news2"}, 7]}, {"!!": [{"var": "shockSuspect"}]} ] },
-          "overdueMin": { "if": [
-            { "or": [ {">=": [{"var": "news2"}, 7]}, {"!!": [{"var": "shockSuspect"}]} ] },
-            { "max": [0, { "-": [{"var": "elapsedMin"}, 60] }] },
-            0
-          ]}
-        }
-      }
-    },
-    {
-      "key": "patient-ordering",
-      "nameEn": "Evidence-based patient ordering",
-      "nameAr": "ترتيب المرضى القائم على الدليل",
-      "status": "approved",
-      "category": "ordering",
-      "version": 1,
-      "units": { "tier": "0-3", "news2": "points", "bundleOverdueMin": "min" },
-      "noteEn": "sortKey = tier*1e6 + news2*1e4 + shock*1e3 + min(bundleOverdueMin,999). Nurse concern, I-PASS severity, overdue tasks and stale vitals are DISPLAYED but never reorder (PROMPT A principle).",
-      "noteAr": "مفتاح الترتيب = المستوى ثم NEWS2 ثم الصدمة ثم تأخر الحزمة. قلق الممرضة وشدة I-PASS والمهام المتأخرة وقدم العلامات تُعرض معلوماتيًا ولا تغيّر الترتيب.",
-      "refs": ["rcp-news2-2017", "althunayyan2025", "ssc2021"],
-      "logic": {
-        "outputs": {
-          "sortKey": { "+": [
-            { "*": [{"var": "tier"}, 1000000] },
-            { "*": [{"var": "news2"}, 10000] },
-            { "*": [{"var": "shock"}, 1000] },
-            { "min": [{"var": "bundleOverdueMin"}, 999] }
-          ]}
-        }
-      }
-    },
-    {
-      "key": "qsofa-context",
-      "nameEn": "qSOFA (context only — never reorders)",
-      "nameAr": "qSOFA (سياق فقط — لا يغيّر الترتيب)",
-      "status": "approved",
-      "category": "context",
-      "version": 1,
-      "units": { "rr": "breaths/min", "sbp": "mmHg", "conscious": "0|3" },
-      "noteEn": "Context-only display: SSC 2021 recommends AGAINST qSOFA as a single screening tool; ICU discrimination is weaker than SOFA (Sepsis-3).",
-      "noteAr": "عرض سياقي فقط: SSC 2021 توصي بعدم استخدام qSOFA كأداة فرز منفردة؛ تمييزه أضعف من SOFA داخل العناية.",
-      "refs": ["ssc2021", "singer2016"],
-      "logic": {
-        "outputs": {
-          "score": { "+": [
-            { "if": [ {">=": [{"var": "rr"}, 22]}, 1, 0 ] },
-            { "if": [ {"<=": [{"var": "sbp"}, 100]}, 1, 0 ] },
-            { "if": [ {">": [{"var": "conscious"}, 0]}, 1, 0 ] }
-          ]}
-        }
-      }
-    },
-    {
-      "key": "claim-line-map",
-      "nameEn": "Event → claim-line mapping (C3)",
-      "nameAr": "ربط الأحداث بسطور المطالبة",
-      "status": "approved",
-      "category": "claim-map",
-      "version": 1,
-      "units": {},
-      "noteEn": "Declarative mapping rows — NOT evaluated as json-logic; read via lib/server/claim-assembly.ts getClaimMap(). Each output key is a line kind; the row says which event types support it and which payload field supplies the code. Missing code → flagged, never guessed. Tariffs live in knowledge/seed/tariffs-simulated.json (Simulated samples only).",
-      "noteAr": "صفوف ربط تعريفية — لا تُقيَّم كمنطق JSON؛ تُقرأ عبر getClaimMap(). كل مفتاح مخرج هو نوع سطر، والصف يحدد أنواع الأحداث الداعمة وحقل الكود. الكود المفقود يُعلَّم ولا يُخمَّن.",
-      "refs": ["nphies-ig"],
-      "logic": {
-        "outputs": {
-          "medication": {
-            "eventTypes": ["medication_administered", "order"],
-            "lineKind": "medication",
-            "codeFields": ["payload.code", "payload.medCode"],
-            "match": "orderKind=medication",
-            "qtyPer": "event",
-            "tariffKey": "medication"
-          },
-          "lab": {
-            "eventTypes": ["lab_result"],
-            "lineKind": "lab",
-            "codeFields": ["payload.loinc", "payload.code"],
-            "qtyPer": "event",
-            "tariffKey": "lab"
-          },
-          "procedure": {
-            "eventTypes": ["procedure"],
-            "lineKind": "procedure",
-            "codeFields": ["payload.code"],
-            "qtyPer": "event",
-            "tariffKey": "procedure"
-          },
-          "bed_day": {
-            "eventTypes": ["transfer"],
-            "lineKind": "bed_day",
-            "codeFields": ["payload.sbs", "payload.code"],
-            "qtyPer": "span_day",
-            "tariffKey": "bed_day"
-          },
-          "intervention": {
-            "eventTypes": ["intervention_completed"],
-            "lineKind": "service",
-            "codeFields": ["payload.code"],
-            "qtyPer": "event",
-            "tariffKey": "service"
-          }
-        }
-      }
+ "kbVersion": "2026-10-01",
+ "note": "Rules are DATA: each version is zod-validated JSON-logic evaluated by json-logic-js. Only status=approved executes. Every rule carries >=1 verified reference. NEWS2 bands follow the RCP 2017 scoring table verbatim.",
+ "rules": [
+  {
+   "key": "news2-score",
+   "nameEn": "NEWS2 aggregate score",
+   "nameAr": "مجموع درجة NEWS2",
+   "status": "approved",
+   "category": "ordering",
+   "version": 1,
+   "units": {
+    "rr": "breaths/min",
+    "spo2": "%",
+    "o2": "0|1",
+    "sbp": "mmHg",
+    "hr": "bpm",
+    "temp": "°C",
+    "conscious": "0|3"
+   },
+   "noteEn": "RCP 2017 NEWS2 banding. spo2 = scale 1; scale 2 applies only with documented hypercapnic respiratory failure (Pimentel 2019) — not modelled.",
+   "noteAr": "تقطيع NEWS2 وفق RCP 2017. المقياس 2 لا يُفعّل إلا بفشل تنفسي مرفوع ثاني أكسيد الكربون موثّق — غير مطبق هنا.",
+   "refs": [
+    "rcp-news2-2017",
+    "smith2013",
+    "pimentel2019"
+   ],
+   "logic": {
+    "outputs": {
+     "score": {
+      "+": [
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           8
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           11
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           20
+          ]
+         },
+         0,
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           24
+          ]
+         },
+         2,
+         3
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "spo2"
+           },
+           91
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "spo2"
+           },
+           93
+          ]
+         },
+         2,
+         {
+          "<=": [
+           {
+            "var": "spo2"
+           },
+           95
+          ]
+         },
+         1,
+         0
+        ]
+       },
+       {
+        "if": [
+         {
+          "var": "o2"
+         },
+         2,
+         0
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           90
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           100
+          ]
+         },
+         2,
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           110
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           219
+          ]
+         },
+         0,
+         3
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           40
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           50
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           90
+          ]
+         },
+         0,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           110
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           130
+          ]
+         },
+         2,
+         3
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           35
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           36
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           38
+          ]
+         },
+         0,
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           39
+          ]
+         },
+         1,
+         2
+        ]
+       },
+       {
+        "if": [
+         {
+          ">": [
+           {
+            "var": "conscious"
+           },
+           0
+          ]
+         },
+         3,
+         0
+        ]
+       }
+      ]
+     },
+     "maxSingle": {
+      "max": [
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           8
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           11
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           20
+          ]
+         },
+         0,
+         {
+          "<=": [
+           {
+            "var": "rr"
+           },
+           24
+          ]
+         },
+         2,
+         3
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "spo2"
+           },
+           91
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "spo2"
+           },
+           93
+          ]
+         },
+         2,
+         {
+          "<=": [
+           {
+            "var": "spo2"
+           },
+           95
+          ]
+         },
+         1,
+         0
+        ]
+       },
+       {
+        "if": [
+         {
+          "var": "o2"
+         },
+         2,
+         0
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           90
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           100
+          ]
+         },
+         2,
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           110
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           219
+          ]
+         },
+         0,
+         3
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           40
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           50
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           90
+          ]
+         },
+         0,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           110
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "hr"
+           },
+           130
+          ]
+         },
+         2,
+         3
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           35
+          ]
+         },
+         3,
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           36
+          ]
+         },
+         1,
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           38
+          ]
+         },
+         0,
+         {
+          "<=": [
+           {
+            "var": "temp"
+           },
+           39
+          ]
+         },
+         1,
+         2
+        ]
+       },
+       {
+        "if": [
+         {
+          ">": [
+           {
+            "var": "conscious"
+           },
+           0
+          ]
+         },
+         3,
+         0
+        ]
+       }
+      ]
+     }
     }
-  ],
-  "kpis": [
-    {
-      "key": "alert-burden",
-      "nameEn": "Alerts per 100 patient-days",
-      "nameAr": "التنبيهات لكل 100 يوم-مريض",
-      "unit": "alerts/100pd",
-      "formula": { "outputs": { "value": { "/": [ { "*": [{"var": "alerts"}, 100] }, { "max": [{"var": "patientDays"}, 1] } ] } } },
-      "noteEn": "Alert burden drives override/fatigue (Ancker 2017; van der Sijs 2006)."
-    },
-    {
-      "key": "closed-loop",
-      "nameEn": "Closed-loop intervention completion",
-      "nameAr": "نسبة إغلاق حلقة التدخل",
-      "unit": "%",
-      "formula": { "outputs": { "value": { "*": [ { "/": [{"var": "done"}, { "max": [{"var": "total"}, 1] }] }, 100 ] } } },
-      "noteEn": "CDS value comes from acting on alerts, not firing them (Kawamoto 2005; Escobar 2021)."
-    },
-    {
-      "key": "missed-care",
-      "nameEn": "Missed-care indicator",
-      "nameAr": "مؤشر الرعاية الفائتة",
-      "unit": "%",
-      "formula": { "outputs": { "value": { "*": [ { "/": [{"var": "uncompleted"}, { "max": [{"var": "due"}, 1] }] }, 100 ] } } },
-      "noteEn": "Care left undone tracks staffing workload (Ball 2014; Aiken 2002)."
+   }
+  },
+  {
+   "key": "news2-tier",
+   "nameEn": "NEWS2 response tier",
+   "nameAr": "مستوى استجابة NEWS2",
+   "status": "approved",
+   "category": "ordering",
+   "version": 1,
+   "units": {
+    "score": "points",
+    "maxSingle": "points"
+   },
+   "noteEn": "RCP clinical response: score>=7 emergency; score 5-6 or any single parameter 3 = urgent ward response; 1-4 routine; 0 minimal.",
+   "noteAr": "استجابة RCP: >=7 طارئ؛ 5-6 أو 3 في معامل واحد = استجابة عاجلة؛ 1-4 روتيني؛ 0 طبيعي.",
+   "refs": [
+    "rcp-news2-2017"
+   ],
+   "logic": {
+    "outputs": {
+     "tier": {
+      "if": [
+       {
+        ">=": [
+         {
+          "var": "score"
+         },
+         7
+        ]
+       },
+       3,
+       {
+        "or": [
+         {
+          ">=": [
+           {
+            "var": "score"
+           },
+           5
+          ]
+         },
+         {
+          ">=": [
+           {
+            "var": "maxSingle"
+           },
+           3
+          ]
+         }
+        ]
+       },
+       2,
+       {
+        ">=": [
+         {
+          "var": "score"
+         },
+         1
+        ]
+       },
+       1,
+       0
+      ]
+     }
     }
-  ]
+   }
+  },
+  {
+   "key": "shock-lactate",
+   "nameEn": "Shock index + lactate screen",
+   "nameAr": "فحص مؤشر الصدمة واللاكتات",
+   "status": "approved",
+   "category": "ordering",
+   "version": 1,
+   "units": {
+    "si": "ratio",
+    "lactate": "mmol/L"
+   },
+   "noteEn": "Shock index >1 and lactate >=2.5 are deterioration signals qSOFA misses (Althunayyan 2025, Riyadh cohort); lactate >2 aligns with Sepsis-3 (Singer 2016).",
+   "noteAr": "مؤشر الصدمة >1 واللاكتات >=2.5 إشارات تدهور يغفلها qSOFA (الثنيان 2025، عينة الرياض)؛ واللاكتات >2 يوافق Sepsis-3.",
+   "refs": [
+    "althunayyan2025",
+    "singer2016"
+   ],
+   "logic": {
+    "outputs": {
+     "siHigh": {
+      ">": [
+       {
+        "var": "si"
+       },
+       1
+      ]
+     },
+     "lactate25": {
+      ">=": [
+       {
+        "var": "lactate"
+       },
+       2.5
+      ]
+     },
+     "lactate2": {
+      ">": [
+       {
+        "var": "lactate"
+       },
+       2
+      ]
+     },
+     "suspect": {
+      "or": [
+       {
+        ">": [
+         {
+          "var": "si"
+         },
+         1
+        ]
+       },
+       {
+        ">=": [
+         {
+          "var": "lactate"
+         },
+         2.5
+        ]
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "sepsis-hour1-bundle",
+   "nameEn": "Hour-1 sepsis bundle timing",
+   "nameAr": "توقيت حزمة الساعة الأولى للإنتان",
+   "status": "approved",
+   "category": "ordering",
+   "version": 1,
+   "units": {
+    "news2": "points",
+    "elapsedMin": "min"
+   },
+   "noteEn": "SSC 2021 hour-1 bundle: when NEWS2>=7 or shock suspected, bundle elements are due within 60 min of trigger; each hour of delay raised mortality (Seymour 2017, OR 1.04/h).",
+   "noteAr": "حزمة الساعة الأولى SSC 2021: عند NEWS2>=7 أو اشتباه صدمة تستحق عناصر الحزمة خلال 60 دقيقة؛ كل ساعة تأخير رفعت الوفيات (سيمور 2017).",
+   "refs": [
+    "ssc2021",
+    "seymour2017"
+   ],
+   "logic": {
+    "outputs": {
+     "indicated": {
+      "or": [
+       {
+        ">=": [
+         {
+          "var": "news2"
+         },
+         7
+        ]
+       },
+       {
+        "!!": [
+         {
+          "var": "shockSuspect"
+         }
+        ]
+       }
+      ]
+     },
+     "overdueMin": {
+      "if": [
+       {
+        "or": [
+         {
+          ">=": [
+           {
+            "var": "news2"
+           },
+           7
+          ]
+         },
+         {
+          "!!": [
+           {
+            "var": "shockSuspect"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "max": [
+         0,
+         {
+          "-": [
+           {
+            "var": "elapsedMin"
+           },
+           60
+          ]
+         }
+        ]
+       },
+       0
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "patient-ordering",
+   "nameEn": "Evidence-based patient ordering",
+   "nameAr": "ترتيب المرضى القائم على الدليل",
+   "status": "approved",
+   "category": "ordering",
+   "version": 1,
+   "units": {
+    "tier": "0-3",
+    "news2": "points",
+    "bundleOverdueMin": "min"
+   },
+   "noteEn": "sortKey = tier*1e6 + news2*1e4 + shock*1e3 + min(bundleOverdueMin,999). Nurse concern, I-PASS severity, overdue tasks and stale vitals are DISPLAYED but never reorder (PROMPT A principle).",
+   "noteAr": "مفتاح الترتيب = المستوى ثم NEWS2 ثم الصدمة ثم تأخر الحزمة. قلق الممرضة وشدة I-PASS والمهام المتأخرة وقدم العلامات تُعرض معلوماتيًا ولا تغيّر الترتيب.",
+   "refs": [
+    "rcp-news2-2017",
+    "althunayyan2025",
+    "ssc2021"
+   ],
+   "logic": {
+    "outputs": {
+     "sortKey": {
+      "+": [
+       {
+        "*": [
+         {
+          "var": "tier"
+         },
+         1000000
+        ]
+       },
+       {
+        "*": [
+         {
+          "var": "news2"
+         },
+         10000
+        ]
+       },
+       {
+        "*": [
+         {
+          "var": "shock"
+         },
+         1000
+        ]
+       },
+       {
+        "min": [
+         {
+          "var": "bundleOverdueMin"
+         },
+         999
+        ]
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "qsofa-context",
+   "nameEn": "qSOFA (context only — never reorders)",
+   "nameAr": "qSOFA (سياق فقط — لا يغيّر الترتيب)",
+   "status": "approved",
+   "category": "context",
+   "version": 1,
+   "units": {
+    "rr": "breaths/min",
+    "sbp": "mmHg",
+    "conscious": "0|3"
+   },
+   "noteEn": "Context-only display: SSC 2021 recommends AGAINST qSOFA as a single screening tool; ICU discrimination is weaker than SOFA (Sepsis-3).",
+   "noteAr": "عرض سياقي فقط: SSC 2021 توصي بعدم استخدام qSOFA كأداة فرز منفردة؛ تمييزه أضعف من SOFA داخل العناية.",
+   "refs": [
+    "ssc2021",
+    "singer2016"
+   ],
+   "logic": {
+    "outputs": {
+     "score": {
+      "+": [
+       {
+        "if": [
+         {
+          ">=": [
+           {
+            "var": "rr"
+           },
+           22
+          ]
+         },
+         1,
+         0
+        ]
+       },
+       {
+        "if": [
+         {
+          "<=": [
+           {
+            "var": "sbp"
+           },
+           100
+          ]
+         },
+         1,
+         0
+        ]
+       },
+       {
+        "if": [
+         {
+          ">": [
+           {
+            "var": "conscious"
+           },
+           0
+          ]
+         },
+         1,
+         0
+        ]
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "claim-line-map",
+   "nameEn": "Event → claim-line mapping (C3)",
+   "nameAr": "ربط الأحداث بسطور المطالبة",
+   "status": "approved",
+   "category": "claim-map",
+   "version": 1,
+   "units": {},
+   "noteEn": "Declarative mapping rows — NOT evaluated as json-logic; read via lib/server/claim-assembly.ts getClaimMap(). Each output key is a line kind; the row says which event types support it and which payload field supplies the code. Missing code → flagged, never guessed. Tariffs live in knowledge/seed/tariffs-simulated.json (Simulated samples only).",
+   "noteAr": "صفوف ربط تعريفية — لا تُقيَّم كمنطق JSON؛ تُقرأ عبر getClaimMap(). كل مفتاح مخرج هو نوع سطر، والصف يحدد أنواع الأحداث الداعمة وحقل الكود. الكود المفقود يُعلَّم ولا يُخمَّن.",
+   "refs": [
+    "nphies-ig"
+   ],
+   "logic": {
+    "outputs": {
+     "medication": {
+      "eventTypes": [
+       "medication_administered",
+       "order"
+      ],
+      "lineKind": "medication",
+      "codeFields": [
+       "payload.code",
+       "payload.medCode"
+      ],
+      "match": "orderKind=medication",
+      "qtyPer": "event",
+      "tariffKey": "medication"
+     },
+     "lab": {
+      "eventTypes": [
+       "lab_result"
+      ],
+      "lineKind": "lab",
+      "codeFields": [
+       "payload.loinc",
+       "payload.code"
+      ],
+      "qtyPer": "event",
+      "tariffKey": "lab"
+     },
+     "procedure": {
+      "eventTypes": [
+       "procedure"
+      ],
+      "lineKind": "procedure",
+      "codeFields": [
+       "payload.code"
+      ],
+      "qtyPer": "event",
+      "tariffKey": "procedure"
+     },
+     "bed_day": {
+      "eventTypes": [
+       "transfer"
+      ],
+      "lineKind": "bed_day",
+      "codeFields": [
+       "payload.sbs",
+       "payload.code"
+      ],
+      "qtyPer": "span_day",
+      "tariffKey": "bed_day"
+     },
+     "intervention": {
+      "eventTypes": [
+       "intervention_completed"
+      ],
+      "lineKind": "service",
+      "codeFields": [
+       "payload.code"
+      ],
+      "qtyPer": "event",
+      "tariffKey": "service"
+     }
+    }
+   }
+  }
+ ],
+ "kpis": [
+  {
+   "key": "alert-burden",
+   "nameEn": "Alerts per 100 patient-days",
+   "nameAr": "التنبيهات لكل 100 يوم-مريض",
+   "unit": "alerts/100pd",
+   "formula": {
+    "outputs": {
+     "value": {
+      "/": [
+       {
+        "*": [
+         {
+          "var": "alerts"
+         },
+         100
+        ]
+       },
+       {
+        "max": [
+         {
+          "var": "patientDays"
+         },
+         1
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "noteEn": "Alert burden drives override/fatigue (Ancker 2017; van der Sijs 2006)."
+  },
+  {
+   "key": "closed-loop",
+   "nameEn": "Closed-loop intervention completion",
+   "nameAr": "نسبة إغلاق حلقة التدخل",
+   "unit": "%",
+   "formula": {
+    "outputs": {
+     "value": {
+      "*": [
+       {
+        "/": [
+         {
+          "var": "done"
+         },
+         {
+          "max": [
+           {
+            "var": "total"
+           },
+           1
+          ]
+         }
+        ]
+       },
+       100
+      ]
+     }
+    }
+   },
+   "noteEn": "CDS value comes from acting on alerts, not firing them (Kawamoto 2005; Escobar 2021)."
+  },
+  {
+   "key": "missed-care",
+   "nameEn": "Missed-care indicator",
+   "nameAr": "مؤشر الرعاية الفائتة",
+   "unit": "%",
+   "formula": {
+    "outputs": {
+     "value": {
+      "*": [
+       {
+        "/": [
+         {
+          "var": "uncompleted"
+         },
+         {
+          "max": [
+           {
+            "var": "due"
+           },
+           1
+          ]
+         }
+        ]
+       },
+       100
+      ]
+     }
+    }
+   },
+   "noteEn": "Care left undone tracks staffing workload (Ball 2014; Aiken 2002)."
+  },
+  {
+   "key": "claim-event-backed-pct",
+   "nameEn": "Claim lines event-backed %",
+   "nameAr": "نسبة سطور المطالبة المدعومة بالأحداث",
+   "unit": "%",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "linesEventBacked/linesTotal"
+     }
+    }
+   },
+   "noteEn": "Every claim line must trace to ≥1 clinical event (C3)."
+  },
+  {
+   "key": "claim-first-pass-pct",
+   "nameEn": "First-pass acceptance (Simulated payer)",
+   "nameAr": "القبول من أول تقديم (دافع محاكى)",
+   "unit": "%",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "approvedV1/adjudicatedV1"
+     }
+    }
+   },
+   "noteEn": "Payer is simulated (C6) — never reported as a real insurer rate."
+  },
+  {
+   "key": "claim-denials-by-category",
+   "nameEn": "Denials by NPHIES category",
+   "nameAr": "الرفض حسب فئة نفيس",
+   "unit": "count",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "group(nphiesCode category)"
+     }
+    }
+   },
+   "noteEn": "Only imported official adjudication-reason codes."
+  },
+  {
+   "key": "claim-readiness-mean",
+   "nameEn": "Mean readiness at submission",
+   "nameAr": "متوسط الجاهزية عند التقديم",
+   "unit": "%",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "mean(c4.readiness)"
+     }
+    }
+   },
+   "noteEn": "C4 rule-based checks, prototype."
+  },
+  {
+   "key": "claim-billed-not-lived",
+   "nameEn": "Billed-but-not-lived lines",
+   "nameAr": "سطور مفوترة بلا أحداث",
+   "unit": "count",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "sum(c4.billedNotLived)"
+     }
+    }
+   },
+   "noteEn": "Line without matching events (C4)."
+  },
+  {
+   "key": "claim-lived-not-billed",
+   "nameEn": "Lived-but-not-billed events",
+   "nameAr": "أحداث بلا فوترة",
+   "unit": "count",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "sum(c4.livedNotBilled)"
+     }
+    }
+   },
+   "noteEn": "Events supporting a service with no claim line (C4)."
+  },
+  {
+   "key": "event-late-entry-pct",
+   "nameEn": "Late-entry events %",
+   "nameAr": "نسبة القيود المتأخرة",
+   "unit": "%",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "lateEntry/eventsTotal"
+     }
+    }
+   },
+   "noteEn": "recordedAt−occurredAt beyond configured threshold (prototype setting)."
+  },
+  {
+   "key": "claim-event-to-claim-h",
+   "nameEn": "Mean event→claim lag (hours)",
+   "nameAr": "متوسط الفاصل حدث→مطالبة (ساعة)",
+   "unit": "h",
+   "formula": {
+    "outputs": {
+     "value": {
+      "var": "mean(claim.updatedAt−lastEvent)"
+     }
+    }
+   },
+   "noteEn": "Prototype discharge→claim proxy; no discharge timestamp is modelled."
+  }
+ ]
 }
