@@ -7,8 +7,13 @@
  *   Usage: DATABASE_URL=... npx tsx scripts/deallocate.ts
  */
 import { PrismaClient } from "@prisma/client";
+import { bouncerUrl } from "./bouncer-url";
 
-const prisma = new PrismaClient();
+// The cleanup query itself must not prepare — pgbouncer mode sends simple
+// (unnamed) statements, which is exactly what clears the leaked "s0".
+const prisma = new PrismaClient({
+  datasources: { db: { url: bouncerUrl(process.env.DATABASE_URL) } },
+});
 
 prisma
   .$executeRawUnsafe("DEALLOCATE ALL")

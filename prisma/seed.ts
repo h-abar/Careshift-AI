@@ -8,6 +8,9 @@
  */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { readFileSync, readdirSync } from "node:fs";
+import path from "node:path";
+import { bouncerUrl } from "../scripts/bouncer-url";
 import { patients } from "../lib/data/patients";
 import { users } from "../lib/data/users";
 import { claims } from "../lib/data/claims";
@@ -26,6 +29,11 @@ if (appEnv === "production") {
   process.exit(1);
 }
 
+// pgbouncer mode → simple statements only; on local `prisma dev` (PGlite)
+// prepared statements leak across pooled connections and collide (42P05).
+// Assign BEFORE any lib/server/* module import so the shared `prisma`
+// singleton (created lazily at import) also uses the simple-statement URL.
+process.env.DATABASE_URL = bouncerUrl(process.env.DATABASE_URL);
 const prisma = new PrismaClient();
 
 const ROLES = [
@@ -67,6 +75,15 @@ async function main() {
   await prisma.patient.deleteMany();
   await prisma.shift.deleteMany();
   await prisma.role.deleteMany();
+  // Knowledge base (PROMPT A) — reloaded idempotently below.
+  await prisma.ruleExecution.deleteMany();
+  await prisma.ruleReference.deleteMany();
+  await prisma.ruleVersion.deleteMany();
+  await prisma.rule.deleteMany();
+  await prisma.reference.deleteMany();
+  await prisma.terminology.deleteMany();
+  await prisma.kpiDefinition.deleteMany();
+  await prisma.extCache.deleteMany();
 
   await prisma.role.createMany({ data: ROLES });
   await prisma.shift.createMany({ data: SHIFTS });
@@ -201,6 +218,38 @@ async function main() {
     })),
   });
 
+  // ── Knowledge base seed (A1): references + versioned rules + KPIs ──
+  const kbDir = path.join(process.cwd(), "knowledge", "seed");
+  const { kbFileSchema, loadKbFile } = await import("../lib/server/kb");
+  for (const f of readdirSync(kbDir).filter((x) => x.endsWith(".json"))) {
+    const parsed = kbFileSchema.parse(
+      JSON.parse(readFileSync(path.join(kbDir, f), "utf8")),
+    );
+    await loadKbFile(parsed);
+  }
+
+  // ── Risk-assessment history (3B2-16): seeds P-1042's recorded 87→42→18
+  // trajectory so the hour-1 bundle clock and risk chart have real rows.
+  const riskHistory: { patientId: string; score: number; level: string; ago: number }[] = [
+    { patientId: "P-1042", score: 87, level: "critical", ago: 120 },
+    { patientId: "P-1042", score: 42, level: "medium", ago: 60 },
+    { patientId: "P-1042", score: 18, level: "low", ago: 15 },
+  ];
+  for (const r of riskHistory) {
+    await prisma.riskAssessment.create({
+      data: {
+        patientId: r.patientId,
+        score: r.score,
+        level: r.level,
+        conditionKey: "dka",
+        factorsJson: "[]",
+        windowHrs: 4,
+        confidence: 95,
+        assessedAt: new Date(Date.now() - r.ago * 60000),
+      },
+    });
+  }
+
   const counts = {
     roles: ROLES.length,
     users: await prisma.user.count(),
@@ -210,6 +259,9 @@ async function main() {
     shifts: SHIFTS.length,
     assignments: await prisma.assignment.count(),
     notifications: await prisma.notification.count(),
+    rules: await prisma.rule.count(),
+    references: await prisma.reference.count(),
+    riskAssessments: await prisma.riskAssessment.count(),
   };
   console.log("Seeded:", counts);
 }

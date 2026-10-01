@@ -312,3 +312,113 @@ model RateBucket {
 
   @@index([expiresAt])
 }
+
+/* ── Knowledge base (PROMPT A / A1) ──
+ * Rules are DATA: versioned JSON-logic payloads seeded from
+ * knowledge/seed/*.json, validated by zod at load, executed only when
+ * status=approved. Every computation writes a RuleExecution row so any
+ * displayed number can be traced to rule id + version + inputs + output.
+ */
+
+/** Verified citation — only rows with a real PMID, DOI or official URL. */
+model Reference {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. "smith2013"
+  kind      String   // pmid | doi | url
+  value     String   // PMID digits, DOI string, or official URL
+  titleEn   String
+  venue     String   @default("")
+  year      Int?
+  rules     RuleReference[]
+
+  @@index([kind])
+}
+
+model Rule {
+  id       String          @id @default(cuid())
+  key      String          @unique // e.g. "news2-tier"
+  nameEn   String
+  nameAr   String
+  status   String          @default("draft") // draft | approved | retired
+  category String          // ordering | risk | context | kpi
+  versions RuleVersion[]
+  refs     RuleReference[]
+}
+
+/** Immutable versioned rule payload — logic is JSON-logic/band tables. */
+model RuleVersion {
+  id        String   @id @default(cuid())
+  ruleId    String
+  rule      Rule     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  version   Int
+  logicJson String
+  unitsJson String   @default("{}") // unit per input name, e.g. {"rr":"breaths/min"}
+  noteEn    String   @default("")
+  noteAr    String   @default("")
+  approvedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@unique([ruleId, version])
+  @@index([ruleId])
+}
+
+model RuleReference {
+  ruleId      String
+  rule        Rule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  referenceId String
+  reference   Reference @relation(fields: [referenceId], references: [id], onDelete: Cascade)
+
+  @@id([ruleId, referenceId])
+}
+
+/** Synced terminology subsets (A4) — the offline-first cache. */
+model Terminology {
+  id        String   @id @default(cuid())
+  provider  String   // rxnorm | openfda | dailymed | clinicaltables | icd11 | medlineplus | nphies
+  system    String   // rxcui | icd10cm | loinc | nphies-adjudication-reason | ...
+  code      String
+  displayEn String
+  displayAr String   @default("")
+  metaJson  String   @default("{}")
+  version   String   @default("") // upstream dataset/IG version
+  fetchedAt DateTime @default(now())
+
+  @@unique([provider, system, code])
+  @@index([provider])
+}
+
+/** Named KPI definitions — formulas are data, displayed with source. */
+model KpiDefinition {
+  id          String @id @default(cuid())
+  key         String @unique
+  nameEn      String
+  nameAr      String
+  unit        String
+  formulaJson String
+  status      String @default("approved")
+}
+
+/** One row per rule computation — the reproducibility trail (A6). */
+model RuleExecution {
+  id          String   @id @default(cuid())
+  ruleId      String
+  ruleVersion Int
+  patientId   String?
+  inputsJson  String
+  outputJson  String
+  durationMs  Int
+  executedAt  DateTime @default(now())
+
+  @@index([ruleId])
+  @@index([patientId])
+}
+
+/** Generic provider response cache — offline fallback + "data as of". */
+model ExtCache {
+  id          String   @id // `${provider}:${key}`
+  provider    String
+  payloadJson String
+  fetchedAt   DateTime @default(now())
+
+  @@index([provider])
+}
