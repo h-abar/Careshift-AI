@@ -1,5 +1,7 @@
 # Careshift AI 2.0
 
+[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+
 **Predict. Intervene. Prove. — تنبّأ بالخطر. تدخّل مبكرًا. أثبت الأثر.**
 
 A bilingual (Arabic RTL / English LTR) clinical-to-insurance intelligence
