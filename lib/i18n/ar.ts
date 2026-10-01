@@ -698,6 +698,15 @@ const ar: Record<string, string> = {
   "prio.basis": "الترتيب حسب مستوى NEWS2 ثم الدرجة ثم الصدمة/اللاكتات ثم تأخر الحزمة فقط",
   "data.asof": "البيانات المرجعية حتى {d}",
   "data.unsynced": "البيانات المرجعية غير متزامنة — شغّل scripts/sync-terminology",
+  "data.sources": "مصادر البيانات",
+  "refs.title": "الأدلة والمراجع",
+  "refs.subtitle": "كل قاعدة تستشهد بمصادر موثّقة — PMID أو DOI أو رابط رسمي",
+  "refs.rules": "القواعد المعتمدة",
+  "refs.attribution": "إسنادات مصادر البيانات",
+  "refs.all": "جميع المراجع",
+  "refs.col.ref": "المرجع",
+  "refs.col.venue": "المصدر",
+  "refs.col.id": "المعرّف",
 };
 
 export default ar;

@@ -19,7 +19,19 @@ export const GET = handle(async (_req: Request) => {
         { status: 503 },
       );
     }
-    return Response.json({ status: "ready", db: "up", migrations: "applied" });
+    // A5 — terminology/API cache freshness per provider (ISO or null).
+    const [termRows, cacheRows] = await Promise.all([
+      prisma.terminology.groupBy({ by: ["provider"], _max: { fetchedAt: true } }),
+      prisma.extCache.groupBy({ by: ["provider"], _max: { fetchedAt: true } }),
+    ]);
+    const cache: Record<string, string | null> = {};
+    for (const r of [...termRows, ...cacheRows]) {
+      const at = r._max.fetchedAt;
+      if (!at) continue;
+      const prev = cache[r.provider];
+      if (!prev || at.toISOString() > prev) cache[r.provider] = at.toISOString();
+    }
+    return Response.json({ status: "ready", db: "up", migrations: "applied", cache });
   } catch {
     return Response.json(
       { status: "not_ready", db: "down" },

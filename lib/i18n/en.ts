@@ -698,6 +698,15 @@ const en: Record<string, string> = {
   "prio.basis": "Ordered by NEWS2 tier → score → shock/lactate → bundle delay only",
   "data.asof": "Reference data as of {d}",
   "data.unsynced": "Reference data not synced — run scripts/sync-terminology",
+  "data.sources": "Data sources",
+  "refs.title": "Evidence & References",
+  "refs.subtitle": "Every rule cites verified sources — PMID, DOI, or official URL",
+  "refs.rules": "Active rules",
+  "refs.attribution": "Data source attributions",
+  "refs.all": "All references",
+  "refs.col.ref": "Reference",
+  "refs.col.venue": "Venue",
+  "refs.col.id": "Identifier",
 };
 
 export default en;
