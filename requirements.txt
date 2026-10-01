@@ -1,0 +1,7 @@
+# Validation-only toolchain (scripts/validation) — NOT part of the app
+# runtime. Used to evaluate models against exported datasets
+# (roc_auc_score, calibration_curve). Python 3.11+.
+pandas==2.3.1
+numpy==2.3.1
+scikit-learn==1.7.0
+matplotlib==3.10.3
