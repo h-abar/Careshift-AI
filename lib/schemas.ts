@@ -152,3 +152,19 @@ export const switchSchema = z
 export const handoffAcceptSchema = z
   .object({ checklist: z.array(z.string()).max(50).optional() })
   .strict();
+
+export const doctorDecisionSchema = z
+  .object({
+    decision: z.enum([
+      "treatment",
+      "escalate",
+      "monitor",
+      "not_significant",
+    ]),
+    // required for every decision; mandatory & meaningful for
+    // not_significant (validated again in the route).
+    reason: z.string().trim().max(500).optional(),
+    // monitor: new NEWS2 check interval in minutes.
+    intervalMin: z.number().int().min(5).max(240).optional(),
+  })
+  .strict();

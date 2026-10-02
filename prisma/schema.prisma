@@ -92,6 +92,38 @@ model Patient {
   claims        InsuranceClaim[]
   riskRuns      RiskAssessment[]
   overrides     InterventionOverride[]
+  doctorTasks   DoctorTask[]
+}
+
+/**
+ * E6 — doctor action task. Every escalated alert (NEWS2 >= 5, or any
+ * single parameter = 3, or NEWS2 >= 7 emergency) opens one of these and
+ * it stays open until the doctor records acknowledge → bedside review →
+ * decision. The escalation ladder (ladderStep/nextEscalateAt) re-notifies
+ * the doctor, then charge_nurse, then senior/on-call — prototype timings.
+ */
+model DoctorTask {
+  tenantId       String    @default("demo") // D2
+  id             String    @id @default(cuid())
+  patientId      String
+  patient        Patient   @relation(fields: [patientId], references: [id])
+  doctorId       String
+  level          String // urgent | emergency
+  score          Int
+  status         String    @default("open") // open | acknowledged | reviewed | closed
+  acknowledgedAt DateTime?
+  reviewedAt     DateTime?
+  decision       String? // treatment | escalate | monitor | not_significant
+  decisionReason String?
+  decidedAt      DateTime?
+  recheckDueAt   DateTime? // scheduled NEWS2 re-check
+  ladderStep     Int       @default(0) // 0 doctor → 1 re-notify → 2 charge_nurse → 3 senior
+  nextEscalateAt DateTime?
+  createdAt      DateTime  @default(now())
+  closedAt       DateTime?
+
+  @@index([doctorId, status])
+  @@index([patientId, status])
 }
 
 model Shift {

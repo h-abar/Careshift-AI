@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import type { JourneyKind } from "@/lib/types";
 import { EventTimeline } from "@/components/event-timeline";
+import { DoctorTaskCard } from "@/components/doctor-task-card";
 
 const KIND_ICON: Record<JourneyKind, string> = {
   admission: "🏥",
@@ -131,6 +132,9 @@ export function PatientView({ patientId }: { patientId: string }) {
           <RiskBadge level={risk.level} score={risk.score} />
         </div>
       </div>
+
+      {/* E6 — open doctor action task for this patient (doctor only) */}
+      <DoctorTaskCard patientId={p.id} onChanged={refetch} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* ── Journey timeline ── */}

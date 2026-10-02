@@ -12,6 +12,7 @@ import {
 import { fmtSarK } from "@/lib/format";
 import type { PatientSnapshot } from "@/lib/aggregate";
 import type { Assignment } from "@/lib/types";
+import { useDoctorTasks } from "@/components/doctor-task-card";
 import {
   Card,
   ErrorState,
@@ -350,6 +351,59 @@ function NurseHome() {
   );
 }
 
+/** E6 — open doctor action tasks, sorted by NEWS2, live wait timer. */
+function DoctorTasksCard() {
+  const { t, lang } = useI18n();
+  const { tasks, loading } = useDoctorTasks();
+  if (loading) return null;
+  return (
+    <Card>
+      <SectionTitle sub={t("doc.taskHint")}>{t("home.needsAction")}</SectionTitle>
+      {tasks.length === 0 ? (
+        <p className="py-4 text-center text-sm text-slate-600">
+          {t("home.noTasks")}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {tasks.map((task) => (
+            <Link
+              key={task.id}
+              href={`/patient/${task.patientId}`}
+              className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50/60 px-4 py-2.5 hover:border-red-300"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="font-mono text-xs font-bold text-red-700">
+                  NEWS2 {task.score}
+                </span>
+                <span className="truncate text-sm text-[#13304d]">
+                  {task.patient
+                    ? lang === "ar"
+                      ? task.patient.nameAr
+                      : task.patient.nameEn
+                    : task.patientId}
+                  <span className="ms-2 font-mono text-xs text-slate-600">
+                    {task.patientId}
+                  </span>
+                </span>
+              </div>
+              <span className="flex items-center gap-2 text-[11px]">
+                {task.ladderStep > 0 && (
+                  <span className="rounded bg-amber-100 px-1.5 py-0.5 font-bold text-amber-800">
+                    {t("doc.ladder")} {task.ladderStep}
+                  </span>
+                )}
+                <span className="font-mono text-red-700">
+                  {task.waitingMin} {t("doc.min")}
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /* ═══════════ E2 — Doctor home ═══════════ */
 function DoctorHome() {
   const { t, lang } = useI18n();
@@ -405,7 +459,9 @@ function DoctorHome() {
         <KpiCard label={t("home.unread")} value={d.unread} accent="text-sky-700" />
       </div>
 
-      {/* Needs your action — escalated alerts first (E6 adds the task flow) */}
+      {/* E6 — top widget: escalated alerts that stay open until decided */}
+      <DoctorTasksCard />
+
       <Card>
         <SectionTitle sub={t("home.whyHint")}>
           {t("home.newDeteriorations")}
