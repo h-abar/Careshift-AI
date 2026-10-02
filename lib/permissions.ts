@@ -76,6 +76,7 @@ const build = (keys: PermKey[]) =>
 export const ROLE_PERMISSIONS: Record<RoleKey, Record<PermKey, boolean>> = {
   nurse: build([
     "patients_view",
+    "patients_edit",
     "risk_view",
     "handoff_view",
     "handoff_accept",

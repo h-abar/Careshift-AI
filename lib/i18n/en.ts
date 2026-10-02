@@ -153,11 +153,17 @@ const en: Record<string, string> = {
   "journey.interventionDone": "Intervention completed — closed loop",
   "journey.escalated": "Intervention escalated",
 
-  // ── SBAR ──
-  "sbar.s": "Situation",
-  "sbar.b": "Background",
-  "sbar.a": "Assessment",
-  "sbar.r": "Recommendation",
+  // ── I-PASS (NEJM 2014) ──
+  "ipass.i": "Illness Severity",
+  "ipass.p": "Patient Summary",
+  "ipass.a": "Action List",
+  "ipass.s": "Situation Awareness & Contingency",
+  "ipass.syn": "Synthesis by Receiver",
+  "sbar.s": "Illness Severity (I)",
+  "sbar.b": "Patient Summary (P)",
+  "sbar.a": "Action List (A)",
+  "sbar.r": "Situation Awareness (S)",
+  "hftl.senderUnavailable": "Accepted on receiver side — sender unavailable (documented)",
 
   // ── Command Center ──
   "cmd.title": "Hospital Command Center",
@@ -190,7 +196,7 @@ const en: Record<string, string> = {
   "ho.at": "Handoff at",
   "ho.count": "patients in unit",
   "ho.window": "Deterioration window",
-  "ho.sbarTitle": "AI-generated SBAR",
+  "ho.sbarTitle": "AI-generated I-PASS (NEJM 2014)",
 
   // ── Patient Journey ──
   "pt.title": "Patient Digital Journey",

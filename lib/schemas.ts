@@ -125,8 +125,18 @@ const vitalPoint = z.object({
   rr: z.number(),
   temp: z.number(),
   spo2: z.number(),
+  o2: z.number().optional(),
+  conscious: z.number().optional(),
   glucose: z.number().optional(),
 });
+
+export const nurseEscalationSchema = z
+  .object({
+    patientId: z.string().min(1),
+    category: z.string().min(1).max(50),
+    reason: z.string().trim().min(3).max(1000),
+  })
+  .strict();
 
 const labResult = z.object({
   key: z.string(),
@@ -150,7 +160,10 @@ export const switchSchema = z
   .strict();
 
 export const handoffAcceptSchema = z
-  .object({ checklist: z.array(z.string()).max(50).optional() })
+  .object({
+    checklist: z.array(z.string()).max(50).optional(),
+    reason: z.string().max(500).optional(),
+  })
   .strict();
 
 export const doctorDecisionSchema = z

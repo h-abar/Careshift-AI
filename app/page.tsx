@@ -13,6 +13,8 @@ import { fmtSarK } from "@/lib/format";
 import type { PatientSnapshot } from "@/lib/aggregate";
 import type { Assignment } from "@/lib/types";
 import { useDoctorTasks } from "@/components/doctor-task-card";
+import { NurseCockpit } from "@/components/nurse-cockpit";
+import { WardBedBoard } from "@/components/ward-bed-board";
 import {
   Card,
   ErrorState,
@@ -238,116 +240,18 @@ function AlertsCard({ userId }: { userId: string }) {
   );
 }
 
-/* ═══════════ E2 — Nurse home ═══════════ */
+/* ═══════════ E2/E8 — Nurse Cockpit (action console) ═══════════ */
 function NurseHome() {
-  const { t, lang } = useI18n();
-  const { user } = useAuth();
   const d = useHomeData();
   if (d.loading) return <Skeleton rows={5} />;
   if (d.error) return <ErrorState onRetry={d.refetch} />;
-  if (!user) return <Loading />;
-
-  const mine = d.assignments.filter((a) => a.nurseId === user.id);
-  const myPatients = d.snaps
-    .filter((s) => mine.some((a) => a.patientId === s.patient.id))
-    .sort((a, b) => (a.priority?.sortKey ?? 0) - (b.priority?.sortKey ?? 0));
-  const critical = myPatients.filter(
-    (s) => s.risk.level === "critical" || s.risk.level === "high",
-  );
-  const mySteps = myPatients.flatMap((s) =>
-    s.plan
-      .filter((st) => st.status !== "done")
-      .map((st) => ({ st, s })),
-  );
-  const overdueSteps = mySteps.filter(
-    (x) => x.s.priority?.info.overdueTasks ?? 0 > 0,
-  );
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
-          {t("my.title")}
-        </h1>
-        <p className="mt-0.5 text-sm text-slate-600">
-          {lang === "ar" ? user.nameAr : user.nameEn} ·{" "}
-          {t(`userRole.${user.role}`)} · {t(`dept.${user.dept}`)}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label={t("my.patients")} value={myPatients.length} />
-        <KpiCard
-          label={t("my.criticalPatients")}
-          value={critical.length}
-          accent="text-red-600"
-        />
-        <KpiCard
-          label={t("home.openSteps")}
-          value={mySteps.length}
-          accent="text-sky-700"
-        />
-        <KpiCard
-          label={t("home.overdue")}
-          value={overdueSteps.length}
-          accent="text-amber-700"
-        />
-      </div>
-
-      <Card>
-        <SectionTitle sub={t("home.byPriority")}>
-          {t("my.patients")}
-        </SectionTitle>
-        {myPatients.length === 0 && (
-          <p className="py-6 text-center text-sm text-slate-600">
-            {t("my.nothing")}
-          </p>
-        )}
-        <div className="space-y-2.5">
-          {myPatients.map((s) => (
-            <SnapRow key={s.patient.id} s={s} />
-          ))}
-        </div>
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <SectionTitle>{t("home.openSteps")}</SectionTitle>
-          {mySteps.length === 0 ? (
-            <p className="py-4 text-center text-sm text-slate-600">
-              {t("my.nothing")}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {mySteps.slice(0, 6).map(({ st, s }) => (
-                <Link
-                  key={st.id}
-                  href={`/patient/${s.patient.id}`}
-                  className="flex items-center justify-between rounded-lg border border-[#eef2f7] bg-[#f8fafc] px-4 py-2.5 hover:border-[#0e9bb5]/40"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <RiskBadge level={s.risk.level} />
-                    <span className="truncate text-sm text-[#13304d]">
-                      {s.patient.id} · {t(`action.${st.actionKey}`)}
-                    </span>
-                  </div>
-                  <IvStatusChip status={st.status} />
-                </Link>
-              ))}
-            </div>
-          )}
-          <Link
-            href="/interventions"
-            className="mt-3 block text-center text-xs font-semibold text-[#0b7a8d] hover:underline"
-          >
-            {t("common.viewAll")} →
-          </Link>
-        </Card>
-        <AlertsCard userId={user.id} />
-      </div>
-
-      <AwaitingAccept userId={user.id} />
-    </div>
+    <NurseCockpit
+      snaps={d.snaps}
+      assignments={d.assignments}
+      handoffs={d.handoffs}
+      refetch={d.refetch}
+    />
   );
 }
 
@@ -569,6 +473,14 @@ function ChargeHome() {
           accent="text-purple-700"
         />
       </div>
+
+      {/* E8 — Ward bed map + staff workload balance */}
+      <WardBedBoard
+        snaps={d.snaps}
+        assignments={d.assignments}
+        handoffs={d.handoffs}
+        refetch={d.refetch}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Chain gaps */}

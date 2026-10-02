@@ -4,7 +4,6 @@ import { REQUIRED_CHECKLIST, handoffEvent } from "@/lib/server/handoffs";
 import { emitHandoffEvent } from "@/lib/server/chains";
 import { notify } from "@/lib/server/notify";
 import { audit } from "@/lib/server/audit";
-import { can } from "@/lib/permissions";
 import { handle, ok } from "@/lib/server/json";
 
 const J = <T>(s: string | null | undefined, fb: T): T =>
@@ -27,9 +26,12 @@ export const POST = handle(
         { status: 409 },
       );
     }
-    const isManager = can(auth.user.role, "handoff_manage");
-    if (!isManager && auth.user.id !== h.outgoingId) {
-      return Response.json({ error: "forbidden" }, { status: 403 });
+    // E8: Charge nurse may NOT sign on behalf of another nurse; proxy signing is disallowed.
+    if (auth.user.id !== h.outgoingId) {
+      return Response.json(
+        { error: "only the outgoing nurse may sign off; proxy signing is disallowed" },
+        { status: 403 },
+      );
     }
 
     const patientIds = J<string[]>(h.patientIdsJson, []);

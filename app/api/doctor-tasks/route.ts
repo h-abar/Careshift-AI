@@ -1,7 +1,8 @@
-import { requireAnyPerm } from "@/lib/server/session";
-import { runEscalationLadder } from "@/lib/server/doctor-tasks";
+import { requireAnyPerm, requirePerm } from "@/lib/server/session";
+import { openNurseEscalationTask, runEscalationLadder } from "@/lib/server/doctor-tasks";
 import { prisma } from "@/lib/server/prisma";
-import { handle, ok } from "@/lib/server/json";
+import { handle, ok, parseBody } from "@/lib/server/json";
+import { nurseEscalationSchema } from "@/lib/schemas";
 
 /**
  * E6 — open doctor action tasks. Doctors see their own queue; the charge
@@ -48,3 +49,23 @@ export const GET = handle(async (req: Request) => {
     })),
   });
 });
+
+/**
+ * E8 — nurse-initiated escalation to doctor (Nurse Concern).
+ * Creates an emergency DoctorTask and records a hash-chained ClinicalEvent.
+ */
+export const POST = handle(async (req: Request) => {
+  const auth = await requirePerm("intervention_execute");
+  const { data: b, error } = await parseBody(req, nurseEscalationSchema);
+  if (error) return error;
+
+  const taskId = await openNurseEscalationTask(
+    b.patientId,
+    auth.user.id,
+    b.category,
+    b.reason,
+  );
+
+  return ok({ taskId });
+});
+

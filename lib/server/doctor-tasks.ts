@@ -74,6 +74,59 @@ export async function openDoctorTask(
 }
 
 /**
+ * Nurse-initiated critical escalation (Nurse Concern).
+ * Creates a critical DoctorTask (level: "emergency", score: >=7 or current NEWS2)
+ * and writes a hash-chained ClinicalEvent "nurse_escalation".
+ */
+export async function openNurseEscalationTask(
+  patientId: string,
+  nurseId: string,
+  category: string,
+  reason: string,
+): Promise<string> {
+  const assignment = await prisma.assignment.findUnique({
+    where: { patientId },
+  });
+  const now = new Date();
+  const doctorId = assignment?.physicianId ?? "a.salem";
+
+  const task = await prisma.doctorTask.create({
+    data: {
+      patientId,
+      doctorId,
+      level: "emergency",
+      score: 7,
+      decisionReason: `Nurse Concern [${category}]: ${reason}`,
+      nextEscalateAt: new Date(now.getTime() + TASK_RENOTIFY_MIN * MINUTES),
+    },
+  });
+
+  await appendEvent({
+    patientId,
+    type: "nurse_escalation",
+    occurredAt: now,
+    actorUserId: nurseId,
+    actorRole: "nurse",
+    payload: {
+      taskId: task.id,
+      category,
+      reason,
+      simulated: "Simulated",
+    },
+    sourceRecordId: `nesc:${task.id}`,
+  });
+
+  await notify(doctorId, "notif.doctorTask", "critical", {
+    patientId,
+    entityType: "doctor_task",
+    entityId: task.id,
+    detail: `Nurse Concern: ${category}`,
+  });
+
+  return task.id;
+}
+
+/**
  * Ladder sweep — called on read paths (doctor-tasks & notifications GET)
  * and directly by tests. Advances each open task one step at a time:
  *   0→1 re-notify doctor, 1→2 charge nurse, 2→3 senior/on-call.

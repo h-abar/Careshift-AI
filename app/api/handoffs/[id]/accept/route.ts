@@ -28,21 +28,28 @@ export const POST = handle(
     if (h.status === "rejected") {
       return Response.json({ error: "handoff was rejected" }, { status: 409 });
     }
-    if (h.status !== "signed_off") {
+    // Only the assigned incoming staff member — or admin/charge nurse —
+    // may accept a handoff.
+    const isManager = can(auth.user.role, "handoff_manage");
+    if (!isManager && auth.user.id !== h.incomingId) {
+      return Response.json({ error: "forbidden" }, { status: 403 });
+    }
+
+    // E8: Charge nurse may NOT sign on behalf of another nurse as sender.
+    // If the sender is unavailable, the charge nurse accepts as receiver and
+    // the event records "sender unavailable" with a mandatory reason.
+    const senderUnavailable = h.status !== "signed_off" && isManager && Boolean(body.reason);
+    if (h.status !== "signed_off" && !senderUnavailable) {
       return Response.json(
         { error: "outgoing sign-off required before acceptance" },
         { status: 409 },
       );
     }
 
-    // Only the assigned incoming staff member — or admin/charge nurse —
-    // may accept a handoff on their behalf.
-    const isManager = can(auth.user.role, "handoff_manage");
-    if (!isManager && auth.user.id !== h.incomingId) {
-      return Response.json({ error: "forbidden" }, { status: 403 });
-    }
-
     const timeline = JSON.parse(h.timelineJson) as { t: string; key: string }[];
+    if (senderUnavailable) {
+      timeline.push({ t: new Date().toISOString().slice(11, 16), key: "hftl.senderUnavailable" });
+    }
     timeline.push({ t: new Date().toISOString().slice(11, 16), key: "hftl.accepted" });
 
     const updated = await prisma.handoff.update({

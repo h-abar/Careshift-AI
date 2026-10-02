@@ -153,11 +153,17 @@ const ar: Record<string, string> = {
   "journey.interventionDone": "اكتمل التدخل — حلقة مغلقة",
   "journey.escalated": "صُعِّد التدخل",
 
-  // ── SBAR ──
-  "sbar.s": "الموقف",
-  "sbar.b": "الخلفية",
-  "sbar.a": "التقييم",
-  "sbar.r": "التوصية",
+  // ── I-PASS (NEJM 2014) ──
+  "ipass.i": "درجة الخطورة (Illness Severity)",
+  "ipass.p": "ملخص المريض (Patient Summary)",
+  "ipass.a": "قائمة الإجراءات (Action List)",
+  "ipass.s": "إدراك الموقف والطوارئ (Situation Awareness)",
+  "ipass.syn": "تأكيد وتلخيص المستلم (Synthesis by Receiver)",
+  "sbar.s": "درجة الخطورة والموقف (Illness Severity)",
+  "sbar.b": "الخلفية وملخص المريض (Patient Summary)",
+  "sbar.a": "التقييم وقائمة الإجراءات (Action List)",
+  "sbar.r": "التوصية وخطط الطوارئ (Situation Awareness)",
+  "hftl.senderUnavailable": "قُبل التسليم كبديل — تعذر تواجد المسلّم (مع توثيق السبب)",
 
   // ── Command Center ──
   "cmd.title": "مركز قيادة المستشفى",
@@ -190,7 +196,7 @@ const ar: Record<string, string> = {
   "ho.at": "التسليم الساعة",
   "ho.count": "مريض في الوحدة",
   "ho.window": "نافذة التدهور المحتملة",
-  "ho.sbarTitle": "SBAR مولّد بالذكاء الاصطناعي",
+  "ho.sbarTitle": "I-PASS مولّد بالذكاء الاصطناعي (NEJM 2014)",
 
   // ── Patient Journey ──
   "pt.title": "الرحلة الرقمية للمريض",
