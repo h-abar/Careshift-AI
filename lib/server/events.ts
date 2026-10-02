@@ -10,6 +10,7 @@
  */
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/server/prisma";
+import { currentTenant, unscoped } from "@/lib/server/tenant";
 
 export const LATE_ENTRY_MINUTES = Number(process.env.LATE_ENTRY_MINUTES ?? 240);
 
@@ -79,7 +80,19 @@ export async function appendEvent(
   });
   const recordedAt = input.recordedAt ?? new Date();
   const lateMin = LATE_ENTRY_MINUTES;
+  // D2 — the request guard stamps tenantId; unscoped callers (seed,
+  // offline ingestion) inherit the owning patient's tenant instead.
+  const tenantId =
+    currentTenant() ??
+    (await unscoped(() =>
+      prisma.patient.findUnique({
+        where: { id: input.patientId },
+        select: { tenantId: true },
+      }),
+    ))?.tenantId ??
+    "demo";
   const base = {
+    tenantId,
     patientId: input.patientId,
     encounterId: input.encounterId ?? ENCOUNTER_ID(input.patientId),
     type: input.type,

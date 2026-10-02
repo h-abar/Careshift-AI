@@ -52,9 +52,10 @@ export function toUser(r: {
   roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
   email: string; phone: string; employeeId: string; status: string;
   consentAt: Date | null; lastLoginAt: Date | null; createdAt: Date;
-  termsVersion: string;
+  termsVersion: string; tenantId: string;
 }): Omit<User, "password"> {
   return {
+    tenantId: r.tenantId,
     id: r.id, username: r.username, nameEn: r.nameEn, nameAr: r.nameAr,
     role: r.roleKey as User["role"], dept: r.dept,
     specialty: { en: r.specialtyEn, ar: r.specialtyAr },

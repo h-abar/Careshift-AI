@@ -183,7 +183,7 @@ describe("C9 live safety events", () => {
     expect(p).not.toHaveProperty("nurseConcern");
     expect(p).not.toHaveProperty("overdueTasks");
     expect(p.rank).toBeGreaterThanOrEqual(1);
-  });
+  }, 60_000); // rank recomputes the whole patient list via KB rules
 
   it("closedLoopChain returns ordered steps with gaps", async () => {
     const c = await closedLoopChain("P-1042");

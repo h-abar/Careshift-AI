@@ -19,7 +19,18 @@ model Role {
   users  User[]
 }
 
+/** D2 — one row per hospital/organization (tenant). */
+model Tenant {
+  id        String   @id          // slug, e.g. "demo"
+  nameEn    String
+  nameAr    String
+  simulated Boolean  @default(false)
+  configJson String  @default("{}") // adapters, NPHIES provider id, thresholds version
+  createdAt DateTime @default(now())
+}
+
 model User {
+  tenantId    String   @default("demo") // D2
   id         String    @id
   username   String    @unique
   passwordHash String
@@ -43,6 +54,7 @@ model User {
 }
 
 model Session {
+  tenantId    String   @default("demo") // D2
   id             String   @id
   userId         String
   user           User     @relation(fields: [userId], references: [id])
@@ -56,6 +68,7 @@ model Session {
 }
 
 model Patient {
+  tenantId    String   @default("demo") // D2
   id           String @id
   nameEn       String
   nameAr       String
@@ -81,6 +94,7 @@ model Patient {
 }
 
 model Shift {
+  tenantId    String   @default("demo") // D2
   id     String @id
   key    String // day | night
   nameEn String
@@ -89,6 +103,7 @@ model Shift {
 }
 
 model Assignment {
+  tenantId    String   @default("demo") // D2
   patientId     String @id
   dept          String
   nurseId       String
@@ -97,6 +112,7 @@ model Assignment {
 }
 
 model Notification {
+  tenantId    String   @default("demo") // D2
   id         String   @id
   level      String   // critical | warning | info
   key        String   // i18n → notif.*
@@ -115,6 +131,7 @@ model Notification {
  * dismissed is scoped to the individual user, never shared.
  */
 model NotificationReceipt {
+  tenantId    String   @default("demo") // D2
   id             String       @id
   notificationId String
   notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
@@ -128,6 +145,7 @@ model NotificationReceipt {
 }
 
 model ShiftHandoff {
+  tenantId    String   @default("demo") // D2
   id           String @id
   fromShiftEn  String
   fromShiftAr  String
@@ -139,6 +157,7 @@ model ShiftHandoff {
 }
 
 model Handoff {
+  tenantId    String   @default("demo") // D2
   id           String @id
   dept         String
   shift        String
@@ -162,6 +181,7 @@ model Handoff {
 
 /** Per-patient row inside a handoff — SBAR snapshot + review state. */
 model HandoffPatient {
+  tenantId    String   @default("demo") // D2
   id        String  @id @default(cuid())
   handoffId String
   handoff   Handoff @relation(fields: [handoffId], references: [id], onDelete: Cascade)
@@ -174,6 +194,7 @@ model HandoffPatient {
 
 /** Persisted timeline — every workflow transition is a row. */
 model HandoffEvent {
+  tenantId    String   @default("demo") // D2
   id        String   @id @default(cuid())
   handoffId String
   handoff   Handoff  @relation(fields: [handoffId], references: [id], onDelete: Cascade)
@@ -186,6 +207,7 @@ model HandoffEvent {
 }
 
 model RiskAssessment {
+  tenantId    String   @default("demo") // D2
   id           String   @id @default(cuid())
   patientId    String
   patient      Patient  @relation(fields: [patientId], references: [id])
@@ -201,6 +223,7 @@ model RiskAssessment {
 }
 
 model InsuranceClaim {
+  tenantId    String   @default("demo") // D2
   id          String   @id
   patientId   String?
   patient     Patient? @relation(fields: [patientId], references: [id])
@@ -235,6 +258,7 @@ model InsuranceClaim {
  * (simulatedPrice flag), never a real SBS price.
  */
 model ClaimLine {
+  tenantId    String   @default("demo") // D2
   id             String   @id @default(cuid())
   claimId        String
   claim          InsuranceClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
@@ -261,6 +285,7 @@ model ClaimLine {
 
 /** Uploaded evidence file metadata — bytes live under uploads/. */
 model ClaimDocument {
+  tenantId    String   @default("demo") // D2
   id         String   @id @default(cuid())
   claimId    String
   claim      InsuranceClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
@@ -278,6 +303,7 @@ model ClaimDocument {
 
 /** Per-claim audit trail (status changes, appeals, uploads). */
 model ClaimEvent {
+  tenantId    String   @default("demo") // D2
   id        String   @id @default(cuid())
   claimId   String
   claim     InsuranceClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
@@ -290,6 +316,7 @@ model ClaimEvent {
 }
 
 model InterventionOverride {
+  tenantId    String   @default("demo") // D2
   stepId      String   @id
   patientId   String
   patient     Patient  @relation(fields: [patientId], references: [id])
@@ -307,6 +334,7 @@ model InterventionOverride {
 
 /** Patient journey timeline events — replaces lib/data/journeys (B7). */
 model JourneyEvent {
+  tenantId    String   @default("demo") // D2
   id        String   @id @default(cuid())
   patientId String
   ts        String   // clock label "09:20" kept for display
@@ -319,6 +347,7 @@ model JourneyEvent {
 }
 
 model AuditLog {
+  tenantId    String   @default("demo") // D2
   id         String   @id @default(cuid())
   userId     String
   action     String   // e.g. auth.login, patient.view, claim.status
@@ -336,6 +365,7 @@ model AuditLog {
 }
 
 model LoginAttempt {
+  tenantId    String   @default("demo") // D2
   id        String   @id @default(cuid())
   username  String
   ip        String
@@ -349,6 +379,7 @@ model LoginAttempt {
 // Phase 3 item 4 — instance-safe rate limiting (fixed-window counters,
 // atomic upsert+increment; shared across app instances via the DB).
 model RateBucket {
+  tenantId    String   @default("demo") // D2
   id        String   @id // `${bucket}:${key}:${windowStart}`
   count     Int      @default(0)
   expiresAt DateTime
@@ -453,6 +484,7 @@ model KpiDefinition {
  * setting, not a clinical standard).
  */
 model ClinicalEvent {
+  tenantId    String   @default("demo") // D2
   id               String    @id @default(cuid())
   patientId        String
   /** Demo has one encounter per patient — `enc-<patientId>`. */
@@ -482,6 +514,7 @@ model ClinicalEvent {
 
 /** D1 — payloads an adapter could not map; never silently dropped. */
 model IngestionDeadLetter {
+  tenantId    String   @default("demo") // D2
   id          String   @id @default(cuid())
   adapter     String   // adapter name + mapping version
   payloadJson String   // raw source payload
@@ -492,6 +525,7 @@ model IngestionDeadLetter {
 }
 
 model RuleExecution {
+  tenantId    String   @default("demo") // D2
   id          String   @id @default(cuid())
   ruleId      String
   ruleVersion Int

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { can, type PermKey } from "@/lib/permissions";
+import { enterTenant } from "@/lib/server/tenant";
 import type { User } from "@/lib/types";
 
 /**
@@ -104,10 +105,11 @@ function toSessionUser(r: {
   roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
   email: string; phone: string; employeeId: string; status: string;
   consentAt: Date | null; lastLoginAt: Date | null; createdAt: Date;
-  termsVersion: string;
+  termsVersion: string; tenantId: string;
 }): Omit<User, "password"> {
   return {
     id: r.id, username: r.username, nameEn: r.nameEn, nameAr: r.nameAr,
+    tenantId: r.tenantId,
     role: r.roleKey as User["role"], dept: r.dept,
     specialty: { en: r.specialtyEn, ar: r.specialtyAr },
     email: r.email, phone: r.phone, employeeId: r.employeeId,
@@ -174,6 +176,8 @@ export async function getAuth(): Promise<AuthContext | null> {
     });
     if (imp) impersonator = toSessionUser(imp);
   }
+  // D2 — pin the effective user's tenant for the rest of the request
+  enterTenant(user.tenantId);
   return { user, sid: session.id, impersonator };
 }
 

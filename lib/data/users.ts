@@ -11,7 +11,7 @@ export const users: User[] = [
     role: "physician", dept: "icu",
     specialty: { en: "Internal Medicine", ar: "باطنية" },
     email: "a.salem@hospital.sa", phone: "+966 5X XXX 1201",
-    employeeId: "EMP-1021", status: "active", termsVersion: "",
+    employeeId: "EMP-1021", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 10, createdAt: "2024-03-12",
   },
   {
@@ -20,7 +20,7 @@ export const users: User[] = [
     role: "nurse", dept: "er",
     specialty: { en: "Emergency Nursing", ar: "تمريض طوارئ" },
     email: "s.ahmed@hospital.sa", phone: "+966 5X XXX 2088",
-    employeeId: "EMP-2088", status: "active", termsVersion: "",
+    employeeId: "EMP-2088", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 5, createdAt: "2024-06-01",
   },
   {
@@ -29,7 +29,7 @@ export const users: User[] = [
     role: "charge_nurse", dept: "icu",
     specialty: { en: "Critical Care Nursing", ar: "تمريض عناية مركزة" },
     email: "k.mohammed@hospital.sa", phone: "+966 5X XXX 3310",
-    employeeId: "EMP-3310", status: "active", termsVersion: "",
+    employeeId: "EMP-3310", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 62, createdAt: "2023-11-20",
   },
   {
@@ -38,7 +38,7 @@ export const users: User[] = [
     role: "physician", dept: "medical",
     specialty: { en: "Endocrinology", ar: "غدد صماء وسكري" },
     email: "l.haddad@hospital.sa", phone: "+966 5X XXX 4477",
-    employeeId: "EMP-4477", status: "active", termsVersion: "",
+    employeeId: "EMP-4477", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 25, createdAt: "2024-01-08",
   },
   {
@@ -47,7 +47,7 @@ export const users: User[] = [
     role: "insurance", dept: "claims",
     specialty: { en: "Claims Review", ar: "مراجعة المطالبات" },
     email: "m.alotaibi@hospital.sa", phone: "+966 5X XXX 5542",
-    employeeId: "EMP-5542", status: "active", termsVersion: "",
+    employeeId: "EMP-5542", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 18, createdAt: "2024-09-15",
   },
   {
@@ -56,7 +56,7 @@ export const users: User[] = [
     role: "hospital_admin", dept: "operations",
     specialty: { en: "Hospital Operations", ar: "عمليات المستشفى" },
     email: "f.shammari@hospital.sa", phone: "+966 5X XXX 6613",
-    employeeId: "EMP-6613", status: "active", termsVersion: "",
+    employeeId: "EMP-6613", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 45, createdAt: "2023-05-30",
   },
   {
@@ -65,7 +65,7 @@ export const users: User[] = [
     role: "nurse", dept: "medical",
     specialty: { en: "Medical Ward Nursing", ar: "تمريض أقسام الباطنية" },
     email: "r.yousef@hospital.sa", phone: "+966 5X XXX 7704",
-    employeeId: "EMP-7704", status: "active", termsVersion: "",
+    employeeId: "EMP-7704", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 7, createdAt: "2025-02-14",
   },
   {
@@ -74,7 +74,7 @@ export const users: User[] = [
     role: "admin", dept: "it",
     specialty: { en: "Systems Administration", ar: "إدارة الأنظمة" },
     email: "o.khalil@hospital.sa", phone: "+966 5X XXX 8895",
-    employeeId: "EMP-8895", status: "active", termsVersion: "",
+    employeeId: "EMP-8895", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 3, createdAt: "2023-08-22",
   },
   {
@@ -83,7 +83,7 @@ export const users: User[] = [
     role: "physician", dept: "er",
     specialty: { en: "Emergency Medicine", ar: "طب طوارئ" },
     email: "r.farouk@hospital.sa", phone: "+966 5X XXX 9012",
-    employeeId: "EMP-9012", status: "suspended", termsVersion: "",
+    employeeId: "EMP-9012", status: "suspended", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 4320, createdAt: "2024-04-10",
   },
   {
@@ -92,7 +92,7 @@ export const users: User[] = [
     role: "nurse", dept: "icu",
     specialty: { en: "Critical Care Nursing", ar: "تمريض عناية مركزة" },
     email: "n.hassan@hospital.sa", phone: "+966 5X XXX 0143",
-    employeeId: "EMP-0143", status: "active", termsVersion: "",
+    employeeId: "EMP-0143", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 31, createdAt: "2025-07-01",
   },
 ];

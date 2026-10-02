@@ -85,6 +85,31 @@ async function main() {
   await prisma.kpiDefinition.deleteMany();
   await prisma.extCache.deleteMany();
   await prisma.clinicalEvent.deleteMany();
+  await prisma.tenant.deleteMany();
+
+  // D2 — the demo hospital plus a second clearly-Simulated tenant to
+  // prove cross-tenant isolation. All demo rows carry tenantId="demo".
+  await prisma.tenant.createMany({
+    data: [
+      {
+        id: "demo",
+        nameEn: "Careshift Demo Hospital",
+        nameAr: "مستشفى كيرشيفت التجريبي",
+        simulated: true,
+        configJson: JSON.stringify({
+          adapters: ["webhook", "fhir", "hl7v2", "csv"],
+          thresholdsVersion: "kb",
+        }),
+      },
+      {
+        id: "sim-east",
+        nameEn: "Simulated East Hospital (tenant isolation test)",
+        nameAr: "مستشفى الشرق الافتراضي (اختبار العزل) — Simulated",
+        simulated: true,
+        configJson: "{}",
+      },
+    ],
+  });
 
   await prisma.role.createMany({ data: ROLES });
   await prisma.shift.createMany({ data: SHIFTS });
@@ -134,6 +159,51 @@ async function main() {
       },
     });
   }
+
+  // Second tenant (sim-east) gets a minimal staff + patient so isolation
+  // tests can assert that tenant demo never sees them and vice versa.
+  await prisma.user.create({
+    data: {
+      id: "U-SE-1",
+      username: "east.nurse",
+      passwordHash: bcrypt.hashSync("Demo@0000", 10),
+      nameEn: "Simulated East Nurse",
+      nameAr: "ممرضة الشرق الافتراضية",
+      roleKey: "nurse",
+      dept: "ward",
+      specialtyEn: "Simulated",
+      specialtyAr: "افتراضي",
+      email: "east.nurse@sim.example",
+      phone: "+966 5X XXX 0000",
+      employeeId: "EMP-SE-1",
+      status: "active",
+      tenantId: "sim-east",
+    },
+  });
+  await prisma.patient.create({
+    data: {
+      id: "P-SE-1",
+      nameEn: "Simulated East Patient",
+      nameAr: "مريض الشرق الافتراضي — Simulated",
+      age: 50,
+      sex: "F",
+      room: "E-1",
+      dxKey: "obs",
+      attending: "Simulated",
+      admittedAt: "2025-01-01T00:00:00Z",
+      shift: "day",
+      dept: "ward",
+      vitalsJson: JSON.stringify([
+        { t: "08:00", hr: 78, sbp: 122, rr: 15, temp: 36.8, spo2: 98 },
+      ]),
+      labsJson: "[]",
+      riskFlagsJson: "[]",
+      medsJson: "[]",
+      noteEn: "Simulated — tenant isolation fixture.",
+      noteAr: "افتراضي — عنصر اختبار العزل.",
+      tenantId: "sim-east",
+    },
+  });
 
   for (const [i, c] of claims.entries()) {
     await prisma.insuranceClaim.create({
@@ -297,7 +367,9 @@ async function main() {
   // the demo claim bundle covers the IG-required supportingInfo slices.
   // Everything below is Simulated demo content, never real codes invented.
   const { appendEvent } = await import("../lib/server/events");
-  const dbPatients = await prisma.patient.findMany();
+  const dbPatients = await prisma.patient.findMany({
+    where: { tenantId: "demo" },
+  });
   for (const p of dbPatients) {
     const docId = `${p.id}:admission-doc`;
     const exists = await prisma.clinicalEvent.findFirst({

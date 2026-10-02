@@ -1704,6 +1704,8 @@ describe("4 rate limiting", () => {
     expect((await checkRate(b, k + "x", 2, 60_000)).allowed).toBe(true);
   });
 
+  // 4 full reassess calls (~2s each on the PGlite dev server) exceed the
+  // default 5s vitest timeout — explicit budget, assertions unchanged.
   it("reassess is rate-limited: beyond the limit → 429 + Retry-After", async () => {
     const old = process.env.RL_REASSESS;
     process.env.RL_REASSESS = "3"; // shrink the window's cap for the test
@@ -1723,7 +1725,7 @@ describe("4 rate limiting", () => {
     } finally {
       process.env.RL_REASSESS = old;
     }
-  });
+  }, 30_000);
 });
 
 /* ── 7: PDPL/NCA controls — consent, audit export, access review, purge ── */

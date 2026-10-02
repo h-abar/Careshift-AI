@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Capacitor Android project — generated platform code, not app source
+    "android/**",
   ]),
   {
     rules: {

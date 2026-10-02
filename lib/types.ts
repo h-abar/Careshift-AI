@@ -165,6 +165,8 @@ export interface User {
   consentAt: string | null;
   /** B3 — accepted terms version ("" = never accepted → re-prompt). */
   termsVersion: string;
+  /** D2 — owning tenant slug. */
+  tenantId: string;
   lastLoginMin: number | null; // minutes ago; null = never logged in
   createdAt: string;
 }
