@@ -11,7 +11,7 @@ const ar: Record<string, string> = {
   "nav.command": "مركز القيادة",
   "nav.handoff": "التسليم الذكي",
   "nav.interventions": "الحلقة المغلقة",
-  "nav.insurance": "مطالبات التأمين الصحي", "nav.claimsItem": "مراقبة المطالبات",
+  "nav.insurance": "مطالبات التأمين والوفر المالي", "nav.claimsItem": "المطالبات والوفر المالي",
 
   // ── Common ──
   "common.patient": "المريض",
@@ -470,6 +470,23 @@ const ar: Record<string, string> = {
   "hf.create": "تسليم جديد",
   "hf.shift.day": "الشيفت الصباحي",
   "hf.shift.night": "الشيفت الليلي",
+  "shift.day": "الشيفت الصباحي",
+  "shift.night": "الشيفت الليلي",
+  "shift.morning": "الشيفت الصباحي",
+  "shift.evening": "الشيفت المسائي",
+  "shift.current": "الوردية الحالية",
+  "shift.incoming": "المستلم",
+  "shift.outgoing": "المُسلِّم",
+  "shift.handoff": "التسليم السريري",
+  "shift.transferredTasks": "مهام محولة لورديتك",
+
+  // ── Story Ribbon (The Core Journey) ──
+  "story.tagline": "حدث المريض الواحد ➔ رعاية أسرع وأكثر أماناً ➔ تسليم I-PASS متكامل ➔ مطالبة معتمدة ➔ وفر مالي مثبت",
+  "story.event": "1. حدث سريري",
+  "story.alert": "2. تنبيه NEWS2",
+  "story.doctor": "3. قرار الطبيب",
+  "story.handoff": "4. تسليم الورديات",
+  "story.claim": "5. مطالبة ووفر",
   "hf.outgoing": "المُسلِّم",
   "hf.incoming": "المستلم",
   "hf.patients": "المرضى",

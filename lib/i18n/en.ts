@@ -11,7 +11,7 @@ const en: Record<string, string> = {
   "nav.command": "Command Center",
   "nav.handoff": "Smart Handoff",
   "nav.interventions": "Closed-Loop",
-  "nav.insurance": "Health Insurance Claims", "nav.claimsItem": "Claims Monitor",
+  "nav.insurance": "Health Insurance & Savings", "nav.claimsItem": "Claims & Savings",
 
   // ── Common ──
   "common.patient": "Patient",
@@ -470,6 +470,23 @@ const en: Record<string, string> = {
   "hf.create": "New handoff",
   "hf.shift.day": "Morning Shift",
   "hf.shift.night": "Night Shift",
+  "shift.day": "Morning Shift",
+  "shift.night": "Night Shift",
+  "shift.morning": "Morning Shift",
+  "shift.evening": "Evening Shift",
+  "shift.current": "Current Shift",
+  "shift.incoming": "Incoming",
+  "shift.outgoing": "Outgoing",
+  "shift.handoff": "Clinical Handoff",
+  "shift.transferredTasks": "Tasks transferred to your shift",
+
+  // ── Story Ribbon (The Core Journey) ──
+  "story.tagline": "One Patient Event ➔ Safer Care ➔ Verified I-PASS Handoff ➔ Approved Claim ➔ Measurable Savings",
+  "story.event": "1. Clinical Event",
+  "story.alert": "2. NEWS2 Alert",
+  "story.doctor": "3. Doctor Action",
+  "story.handoff": "4. Shift Handoff",
+  "story.claim": "5. Claim & Savings",
   "hf.outgoing": "Outgoing",
   "hf.incoming": "Incoming",
   "hf.patients": "Patients",

@@ -9,11 +9,15 @@ import { useToast } from "@/components/toast";
 import { Card, Empty, ErrorState, HfStatusChip, Loading, Modal, Skeleton, RiskBadge, SectionTitle } from "@/components/ui";
 import type { StaffPicker } from "@/lib/types";
 
+import { HandoffFlow } from "@/components/handoff-flow";
+
 type SafeUser = StaffPicker;
 
 export default function HandoffsPage() {
   const { t, lang } = useI18n();
+  const isAr = lang === "ar";
   const { can } = useAuth();
+  const [viewMode, setViewMode] = useState<"flow" | "list">("flow");
   const [wizard, setWizard] = useState(false);
   const { data, loading, error, refetch } = useHandoffs();
   const { data: snapData } = useSnapshots();
@@ -22,70 +26,101 @@ export default function HandoffsPage() {
 
   if (!can("handoff_view"))
     return <p className="py-20 text-center text-slate-600">{t("common.noAccess")}</p>;
-  if (loading && !data) return <Skeleton rows={4} />;
-  if (error && !data) return <ErrorState onRetry={refetch} />;
-  if (!data || !snapData) return <Loading />;
-  const userName = (id: string) => {
-    const u = data.users.find((x) => x.id === id);
-    return u ? (lang === "ar" ? u.nameAr : u.nameEn) : id;
-  };
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SectionTitle sub={t("ho.subtitle")}>{t("hf.title")}</SectionTitle>
-        {can("handoff_manage") && (
+      {/* Top View Mode Switcher */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode("flow")}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              viewMode === "flow"
+                ? "bg-[#0b7a8d] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+            }`}
+          >
+            ⚡ {isAr ? "مسار التسليم السريري (I-PASS 3-Step)" : "Interactive I-PASS Flow"}
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              viewMode === "list"
+                ? "bg-[#0b7a8d] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+            }`}
+          >
+            📋 {isAr ? "سجل جميع التسليمات" : "All Handoffs Archive"}
+          </button>
+        </div>
+
+        {can("handoff_manage") && viewMode === "list" && (
           <button
             onClick={() => setWizard(true)}
-            className="rounded-lg bg-[#13304d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1b5fad] transition-colors"
+            className="rounded-lg bg-[#13304d] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1b5fad] transition-colors"
           >
             + {t("hf.create")}
           </button>
         )}
       </div>
 
-      <div className="space-y-3">
-        {data.handoffs.length === 0 && <Empty />}
-        {data.handoffs.map((h) => {
-          const reviewed = Object.values(h.reviewed).filter(Boolean).length;
-          const criticalCount = h.patientIds.filter(
-            (pid) => riskOf(pid)?.level === "critical" || riskOf(pid)?.level === "high",
-          ).length;
-          return (
-            <Link key={h.id} href={`/handoffs/${h.id}`}>
-              <Card className="!p-4 hover:border-[#0e9bb5]/40 transition-colors">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-4">
-                    <span className="font-mono text-sm font-bold text-[#0b7a8d]">{h.id}</span>
-                    <div>
-                      <div className="text-sm font-semibold text-[#13304d]">
-                        {t(`dept.${h.dept}`)} · {t(`hf.shift.${h.shift}`)} · {h.date}
+      {viewMode === "flow" ? (
+        <HandoffFlow />
+      ) : (
+        <>
+          {loading && !data && <Skeleton rows={4} />}
+          {error && !data && <ErrorState onRetry={refetch} />}
+          {data && (
+            <div className="space-y-3">
+              {data.handoffs.length === 0 && <Empty />}
+              {data.handoffs.map((h) => {
+                const reviewed = Object.values(h.reviewed).filter(Boolean).length;
+                const criticalCount = h.patientIds.filter(
+                  (pid) => riskOf(pid)?.level === "critical" || riskOf(pid)?.level === "high",
+                ).length;
+                const userName = (id: string) => {
+                  const u = data.users.find((x) => x.id === id);
+                  return u ? (lang === "ar" ? u.nameAr : u.nameEn) : id;
+                };
+                return (
+                  <Link key={h.id} href={`/handoffs/${h.id}`}>
+                    <Card className="!p-4 hover:border-[#0e9bb5]/40 transition-colors">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-4">
+                          <span className="font-mono text-sm font-bold text-[#0b7a8d]">{h.id}</span>
+                          <div>
+                            <div className="text-sm font-semibold text-[#13304d]">
+                              {t(`dept.${h.dept}`)} · {t(`hf.shift.${h.shift}`)} · {h.date}
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-600">
+                              {t("hf.outgoing")}: {userName(h.outgoingId)}
+                              <span className="mx-2 text-[#0b7a8d]">→</span>
+                              {t("hf.incoming")}: {userName(h.incomingId)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3 text-xs text-slate-600">
+                            <span><b className="text-[#13304d]">{h.patientIds.length}</b> {t("hf.patients")}</span>
+                            <span><b className="text-emerald-700">{reviewed}</b> {t("hf.completed")}</span>
+                            {criticalCount > 0 && (
+                              <span><b className="text-red-600">{criticalCount}</b> {t("hf.critical")}</span>
+                            )}
+                          </div>
+                          <HfStatusChip status={h.status} />
+                        </div>
                       </div>
-                      <div className="mt-0.5 text-xs text-slate-600">
-                        {t("hf.outgoing")}: {userName(h.outgoingId)}
-                        <span className="mx-2 text-[#0b7a8d]">→</span>
-                        {t("hf.incoming")}: {userName(h.incomingId)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 text-xs text-slate-600">
-                      <span><b className="text-[#13304d]">{h.patientIds.length}</b> {t("hf.patients")}</span>
-                      <span><b className="text-emerald-700">{reviewed}</b> {t("hf.completed")}</span>
-                      {criticalCount > 0 && (
-                        <span><b className="text-red-600">{criticalCount}</b> {t("hf.critical")}</span>
-                      )}
-                    </div>
-                    <HfStatusChip status={h.status} />
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
 
-      {wizard && (
+
+      {wizard && data && (
         <HandoffWizard
           users={data.users}
           onClose={() => {
