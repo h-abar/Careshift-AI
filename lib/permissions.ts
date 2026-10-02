@@ -142,7 +142,6 @@ export const PAGE_PERMS: { prefix: string; perm: PermKey }[] = [
   { prefix: "/audit", perm: "audit_view" },
   { prefix: "/settings", perm: "settings_manage" },
   { prefix: "/claims", perm: "claims_view" },
-  { prefix: "/insurance", perm: "claims_view" }, // E4 removes the route
   { prefix: "/payer", perm: "payer_claims" },
   { prefix: "/reports", perm: "reports_view" },
   { prefix: "/handoff", perm: "handoff_view" },

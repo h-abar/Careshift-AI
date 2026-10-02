@@ -1,7 +1,12 @@
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/server/prisma";
-import { signSession, SESSION_COOKIE, sessionTtlMs } from "@/lib/server/session";
+import {
+  signSession,
+  SESSION_COOKIE,
+  sessionTtlMs,
+  tenantBadge,
+} from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
 import { clientIp, lockState, recordAttempt } from "@/lib/server/lockout";
 import { captchaVerifier } from "@/lib/server/captcha";
@@ -127,7 +132,9 @@ export const POST = handle(async (req: Request) => {
     req,
   );
 
+  const tenant = await tenantBadge(user.tenantId);
   return ok({
+    tenant,
     user: {
       id: user.id,
       username: user.username,

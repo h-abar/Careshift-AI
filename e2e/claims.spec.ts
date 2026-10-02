@@ -5,8 +5,8 @@ test.describe("claims lifecycle", () => {
   test("hospital admin: view claims, open detail, change status", async ({
     page,
   }) => {
-    await loginAs(page, "hosp");
-    await page.goto("/insurance");
+    await loginAs(page, "hospital_admin");
+    await page.goto("/claims");
     // claims table renders rows
     await expect(page.locator("tbody tr").first()).toBeVisible({
       timeout: 15_000,
@@ -22,8 +22,8 @@ test.describe("claims lifecycle", () => {
   });
 
   test("hospital admin: upload a document to a claim", async ({ page }) => {
-    await loginAs(page, "hosp");
-    await page.goto("/insurance");
+    await loginAs(page, "hospital_admin");
+    await page.goto("/claims");
     await page
       .getByRole("button", { name: /detail|تفاصيل|claim/i })
       .first()

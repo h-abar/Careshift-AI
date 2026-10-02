@@ -6,6 +6,7 @@ import {
   signSession,
   SESSION_COOKIE,
   sessionTtlMs,
+  tenantBadge,
 } from "@/lib/server/session";
 import { can } from "@/lib/permissions";
 import { audit } from "@/lib/server/audit";
@@ -68,5 +69,10 @@ export const POST = handle(async (req: Request) => {
     req,
   );
 
-  return ok({ user: await dbUser(target.id), impersonator: auth.user });
+  const switched = await dbUser(target.id);
+  return ok({
+    user: switched,
+    impersonator: auth.user,
+    tenant: switched ? await tenantBadge(switched.tenantId) : null,
+  });
 });

@@ -5,6 +5,7 @@ import {
   signSession,
   SESSION_COOKIE,
   sessionTtlMs,
+  tenantBadge,
 } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
@@ -62,5 +63,10 @@ export const POST = handle(async (req: Request) => {
     req,
   );
 
-  return ok({ user: await dbUser(admin.id), impersonator: null });
+  const restored = await dbUser(admin.id);
+  return ok({
+    user: restored,
+    impersonator: null,
+    tenant: restored ? await tenantBadge(restored.tenantId) : null,
+  });
 });

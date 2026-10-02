@@ -115,8 +115,8 @@ test.describe("i18n + a11y", () => {
   });
 
   test("axe: hospital admin pages", async ({ page }) => {
-    await loginAs(page, "hosp");
-    for (const path of ["/reports", "/audit", "/insurance"]) {
+    await loginAs(page, "hospital_admin");
+    for (const path of ["/reports", "/audit", "/claims"]) {
       await axePage(page, path);
     }
   });

@@ -512,7 +512,7 @@ export function PatientView({ patientId }: { patientId: string }) {
                 {t("imp.friction")}
               </span>
               <Link
-                href="/insurance"
+                href="/claims"
                 className="rounded-md bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-700 border border-amber-200 hover:bg-amber-100"
               >
                 {t("imp.resolve")} →

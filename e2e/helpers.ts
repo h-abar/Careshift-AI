@@ -7,7 +7,7 @@ export const CREDS = {
   nurse: { u: "s.ahmed", p: "Demo@2088" },
   nurse2: { u: "r.yousef", p: "Demo@7704" },
   payer: { u: "m.alotaibi", p: "Demo@5542" },
-  hosp: { u: "f.shammari", p: "Demo@6613" },
+  hospital_admin: { u: "f.shammari", p: "Demo@6613" },
   suspended: { u: "r.farouk", p: "Demo@9012" },
 };
 

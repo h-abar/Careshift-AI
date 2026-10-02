@@ -173,6 +173,13 @@ export interface User {
   createdAt: string;
 }
 
+/** E3 — tenant identity shown in the top bar (name + Simulated flag). */
+export interface TenantBadge {
+  nameEn: string;
+  nameAr: string;
+  simulated: boolean;
+}
+
 /** Minimum-necessary staff identity for pickers — no contact/HR fields. */
 export interface StaffPicker {
   id: string;

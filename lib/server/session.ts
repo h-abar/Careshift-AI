@@ -213,3 +213,10 @@ export async function requireAnyPerm(perms: PermKey[]): Promise<AuthContext> {
 }
 
 export const sessionTtlMs = TTL_MS;
+
+/** E3 — tenant identity for the top bar; null when the tenant row is gone. */
+export async function tenantBadge(tenantId: string) {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!t) return null;
+  return { nameEn: t.nameEn, nameAr: t.nameAr, simulated: t.simulated };
+}

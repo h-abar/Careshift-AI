@@ -2,53 +2,21 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { TERMS_VERSION } from "@/lib/terms";
-import { roleHome, type PermKey } from "@/lib/permissions";
+import { navForRole, roleHome } from "@/lib/permissions";
 import { Icon } from "@/components/icons";
 import { NotificationCenter } from "@/components/notification-center";
 import { UserMenu } from "@/components/user-menu";
 import { LoginScreen } from "@/components/login-screen";
 import { Avatar } from "@/components/ui";
 
-const MAIN_NAV: { href: string; key: string; icon: string; perm?: PermKey }[] = [
-  { href: "/", key: "nav.command", icon: "dashboard" },
-  { href: "/handoff", key: "nav.handoff", icon: "handoff", perm: "handoff_view" },
-  { href: "/handoffs", key: "nav.handoffs", icon: "handoffs", perm: "handoff_view" },
-  { href: "/patients", key: "nav.patients", icon: "patients", perm: "patients_view" },
-  { href: "/interventions", key: "nav.interventions", icon: "interventions", perm: "patients_view" },
-  { href: "/insurance", key: "nav.insurance", icon: "insurance", perm: "claims_view" },
-  { href: "/reports", key: "nav.reports", icon: "reports", perm: "reports_view" },
-];
-
-// B6 — governance pages: read-only for every signed-in role.
-const GOV_NAV: { href: string; key: string; icon: string }[] = [
-  { href: "/rules/calculation", key: "nav.rulesCalc", icon: "audit" },
-  { href: "/rules/general", key: "nav.rulesGeneral", icon: "lock" },
-  { href: "/references/scientific", key: "nav.refSci", icon: "search" },
-  { href: "/references/technical", key: "nav.refTech", icon: "settings" },
-  { href: "/terms", key: "nav.terms", icon: "check" },
-];
-
-const ADMIN_NAV: { href: string; key: string; icon: string; perm: PermKey }[] = [
-  { href: "/users", key: "nav.users", icon: "users", perm: "users_manage" },
-  { href: "/audit", key: "nav.audit", icon: "audit", perm: "audit_view" },
-  { href: "/settings", key: "nav.settings", icon: "settings", perm: "settings_manage" },
-];
-
-// Mobile bottom bar — Home | Handoff | Patients | Actions | Profile(menu)
-const MOBILE_NAV = [
-  { href: "/", key: "nav.command", icon: "home" },
-  { href: "/handoff", key: "nav.handoff", icon: "handoff", perm: "handoff_view" as PermKey },
-  { href: "/patients", key: "nav.patients", icon: "patients", perm: "patients_view" as PermKey },
-  { href: "/interventions", key: "nav.interventions", icon: "check", perm: "patients_view" as PermKey },
-];
-
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, toggle } = useI18n();
-  const { user, impersonator, stopSwitch, consent, acceptTerms, can } = useAuth();
+  const { user, impersonator, stopSwitch, consent, acceptTerms, tenant } =
+    useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [drawer, setDrawer] = useState(false);
@@ -66,10 +34,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  const visibleMain = MAIN_NAV.filter((n) => !n.perm || can(n.perm));
-  const visibleAdmin = ADMIN_NAV.filter((n) => can(n.perm));
-  const visibleMobile = MOBILE_NAV.filter((n) => !("perm" in n) || !n.perm || can(n.perm));
-
   // Gate the whole workspace behind the login screen — except the public demo.
   if (!user) {
     if (pathname === "/demo" || pathname === "/terms")
@@ -78,6 +42,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       );
     return <LoginScreen />;
   }
+
+  // E3 — sidebar generated from lib/permissions.ts; the server enforces the
+  // same matrix, so hidden items are a UX filter, not security.
+  const groups = navForRole(user.role);
+  const flatNav = groups.flatMap((g) => g.items);
+  const visibleMobile = flatNav.slice(0, 4);
+  const hour = new Date().getHours();
+  const shiftKey = hour >= 7 && hour < 19 ? "day" : "night";
 
   const navLink = (
     n: { href: string; key: string; icon: string },
@@ -100,22 +72,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const sidebarBody = (
     <>
-      <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-        {t("nav.main")}
-      </div>
-      <nav className="space-y-0.5 px-3">{visibleMain.map((n) => navLink(n, () => setDrawer(false)))}</nav>
-      <div className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-        {t("nav.governance")}
-      </div>
-      <nav className="space-y-0.5 px-3">{GOV_NAV.map((n) => navLink(n, () => setDrawer(false)))}</nav>
-      {visibleAdmin.length > 0 && (
-        <>
-          <div className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-            {t("nav.admin")}
+      {groups.map((g, gi) => (
+        <Fragment key={g.key}>
+          <div
+            className={`px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 ${gi === 0 ? "pt-2" : "pt-4"}`}
+          >
+            {t(g.key)}
           </div>
-          <nav className="space-y-0.5 px-3">{visibleAdmin.map((n) => navLink(n, () => setDrawer(false)))}</nav>
-        </>
-      )}
+          <nav className="space-y-0.5 px-3">
+            {g.items.map((n) => navLink(n, () => setDrawer(false)))}
+          </nav>
+        </Fragment>
+      ))}
       <div className="mt-auto border-t border-[#eef2f7] p-3">
         <div className="flex items-center gap-2.5">
           <Avatar name={lang === "ar" ? user.nameAr : user.nameEn} />
@@ -260,14 +228,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Icon name="menu" />
           </button>
 
-          {/* Facility / department */}
+          {/* E3 — tenant badge (hospital name + Simulated) + role + shift */}
           <div className="hidden items-center gap-2 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-1.5 md:flex">
             <Icon name="home" className="h-4 w-4 text-[#0b7a8d]" />
             <span className="text-xs font-semibold text-[#13304d]">
-              {t("dept.hospital")}
+              {tenant ? (lang === "ar" ? tenant.nameAr : tenant.nameEn) : t("dept.hospital")}
             </span>
+            {(tenant?.simulated ?? true) && (
+              <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                {t("ev.simulated")}
+              </span>
+            )}
             <span className="text-xs text-slate-600">·</span>
-            <span className="text-xs text-slate-600">{t(`dept.${user.dept}`)}</span>
+            <span className="text-xs text-slate-600">
+              {t(`userRole.${user.role}`)} · {t(`hf.shift.${shiftKey}`)}
+            </span>
           </div>
 
           {/* Search */}

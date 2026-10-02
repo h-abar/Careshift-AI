@@ -16,7 +16,7 @@ const DOT: Record<string, string> = {
 
 function linkFor(n: NotificationItem): string {
   if (n.entityType === "handoff" && n.entityId) return `/handoffs/${n.entityId}`;
-  if (n.entityType === "claim") return "/insurance";
+  if (n.entityType === "claim") return "/claims";
   if (n.entityType === "intervention") return "/interventions";
   if (n.patientId) return `/patient/${n.patientId}`;
   return "/";

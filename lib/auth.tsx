@@ -11,15 +11,18 @@ import {
 } from "react";
 import { can, type PermKey } from "@/lib/permissions";
 import { postJson, ApiError } from "@/lib/api";
-import type { User } from "@/lib/types";
+import type { TenantBadge, User } from "@/lib/types";
 
 type SessionUser = Omit<User, "password">;
+type Tenant = TenantBadge | null;
 
 interface Auth {
   /** Currently authenticated user (null until session check resolves). */
   user: SessionUser | null;
   /** The admin who is impersonating, if viewing as someone else. */
   impersonator: SessionUser | null;
+  /** E3 — tenant identity for the top bar (name + Simulated flag). */
+  tenant: Tenant;
   loggedIn: boolean;
   loading: boolean;
   /** Server login — bcrypt-verified credentials → httpOnly session cookie.
@@ -45,6 +48,7 @@ interface Auth {
 const Ctx = createContext<Auth>({
   user: null,
   impersonator: null,
+  tenant: null,
   loggedIn: false,
   loading: true,
   login: async () => "invalid",
@@ -59,6 +63,7 @@ const Ctx = createContext<Auth>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [impersonator, setImpersonator] = useState<SessionUser | null>(null);
+  const [tenant, setTenant] = useState<Tenant>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((d) => {
         setUser(d.user ?? null);
         setImpersonator(d.impersonator ?? null);
+        setTenant(d.tenant ?? null);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -75,13 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (username: string, password: string, captchaToken?: string) => {
       try {
-        const d = await postJson<{ user: SessionUser }>("/api/auth/login", {
+        const d = await postJson<{ user: SessionUser; tenant: Tenant }>("/api/auth/login", {
           username,
           password,
           ...(captchaToken ? { captchaToken } : {}),
         });
         setUser(d.user);
         setImpersonator(null);
+        setTenant(d.tenant ?? null);
         return "ok" as const;
       } catch (e) {
         if (e instanceof Error && e.message === "locked")
@@ -105,12 +112,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const switchUser = useCallback(async (id: string) => {
     try {
-      const d = await postJson<{ user: SessionUser; impersonator: SessionUser }>(
+      const d = await postJson<{ user: SessionUser; impersonator: SessionUser; tenant: Tenant }>(
         "/api/auth/switch",
         { userId: id },
       );
       setUser(d.user);
       setImpersonator(d.impersonator);
+      setTenant(d.tenant ?? null);
       return true;
     } catch {
       return false;
@@ -119,11 +127,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const stopSwitch = useCallback(async () => {
     try {
-      const d = await postJson<{ user: SessionUser }>(
+      const d = await postJson<{ user: SessionUser; tenant: Tenant }>(
         "/api/auth/switch/stop",
         {},
       );
       setUser(d.user);
+      setTenant(d.tenant ?? null);
       setImpersonator(null);
       return true;
     } catch {
@@ -158,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       impersonator,
+      tenant,
       loggedIn: !!user,
       loading,
       login,
@@ -168,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       acceptTerms,
       can: (p) => (user ? can(user.role, p) : false),
     }),
-    [user, impersonator, loading, login, logout, switchUser, stopSwitch, consent, acceptTerms],
+    [user, impersonator, tenant, loading, login, logout, switchUser, stopSwitch, consent, acceptTerms],
   );
 
   if (loading) return null;
