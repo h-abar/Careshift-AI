@@ -36,6 +36,8 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "#94a3b8",
   review: "#fbbf24",
   denied: "#f87171",
+  draft: "#a78bfa",
+  exception: "#fb923c",
 };
 
 /**
@@ -78,7 +80,9 @@ export default function ClaimsMonitorPage() {
 
   const topCases = org.claimLinked.slice(0, 6);
 
-  const byStatus = (["approved", "pending", "review", "denied"] as const).map(
+  const byStatus = (
+    ["approved", "pending", "review", "denied", "exception", "draft"] as const
+  ).map(
     (st) => ({
       status: t(`claim.${st}`),
       count: claims.filter((c) => c.status === st).length,
@@ -139,6 +143,53 @@ export default function ClaimsMonitorPage() {
 
       {/* C7 — registry-computed claim integrity KPIs */}
       <ClaimKpis />
+
+      {/* E7 — auto-pipeline metrics (prototype, labelled Simulated) */}
+      {claimsData.pipeline && (
+        <section>
+          <SectionTitle sub={claimsData.pipeline.label === "Simulated" ? `${t("ins.pipelineSub")}` : undefined}>
+            {t("ins.pipeline")}
+          </SectionTitle>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
+              <div className="text-xs text-slate-600">{t("ins.autoRate")}</div>
+              <div className="mt-1 text-2xl font-bold text-[#0e9bb5]">
+                {claimsData.pipeline.autoRate}%
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
+              <div className="text-xs text-slate-600">{t("ins.exceptionCount")}</div>
+              <div className="mt-1 text-2xl font-bold text-orange-600">
+                {claimsData.pipeline.exceptionCount}
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
+              <div className="text-xs text-slate-600">{t("ins.firstPass")}</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-600">
+                {claimsData.pipeline.firstPassRate != null
+                  ? `${claimsData.pipeline.firstPassRate}%`
+                  : "—"}
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
+              <div className="text-xs text-slate-600">{t("ins.appealSuccess")}</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-600">
+                {claimsData.pipeline.appealSuccessRate != null
+                  ? `${claimsData.pipeline.appealSuccessRate}%`
+                  : "—"}
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#e2e9f2] bg-white p-4">
+              <div className="text-xs text-slate-600">{t("ins.medianSubmit")}</div>
+              <div className="mt-1 text-2xl font-bold text-[#13304d]">
+                {claimsData.pipeline.medianSubmitHours != null
+                  ? `${claimsData.pipeline.medianSubmitHours}${t("ins.hours")}`
+                  : "—"}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Top financial risk cases */}
       <Card>
@@ -353,6 +404,22 @@ export default function ClaimsMonitorPage() {
                   </span>
                 ))}
               </div>
+              {(c.exceptions ?? []).length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {c.exceptions!.map((ex, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-1.5 text-[10px] text-orange-700"
+                    >
+                      <span className="font-mono">{ex.seCode ?? "—"}</span>
+                      <span className="truncate">{ex.detail}</span>
+                      <span className="shrink-0 rounded-full bg-orange-100 px-1.5 py-px font-bold text-orange-800">
+                        → {t(`userRole.${ex.owner}`)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {c.frictionKeys.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {c.frictionKeys.map((f) => (

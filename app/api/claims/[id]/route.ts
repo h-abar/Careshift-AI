@@ -6,6 +6,7 @@ import {
   claimEvent,
   notifyClaimWatchers,
 } from "@/lib/server/claims";
+import { autoAppeal } from "@/lib/server/claim-pipeline";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { isDenialCode } from "@/lib/denial";
 import { handle, ok, parseBody } from "@/lib/server/json";
@@ -14,8 +15,12 @@ import { dbClaims } from "@/lib/server/data";
 import type { ClaimStatus } from "@/lib/types";
 import { rateGuard } from "@/lib/server/ratelimit";
 
-/** Legal claim lifecycle — anything not listed is rejected with 400. */
+/** Legal claim lifecycle — anything not listed is rejected with 400.
+ *  "draft"/"exception" are system-owned pipeline states (E7): users
+ *  cannot transition into or out of them via PATCH. */
 const TRANSITIONS: Record<ClaimStatus, ClaimStatus[]> = {
+  draft: [],
+  exception: [],
   pending: ["review", "approved", "denied"],
   review: ["approved", "denied"],
   denied: ["review"],
@@ -119,6 +124,12 @@ export const PATCH = handle(
       req,
     );
     await notifyClaimWatchers(id, auth.user.id, status === "denied" ? "warning" : "info", status);
+
+    // E7 — a manual denial feeds the auto-appeal pipeline: covered
+    // denials resubmit themselves, uncovered ones park in exception.
+    if (status === "denied") {
+      await autoAppeal(id, auth.user.id);
+    }
 
     return ok({ claim: updated });
   },

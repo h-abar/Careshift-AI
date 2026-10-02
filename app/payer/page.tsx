@@ -1,7 +1,9 @@
 "use client";
 
+import { Fragment } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useClaims } from "@/lib/api";
+import { ClaimDetail } from "@/components/claim-detail";
 import { fmtSar } from "@/lib/format";
 import {
   Card,
@@ -18,6 +20,8 @@ const STATUS_STYLE: Record<string, string> = {
   pending: "bg-slate-100 text-slate-600 border-slate-200",
   review: "bg-amber-50 text-amber-700 border-amber-200",
   denied: "bg-red-50 text-red-700 border-red-200",
+  draft: "bg-violet-50 text-violet-700 border-violet-200",
+  exception: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
 /**
@@ -81,8 +85,8 @@ export default function PayerPortal() {
               </thead>
               <tbody>
                 {claims.map((c) => (
+                  <Fragment key={c.id}>
                   <tr
-                    key={c.id}
                     className="border-b border-[#f4f7fa] last:border-0"
                   >
                     <td className="px-3 py-2.5 font-mono text-xs font-semibold text-[#0b7a8d]">
@@ -114,8 +118,21 @@ export default function PayerPortal() {
                     </td>
                     <td className="px-3 py-2.5 text-end font-mono text-sm font-bold text-[#13304d]">
                       {fmtSar(c.amountSar, lang)}
+                      {c.autoSubmitted && (
+                        <span className="ms-2 rounded-full bg-[#0e9bb5]/10 px-1.5 py-px text-[9px] font-bold text-[#075e6e]">
+                          {t("claim.autoSubmitted")}
+                        </span>
+                      )}
                     </td>
                   </tr>
+                  {/* E7 — adjudication actions: verify package, accept,
+                      deny with coded reason, request evidence */}
+                  <tr className="border-b border-[#f4f7fa] last:border-0">
+                    <td colSpan={6} className="px-3 pb-2">
+                      <ClaimDetail claim={c} onChanged={refetch} />
+                    </td>
+                  </tr>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

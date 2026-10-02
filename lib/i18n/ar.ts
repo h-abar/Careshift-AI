@@ -67,6 +67,11 @@ const ar: Record<string, string> = {
   "claim.pending": "معلقة",
   "claim.review": "قيد المراجعة",
   "claim.denied": "مرفوضة",
+  "claim.draft": "قيد التجميع",
+  "claim.exception": "استثناء",
+  "claim.autoSubmitted": "أُرسلت آليًا",
+  "claim.requestEvidence": "طلب أدلة",
+  "claim.evidenceDetail": "ما الأدلة الناقصة؟",
 
   // ── Diagnoses ──
   "dx.abdominalPain": "ألم بطن",
@@ -295,6 +300,14 @@ const ar: Record<string, string> = {
   "ins.valueNote":
     "كل تدخل مغلق الحلقة يتحول إلى دليل منظم — يسرّع التسوية ويقلل النزاعات.",
   "ins.thousands": "ألف",
+  "ins.pipeline": "الأنبوب الآلي",
+  "ins.pipelineSub": "النظام يجمّع المطالبات ويفحصها ويرسلها — بدون موظف تأمين. مقاييس نموذج أولي.",
+  "ins.autoRate": "أُرسلت آليًا",
+  "ins.exceptionCount": "في الاستثناءات",
+  "ins.firstPass": "قبول من أول مرة",
+  "ins.appealSuccess": "نجاح الاستئناف",
+  "ins.medianSubmit": "وسيط زمن الإرسال",
+  "ins.hours": "س",
 
   // ── Extended nav ──
   "nav.patients": "المرضى",
@@ -523,6 +536,8 @@ const ar: Record<string, string> = {
   "notif.interventionOverdue": "{id} — تدخل متأخر",
   "notif.interventionEscalated": "{id} — صُعِّد التدخل إلى {detail}",
   "notif.claimStatus": "المطالبة {id} → {detail}",
+  "notif.claimException": "المطالبة {id} تحتاج إصلاحك — {detail}",
+  "notif.evidenceRequested": "المؤمّن طلب أدلة إضافية للمطالبة {id}",
   "notif.doctorTask": "تصعيد يحتاج إجراءك — {id} (NEWS2 {detail})",
   "notif.doctorTaskReminder": "تذكير: تصعيد بلا إقرار — {id} (NEWS2 {detail})",
   "notif.doctorTaskCharge": "تصعيد بلا إقرار من الطبيب — {id} (NEWS2 {detail})",

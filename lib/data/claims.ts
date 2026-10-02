@@ -48,6 +48,20 @@ const linkedClaims: Claim[] = [
     evidence: ["diagnosis", "justification", "clinician", "timeline", "lab"],
     frictionKeys: ["missingIntervention"],
   },
+  // E7 — pipeline fixtures: "draft" claims are assembled, checked and
+  // auto-submitted (or parked in exception) by the system, not a clerk.
+  {
+    id: "CL-88210", patientId: "P-1042", amountSar: 21400, status: "draft",
+    dxKey: "dka", losDays: 2, icuDays: 0,
+    evidence: ["diagnosis", "justification", "intervention", "clinician", "timeline", "lab"],
+    frictionKeys: [],
+  },
+  {
+    id: "CL-88501", patientId: "P-7455", amountSar: 12600, status: "draft",
+    dxKey: "chf", losDays: 3, icuDays: 0,
+    evidence: ["diagnosis", "justification", "clinician", "timeline"],
+    frictionKeys: ["missingJustification"],
+  },
 ];
 
 // Remaining volume — realistic mix across the last 60 days.

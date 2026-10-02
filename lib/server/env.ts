@@ -69,6 +69,9 @@ const envSchema = z.object({
   // C1 prototype setting — minutes after which a recorded event is
   // flagged lateEntry. Configurable; not a clinical standard.
   LATE_ENTRY_MINUTES: optionalPort,
+  // E7 prototype setting — appeals above this amount (SAR) need an
+  // explicit hospital_admin approval instead of auto-resubmission.
+  APPEAL_APPROVAL_SAR: optionalPort,
   // C10 — NPHIES: "sandbox" enables outbound calls; never send real data.
   NPHIES_ENV: z.enum(["", "sandbox"]).optional(),
   NPHIES_ENDPOINT: z.string().optional(),

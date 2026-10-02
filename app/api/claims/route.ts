@@ -1,5 +1,6 @@
 import { requireAnyPerm } from "@/lib/server/session";
 import { payerWhere } from "@/lib/server/claims";
+import { runClaimsPipeline, pipelineStats } from "@/lib/server/claim-pipeline";
 import { dbSavingsTrend, toClaim } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
@@ -15,6 +16,9 @@ export const GET = handle(async (req: Request) => {
     50,
     Math.max(1, Number(url.searchParams.get("pageSize")) || 20),
   );
+  // E7 — sweep the auto-pipeline on the read path (idempotent): draft
+  // claims submit themselves, fixed exceptions resubmit themselves.
+  if (auth.user.role !== "payer") await runClaimsPipeline();
   // E7 — payer orgs only ever list their own claims.
   const where = {
     ...(status ? { status } : {}),
@@ -38,6 +42,7 @@ export const GET = handle(async (req: Request) => {
   return ok({
     claims: claims.map((c) => ({ ...c, readiness: claimReadiness(c) })),
     savingsTrend,
+    pipeline: auth.user.role === "payer" ? null : await pipelineStats(),
     total,
     page,
     pageSize,

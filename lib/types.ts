@@ -9,7 +9,9 @@ export type InterventionStatus =
   | "overdue"
   | "escalated"
   | "resolved";
-export type ClaimStatus = "approved" | "pending" | "review" | "denied";
+export type ClaimStatus =
+  | "approved" | "pending" | "review" | "denied"
+  | "draft" | "exception"; // E7 — system-owned pipeline states
 export type Lang = "en" | "ar";
 
 /** Localized string pair */
@@ -128,6 +130,11 @@ export interface Claim {
   nphiesCode?: string | null;
   version?: number;
   supersedesId?: string | null;
+  /** E7 — pipeline state */
+  denialCode?: string | null;
+  autoSubmitted?: boolean;
+  submittedAt?: string | null;
+  exceptions?: { kind: string; detail: string; owner: string; seCode?: string | null }[];
 }
 
 export interface ShiftHandoff {

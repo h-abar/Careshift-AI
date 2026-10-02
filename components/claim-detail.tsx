@@ -31,6 +31,8 @@ interface ClaimDetailData {
 }
 
 const NEXT_STATUS: Record<ClaimStatus, ClaimStatus[]> = {
+  draft: [],
+  exception: [],
   pending: ["review", "approved", "denied"],
   review: ["approved", "denied"],
   denied: ["review"],
@@ -59,6 +61,7 @@ export function ClaimDetail({
   const [pendingDenied, setPendingDenied] = useState(false);
   const [denialCode, setDenialCode] = useState("");
   const [appealMode, setAppealMode] = useState<"appeal" | "resubmit" | null>(null);
+  const [evidenceMode, setEvidenceMode] = useState(false);
   const [reason, setReason] = useState("");
   const [err, setErr] = useState("");
   const toast = useToast();
@@ -86,6 +89,7 @@ export function ClaimDetail({
       await fn();
       setPendingDenied(false);
       setAppealMode(null);
+      setEvidenceMode(false);
       setReason("");
       await refetch();
       onChanged();
@@ -211,6 +215,15 @@ export function ClaimDetail({
                   </button>
                 </>
               ))}
+              {canAdjudicate &&
+                (claim.status === "pending" || claim.status === "review") && (
+                  <button
+                    onClick={() => setEvidenceMode((v) => !v)}
+                    className={`${btnCls} bg-slate-50 border-[#e2e9f2] text-slate-600`}
+                  >
+                    {t("claim.requestEvidence")}
+                  </button>
+                )}
               {canFixEvidence && claim.status === "denied" && (
                 <>
                   <button
@@ -276,6 +289,37 @@ export function ClaimDetail({
               </button>
               <button
                 onClick={() => setAppealMode(null)}
+                className={`${btnCls} border-[#e2e9f2] text-slate-600`}
+              >
+                {t("usr.cancel")}
+              </button>
+            </div>
+          )}
+
+          {evidenceMode && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                aria-label={t("claim.evidenceDetail")}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={t("claim.evidenceDetail")}
+                className={`${inputCls} min-w-56 flex-1`}
+              />
+              <button
+                disabled={reason.trim().length < 3}
+                onClick={() =>
+                  run(() =>
+                    postJson(`/api/claims/${claim.id}/request-evidence`, {
+                      detail: reason,
+                    }),
+                  )
+                }
+                className={`${btnCls} bg-[#0e9bb5]/10 border-[#0e9bb5]/30 text-[#075e6e] disabled:opacity-40`}
+              >
+                {t("claim.requestEvidence")}
+              </button>
+              <button
+                onClick={() => setEvidenceMode(false)}
                 className={`${btnCls} border-[#e2e9f2] text-slate-600`}
               >
                 {t("usr.cancel")}

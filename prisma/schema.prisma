@@ -276,6 +276,12 @@ model InsuranceClaim {
   version     Int      @default(1)
   supersedesId String?
   payerOrg    String?  // E7 — which payer this claim was submitted to
+  /** E7 — auto-pipeline: submission stamp + flag; claims also carry the
+   *  "draft" (waiting for the pipeline) and "exception" (pipeline
+   *  blocked, routed to an owner) statuses. */
+  submittedAt   DateTime?
+  autoSubmitted Boolean   @default(false)
+  exceptionJson String?   // [{kind, detail, owner, seCode?}]
   updatedAt   DateTime @default(now())
   updatedBy   String?
   documents   ClaimDocument[]

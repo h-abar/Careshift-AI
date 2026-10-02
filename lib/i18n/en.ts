@@ -67,6 +67,11 @@ const en: Record<string, string> = {
   "claim.pending": "Pending",
   "claim.review": "Under review",
   "claim.denied": "Denied",
+  "claim.draft": "Assembling",
+  "claim.exception": "Exception",
+  "claim.autoSubmitted": "Auto-submitted",
+  "claim.requestEvidence": "Request evidence",
+  "claim.evidenceDetail": "What evidence is missing?",
 
   // ── Diagnoses ──
   "dx.abdominalPain": "Abdominal pain",
@@ -295,6 +300,14 @@ const en: Record<string, string> = {
   "ins.valueNote":
     "Every closed-loop intervention becomes structured evidence — accelerating settlement and reducing disputes.",
   "ins.thousands": "K",
+  "ins.pipeline": "Auto-pipeline",
+  "ins.pipelineSub": "The system assembles, checks and submits claims — no billing clerk. Prototype metrics.",
+  "ins.autoRate": "Auto-submitted",
+  "ins.exceptionCount": "In exception",
+  "ins.firstPass": "First-pass acceptance",
+  "ins.appealSuccess": "Appeal success",
+  "ins.medianSubmit": "Median time-to-submit",
+  "ins.hours": "h",
 
   // ── Extended nav ──
   "nav.patients": "Patients",
@@ -523,6 +536,8 @@ const en: Record<string, string> = {
   "notif.interventionOverdue": "{id} — intervention overdue",
   "notif.interventionEscalated": "{id} — intervention escalated to {detail}",
   "notif.claimStatus": "Claim {id} → {detail}",
+  "notif.claimException": "Claim {id} needs your fix — {detail}",
+  "notif.evidenceRequested": "Payer requested evidence on claim {id}",
   "notif.doctorTask": "Escalation needs your action — {id} (NEWS2 {detail})",
   "notif.doctorTaskReminder": "Reminder: unacknowledged escalation — {id} (NEWS2 {detail})",
   "notif.doctorTaskCharge": "Unacknowledged doctor escalation — {id} (NEWS2 {detail})",

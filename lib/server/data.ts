@@ -75,6 +75,8 @@ export function toClaim(r: {
   dxKey: string; losDays: number; icuDays: number;
   evidenceJson: string; frictionJson: string;
   nphiesCode?: string | null; version?: number; supersedesId?: string | null;
+  denialCode?: string | null; autoSubmitted?: boolean;
+  submittedAt?: Date | null; exceptionJson?: string | null;
 }): Claim {
   return {
     id: r.id, patientId: r.patientId ?? undefined, amountSar: r.amountSar,
@@ -84,6 +86,10 @@ export function toClaim(r: {
     nphiesCode: r.nphiesCode ?? null,
     version: r.version ?? 1,
     supersedesId: r.supersedesId ?? null,
+    denialCode: r.denialCode ?? null,
+    autoSubmitted: r.autoSubmitted ?? false,
+    submittedAt: r.submittedAt?.toISOString() ?? null,
+    exceptions: J(r.exceptionJson ?? "[]", []),
   };
 }
 

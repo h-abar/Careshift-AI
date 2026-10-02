@@ -170,6 +170,15 @@ export const useClaims = (p?: {
       readiness: { score: number; checklist: { key: string; ok: boolean }[] };
     })[];
     savingsTrend: { month: string; monthAr: string; avoided: number; exposure: number }[];
+    pipeline: {
+      label: string;
+      autoSubmitted: number;
+      autoRate: number;
+      exceptionCount: number;
+      firstPassRate: number | null;
+      appealSuccessRate: number | null;
+      medianSubmitHours: number | null;
+    } | null;
     total: number;
     page: number;
     pageSize: number;

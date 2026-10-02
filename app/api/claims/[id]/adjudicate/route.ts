@@ -9,6 +9,7 @@ import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { assertPayerClaim } from "@/lib/server/claims";
 import { simulateAdjudication } from "@/lib/server/adjudication";
+import { autoAppeal } from "@/lib/server/claim-pipeline";
 import { handle, ok } from "@/lib/server/json";
 
 export const POST = handle(
@@ -21,6 +22,8 @@ export const POST = handle(
     );
     try {
       const r = await simulateAdjudication(id);
+      // E7 — denial goes straight into the auto-appeal pipeline.
+      if (r.decision === "denied") await autoAppeal(id, auth.user.id);
       await audit({
         userId: auth.user.id, action: "claim.adjudicate",
         entityType: "claim", entityId: id,
