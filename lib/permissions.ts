@@ -183,13 +183,10 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: "nav.clinical",
     items: [
-      // "/" is the clinical home — proxy redirects non-clinical roles to
-      // their ROLE_HOME, so the item only makes sense with patients_view.
       { href: "/", key: "nav.command", icon: "dashboard", perm: "patients_view" },
       { href: "/patients", key: "nav.patients", icon: "patients", perm: "patients_view" },
       { href: "/interventions", key: "nav.interventions", icon: "interventions", perm: "patients_view" },
       { href: "/handoff", key: "nav.handoff", icon: "handoff", perm: "handoff_view" },
-      { href: "/handoffs", key: "nav.handoffs", icon: "handoffs", perm: "handoff_view" },
     ],
   },
   {
@@ -212,9 +209,7 @@ export const NAV_GROUPS: NavGroup[] = [
     key: "nav.reference",
     items: [
       { href: "/rules/calculation", key: "nav.rulesCalc", icon: "audit" },
-      { href: "/rules/general", key: "nav.rulesGeneral", icon: "lock" },
       { href: "/references/scientific", key: "nav.refSci", icon: "search" },
-      { href: "/references/technical", key: "nav.refTech", icon: "settings" },
       { href: "/terms", key: "nav.terms", icon: "check" },
     ],
   },

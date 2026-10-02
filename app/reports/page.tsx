@@ -17,6 +17,7 @@ import {
 } from "recharts";
 
 import { LeadershipEstimateCard } from "@/components/leadership-estimate-card";
+import { StoryRibbon } from "@/components/story-ribbon";
 
 export default function ReportsPage() {
   const { t, lang } = useI18n();
@@ -46,6 +47,9 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-5">
+      {/* Story Ribbon */}
+      <StoryRibbon activeStep="claim" patientId="P-1042" patientName="نورة القحطاني" />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SectionTitle sub={t("rpt.subtitle")}>{t("rpt.title")}</SectionTitle>
         <button className="rounded-lg border border-[#e2e9f2] bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:border-[#0e9bb5]/40 hover:text-[#0b7a8d]">

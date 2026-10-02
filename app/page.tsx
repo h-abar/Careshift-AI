@@ -16,6 +16,7 @@ import { useDoctorTasks } from "@/components/doctor-task-card";
 import { DoctorDecisionConsole } from "@/components/doctor-decision-console";
 import { NurseCockpit } from "@/components/nurse-cockpit";
 import { WardBedBoard } from "@/components/ward-bed-board";
+import { StoryRibbon } from "@/components/story-ribbon";
 import {
   Card,
   ErrorState,
@@ -356,6 +357,9 @@ function ChargeHome() {
 
   return (
     <div className="space-y-6">
+      {/* Story Ribbon */}
+      <StoryRibbon activeStep="handoff" patientId="P-1042" patientName="نورة القحطاني" />
+
       <div>
         <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
           {t("home.chargeTitle")}
@@ -607,6 +611,9 @@ function CommandCenter() {
 
   return (
     <div className="space-y-6">
+      {/* Story Ribbon */}
+      <StoryRibbon activeStep="claim" patientId="P-1042" patientName="نورة القحطاني" />
+
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
