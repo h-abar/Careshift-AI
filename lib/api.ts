@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { PatientSnapshot } from "@/lib/aggregate";
 import type {
+  Assignment,
   Claim,
   HandoffRecord,
   JourneyKind,
@@ -121,12 +122,7 @@ export const usePatientsTable = (p?: { page?: number; pageSize?: number }) =>
     total?: number;
     page?: number;
     pageSize?: number;
-    assignments: {
-      patientId: string;
-      nurseId: string;
-      physicianId: string;
-      chargeNurseId: string;
-    }[];
+    assignments: Assignment[];
     userNames: Record<string, { en: string; ar: string }>;
   }>(`/api/patients${qs(p ?? {})}`);
 export const useHandoffContext = () =>
@@ -164,7 +160,11 @@ export const useUsers = (p?: {
   }>(`/api/users${qs(p ?? {})}`);
 export const useUser = (id: string) =>
   useApi<{ user: Omit<User, "password"> }>(`/api/users/${id}`, [id]);
-export const useClaims = (p?: { status?: string; page?: number }) =>
+export const useClaims = (p?: {
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}) =>
   useApi<{
     claims: (Claim & {
       readiness: { score: number; checklist: { key: string; ok: boolean }[] };

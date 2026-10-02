@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers";
 
-const HOME = /\/$/;
 // E1 — forbidden pages return a real Arabic 403 (not a redirect).
 const DENIED = /غير مصرّح|403/;
 

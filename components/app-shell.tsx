@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { TERMS_VERSION } from "@/lib/terms";
-import type { PermKey } from "@/lib/permissions";
+import { roleHome, type PermKey } from "@/lib/permissions";
 import { Icon } from "@/components/icons";
 import { NotificationCenter } from "@/components/notification-center";
 import { UserMenu } from "@/components/user-menu";
@@ -50,7 +50,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, toggle } = useI18n();
   const { user, impersonator, stopSwitch, consent, acceptTerms, can } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [drawer, setDrawer] = useState(false);
+
+  // E2 — client-side role landing: signing in while on "/" (or navigating
+  // back to it) sends non-clinical roles to their own home. proxy.ts does
+  // the same for full page loads; this covers SPA transitions.
+  useEffect(() => {
+    if (user && pathname === "/") {
+      const home = roleHome(user.role);
+      if (home !== "/") router.replace(home);
+    }
+  }, [user, pathname, router]);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);

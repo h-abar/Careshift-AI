@@ -6,22 +6,10 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
 import { postJson, useHandoffs, useSnapshots } from "@/lib/api";
 import { useToast } from "@/components/toast";
-import { Card, Empty, ErrorState, Loading, Modal, Skeleton, RiskBadge, SectionTitle } from "@/components/ui";
-import type { HandoffStatus, StaffPicker } from "@/lib/types";
+import { Card, Empty, ErrorState, HfStatusChip, Loading, Modal, Skeleton, RiskBadge, SectionTitle } from "@/components/ui";
+import type { StaffPicker } from "@/lib/types";
 
 type SafeUser = StaffPicker;
-
-const STATUS_STYLE: Record<HandoffStatus, string> = {
-  draft: "bg-slate-100 text-slate-600 border-slate-200",
-  pending: "bg-amber-50 text-amber-700 border-amber-200",
-  in_progress: "bg-sky-50 text-sky-700 border-sky-200",
-  signed_off: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  rejected: "bg-red-50 text-red-700 border-red-200",
-  partial: "bg-orange-50 text-orange-700 border-orange-200",
-  escalated: "bg-purple-50 text-purple-700 border-purple-200",
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-};
 
 export default function HandoffsPage() {
   const { t, lang } = useI18n();
@@ -88,9 +76,7 @@ export default function HandoffsPage() {
                         <span><b className="text-red-600">{criticalCount}</b> {t("hf.critical")}</span>
                       )}
                     </div>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[h.status]}`}>
-                      {t(`hfst.${h.status}`)}
-                    </span>
+                    <HfStatusChip status={h.status} />
                   </div>
                 </div>
               </Card>

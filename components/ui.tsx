@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { fmtTime } from "@/lib/format";
-import type { InterventionStatus, RiskLevel } from "@/lib/types";
+import type { HandoffStatus, InterventionStatus, RiskLevel } from "@/lib/types";
 import type { PrioritySignals } from "@/lib/engines/priority";
 
 // ── Light clinical palette per risk level ────────────────────────────────────
@@ -154,6 +154,30 @@ export function IvStatusChip({ status }: { status: InterventionStatus }) {
       className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${map[status]}`}
     >
       {t(`iv.${status}`)}
+    </span>
+  );
+}
+
+/** Handoff lifecycle chip — one style map shared by list/home/detail. */
+export const HF_STATUS_STYLE: Record<HandoffStatus, string> = {
+  draft: "bg-slate-100 text-slate-600 border-slate-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  in_progress: "bg-sky-50 text-sky-700 border-sky-200",
+  signed_off: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  rejected: "bg-red-50 text-red-700 border-red-200",
+  partial: "bg-orange-50 text-orange-700 border-orange-200",
+  escalated: "bg-purple-50 text-purple-700 border-purple-200",
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+};
+
+export function HfStatusChip({ status }: { status: HandoffStatus }) {
+  const { t } = useI18n();
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${HF_STATUS_STYLE[status]}`}
+    >
+      {t(`hfst.${status}`)}
     </span>
   );
 }
