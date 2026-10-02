@@ -23,6 +23,15 @@ const MAIN_NAV: { href: string; key: string; icon: string; perm?: PermKey }[] = 
   { href: "/reports", key: "nav.reports", icon: "reports", perm: "reports_view" },
 ];
 
+// B6 — governance pages: read-only for every signed-in role.
+const GOV_NAV: { href: string; key: string; icon: string }[] = [
+  { href: "/rules/calculation", key: "nav.rulesCalc", icon: "audit" },
+  { href: "/rules/general", key: "nav.rulesGeneral", icon: "lock" },
+  { href: "/references/scientific", key: "nav.refSci", icon: "search" },
+  { href: "/references/technical", key: "nav.refTech", icon: "settings" },
+  { href: "/terms", key: "nav.terms", icon: "check" },
+];
+
 const ADMIN_NAV: { href: string; key: string; icon: string; perm: PermKey }[] = [
   { href: "/users", key: "nav.users", icon: "users", perm: "users_manage" },
   { href: "/audit", key: "nav.audit", icon: "audit", perm: "audit_view" },
@@ -84,6 +93,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         {t("nav.main")}
       </div>
       <nav className="space-y-0.5 px-3">{visibleMain.map((n) => navLink(n, () => setDrawer(false)))}</nav>
+      <div className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+        {t("nav.governance")}
+      </div>
+      <nav className="space-y-0.5 px-3">{GOV_NAV.map((n) => navLink(n, () => setDrawer(false)))}</nav>
       {visibleAdmin.length > 0 && (
         <>
           <div className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-600">
@@ -285,6 +298,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <footer className="border-t border-[#e2e9f2] bg-white">
           <p className="mx-auto max-w-7xl px-4 py-2.5 text-center text-[11px] text-slate-600 sm:px-6">
             {t("app.disclaimer")}
+            {" · "}
+            <Link href="/terms" className="text-[#1b5fad] underline">
+              {t("terms.title")}
+            </Link>
           </p>
           <DataFreshness />
         </footer>

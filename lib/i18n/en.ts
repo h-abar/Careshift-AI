@@ -953,6 +953,13 @@ const en: Record<string, string> = {
   "tech.arch": "Architecture",
   "tech.archCap": "Careshift sits between hospital systems and NPHIES — Simulated demo",
   "tech.noArtifact": "not generated — run the SBOM/audit scripts",
+  // ── B6 governance navigation ──
+  "nav.governance": "Governance",
+  "nav.rulesCalc": "Calculation rules",
+  "nav.rulesGeneral": "General rules",
+  "nav.terms": "Terms of use",
+  "nav.refSci": "Scientific refs",
+  "nav.refTech": "Technical refs",
 };
 
 export default en;

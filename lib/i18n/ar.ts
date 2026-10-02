@@ -953,6 +953,13 @@ const ar: Record<string, string> = {
   "tech.arch": "البنية",
   "tech.archCap": "تقف Careshift بين أنظمة المستشفى ونفيس — ديمو محاكاة",
   "tech.noArtifact": "غير مُولَّد — شغّل سكربتات SBOM/audit",
+  // ── B6 governance navigation ──
+  "nav.governance": "الحوكمة",
+  "nav.rulesCalc": "قواعد الحساب",
+  "nav.rulesGeneral": "القواعد العامة",
+  "nav.terms": "شروط الاستخدام",
+  "nav.refSci": "المراجع العلمية",
+  "nav.refTech": "المراجع التقنية",
 };
 
 export default ar;

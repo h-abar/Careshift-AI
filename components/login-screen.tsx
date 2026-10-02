@@ -298,9 +298,14 @@ export function LoginScreen() {
         {/* Footer */}
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
           <span className="flex items-center gap-1.5">🛡 {t("login.secure")}</span>
-          <span className="text-end leading-tight">
-            <span dir="ltr" className="block">{t("login.version")}</span>
-            <span className="block text-[10px] text-slate-600">{t("login.tags")}</span>
+          <span className="flex items-center gap-3">
+            <a href="/terms" className="font-semibold text-[#1b5fad] underline underline-offset-2">
+              {t("terms.title")}
+            </a>
+            <span className="text-end leading-tight">
+              <span dir="ltr" className="block">{t("login.version")}</span>
+              <span className="block text-[10px] text-slate-600">{t("login.tags")}</span>
+            </span>
           </span>
         </div>
       </div>

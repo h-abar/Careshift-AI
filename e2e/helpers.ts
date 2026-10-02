@@ -30,6 +30,14 @@ export async function loginAs(page: Page, who: keyof typeof CREDS) {
       .click();
     await expect(consent).not.toBeVisible();
   }
+  // B3 terms gate — shows until the current terms version is accepted.
+  const terms = page.getByRole("dialog", { name: /terms of use|شروط الاستخدام/i });
+  if (await terms.isVisible().catch(() => false)) {
+    await terms
+      .getByRole("button", { name: /accept|أوافق/i })
+      .click();
+    await expect(terms).not.toBeVisible();
+  }
 }
 
 /** Same-origin API call in the page context (sends the httpOnly session cookie). */
