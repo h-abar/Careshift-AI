@@ -58,6 +58,8 @@ export interface AppendEventInput {
   actorRole?: string;
   payload?: Record<string, unknown>;
   sourceRecordId?: string;
+  /** D1 — adapter name+mapping version for externally ingested rows. */
+  sourceSystem?: string;
   ruleId?: string;
   ruleVersion?: number;
   correctsId?: string;
@@ -86,6 +88,7 @@ export async function appendEvent(
     actorRole: input.actorRole ?? "",
     payloadJson: JSON.stringify(input.payload ?? {}),
     sourceRecordId: input.sourceRecordId ?? null,
+    sourceSystem: input.sourceSystem ?? null,
     ruleId: input.ruleId ?? null,
     ruleVersion: input.ruleVersion ?? null,
     correctsId: input.correctsId ?? null,

@@ -960,6 +960,7 @@ const ar: Record<string, string> = {
   "nav.terms": "شروط الاستخدام",
   "nav.refSci": "المراجع العلمية",
   "nav.refTech": "المراجع التقنية",
+  "auditAction.ingest.vitals": "استقبال علامات حيوية من جهاز عبر webhook",
 };
 
 export default ar;

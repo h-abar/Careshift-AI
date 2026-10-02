@@ -960,6 +960,7 @@ const en: Record<string, string> = {
   "nav.terms": "Terms of use",
   "nav.refSci": "Scientific refs",
   "nav.refTech": "Technical refs",
+  "auditAction.ingest.vitals": "Received device vitals via webhook",
 };
 
 export default en;
