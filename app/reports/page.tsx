@@ -16,6 +16,8 @@ import {
   YAxis,
 } from "recharts";
 
+import { LeadershipEstimateCard } from "@/components/leadership-estimate-card";
+
 export default function ReportsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
@@ -51,6 +53,7 @@ export default function ReportsPage() {
         </button>
       </div>
 
+      {/* Primary KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label={t("rpt.handoffs")} value={handoffCount} />
         <KpiCard label={t("rpt.closures")} value={`${s.operational.closedLoopCompletion}%`} accent="text-emerald-700" />
@@ -61,6 +64,26 @@ export default function ReportsPage() {
           unit={t("common.sar")}
           accent="text-emerald-700"
           sub={t("common.simulated")}
+        />
+      </div>
+
+      {/* E11: Leadership Estimates with explicit Estimated Badges and Formula Breakdown */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <LeadershipEstimateCard
+          titleAr="أيام العناية المركزة المتجنبة (تقديري)"
+          titleEn="ICU Days Avoided (Estimated)"
+          value="18.4"
+          unit={lang === "ar" ? "يوم مُوفَّر" : "Days"}
+          kind="icu_days"
+          accent="text-teal-700"
+        />
+        <LeadershipEstimateCard
+          titleAr="التعرض المالي المحمي للمستشفى (تقديري)"
+          titleEn="SAR Exposure Protected (Estimated)"
+          value={fmtSarK(trend[trend.length - 1].avoided * 1000, lang)}
+          unit={t("common.sar")}
+          kind="sar_exposure"
+          accent="text-emerald-700"
         />
       </div>
 

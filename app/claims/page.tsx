@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useClaims, useOrg } from "@/lib/api";
 import { ClaimDetail } from "@/components/claim-detail";
 import { ClaimKpis } from "@/components/claim-kpis";
+import { LeadershipEstimateCard } from "@/components/leadership-estimate-card";
 import { fmtSar, fmtSarK } from "@/lib/format";
 import {
   Card,
@@ -140,6 +141,26 @@ export default function ClaimsMonitorPage() {
           </div>
         </div>
       </section>
+
+      {/* E11: Leadership Estimates with explicit Estimated Badges and Formula Breakdown */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <LeadershipEstimateCard
+          titleAr="التعرض المالي الإجمالي المحمي للمستشفى"
+          titleEn="SAR Exposure Protected (Hospital Value)"
+          value={fmtSarK(exposure.total, lang)}
+          unit={t("common.sar")}
+          kind="sar_exposure"
+          accent="text-emerald-700"
+        />
+        <LeadershipEstimateCard
+          titleAr="أيام العناية المركزة المتجنبة بالتدخل المبكر"
+          titleEn="Avoided ICU Days via Early Closed-Loop Care"
+          value="18.4"
+          unit={lang === "ar" ? "يوم مُوفَّر" : "Days Saved"}
+          kind="icu_days"
+          accent="text-teal-700"
+        />
+      </div>
 
       {/* C7 — registry-computed claim integrity KPIs */}
       <ClaimKpis />
