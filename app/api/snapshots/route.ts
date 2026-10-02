@@ -11,7 +11,7 @@ import { handle, ok } from "@/lib/server/json";
  */
 export const GET = handle(async (req: Request) => {
   const auth = await requireAnyPerm([
-    "patients_view", "insurance_view", "reports_view", "command_view",
+    "patients_view", "claims_view", "reports_view",
   ]);
   const org = await dbOrgStats({
     includeSnaps: can(auth.user.role, "patients_view"),

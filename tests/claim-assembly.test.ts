@@ -103,7 +103,7 @@ describe("C3 claim assembly from events", () => {
         for (const eid of d.byEventIds) {
           const e = await prisma.clinicalEvent.findUnique({ where: { id: eid } });
           expect(e!.type).toBe("documentation_entry");
-          expect(e!.actorRole).toBe("physician");
+          expect(e!.actorRole).toBe("doctor");
         }
       }
     }

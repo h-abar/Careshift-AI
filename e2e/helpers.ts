@@ -2,11 +2,11 @@ import { expect, type Page } from "@playwright/test";
 
 export const CREDS = {
   admin: { u: "o.khalil", p: "Demo@8895" },
-  physician: { u: "a.salem", p: "Demo@1021" },
+  doctor: { u: "a.salem", p: "Demo@1021" },
   charge: { u: "k.mohammed", p: "Demo@3310" },
   nurse: { u: "s.ahmed", p: "Demo@2088" },
   nurse2: { u: "r.yousef", p: "Demo@7704" },
-  insurance: { u: "m.alotaibi", p: "Demo@5542" },
+  payer: { u: "m.alotaibi", p: "Demo@5542" },
   hosp: { u: "f.shammari", p: "Demo@6613" },
   suspended: { u: "r.farouk", p: "Demo@9012" },
 };

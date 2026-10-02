@@ -207,7 +207,7 @@ export async function runClaimChecks(claimId: string): Promise<ChecksResult> {
     const docSupport = events.some(
       (e) =>
         e.type === "documentation_entry" &&
-        e.actorRole === "physician" &&
+        e.actorRole === "doctor" &&
         e.payloadJson.includes("diagnosis"),
     );
     if (!docSupport) {

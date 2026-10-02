@@ -1,7 +1,7 @@
 // ── Shared domain types ─────────────────────────────────────────────────────
 
 export type RiskLevel = "critical" | "high" | "medium" | "low";
-export type Role = "nurse" | "charge_nurse" | "physician";
+export type Role = "nurse" | "charge_nurse" | "doctor";
 export type InterventionStatus =
   | "done"
   | "in_progress"
@@ -143,10 +143,10 @@ export interface ShiftHandoff {
 
 export type RoleKey =
   | "admin"
-  | "physician"
+  | "doctor"
   | "nurse"
   | "charge_nurse"
-  | "insurance"
+  | "payer"
   | "hospital_admin";
 
 export interface User {
@@ -160,6 +160,8 @@ export interface User {
   email: string;
   phone: string;
   employeeId: string;
+  /** E1 — external payer organization; set only when role === "payer". */
+  payerOrg?: string | null;
   status: "active" | "suspended";
   /** ISO timestamp of demo-data consent acknowledgement; null = pending. */
   consentAt: string | null;

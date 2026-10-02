@@ -71,7 +71,7 @@ describe("C5 insurer claim package", () => {
     // restore the chain for later tests.
     const scratch = await appendEvent({
       patientId: c.patientId!, type: "documentation_entry",
-      occurredAt: new Date(), actorRole: "physician",
+      occurredAt: new Date(), actorRole: "doctor",
       payload: { note: "scratch" },
     });
     const okBefore = await verifyPackage(c.id);

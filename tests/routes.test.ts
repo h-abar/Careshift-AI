@@ -76,11 +76,11 @@ const ctx = <T extends Record<string, string>>(params: T) => ({
 
 const USERS = {
   admin: { u: "o.khalil", p: "Demo@8895" },       // U-008
-  physician: { u: "a.salem", p: "Demo@1021" },    // U-001
+  doctor: { u: "a.salem", p: "Demo@1021" },    // U-001
   charge: { u: "k.mohammed", p: "Demo@3310" },    // U-003
   nurse: { u: "s.ahmed", p: "Demo@2088" },        // U-002
   nurse2: { u: "r.yousef", p: "Demo@7704" },      // U-007
-  insurance: { u: "m.alotaibi", p: "Demo@5542" }, // U-005
+  payer: { u: "m.alotaibi", p: "Demo@5542" }, // U-005
   hosp: { u: "f.shammari", p: "Demo@6613" },      // U-006
 };
 
@@ -180,13 +180,13 @@ describe("auth endpoints", () => {
   it("5 failed logins → 429 lockout; admin unlock restores access", async () => {
     const ip = "10.9.9.9";
     for (let i = 0; i < 5; i++) {
-      await login(USERS.physician.u, "bad", ip);
+      await login(USERS.doctor.u, "bad", ip);
     }
-    const r = await login(USERS.physician.u, "bad", ip);
+    const r = await login(USERS.doctor.u, "bad", ip);
     expect(r.status).toBe(429);
     expect((await r.json()).error).toBe("locked");
     // Even the correct password is rejected while locked.
-    const r2 = await login(USERS.physician.u, USERS.physician.p, ip);
+    const r2 = await login(USERS.doctor.u, USERS.doctor.p, ip);
     expect(r2.status).toBe(429);
     expect(
       await prisma.auditLog.findFirst({ where: { action: "auth.locked" } }),
@@ -195,7 +195,7 @@ describe("auth endpoints", () => {
     // Admin unlock clears the failed-attempt window — audited.
     await loginAs("admin");
     const target = await prisma.user.findUnique({
-      where: { username: USERS.physician.u },
+      where: { username: USERS.doctor.u },
     });
     const ur = await unlockPost(post({}), ctx({ id: target!.id }));
     expect(ur.status).toBe(200);
@@ -204,7 +204,7 @@ describe("auth endpoints", () => {
         where: { action: "auth.unlock", entityId: target!.id },
       }),
     ).toBeTruthy();
-    const ok2 = await login(USERS.physician.u, USERS.physician.p, ip);
+    const ok2 = await login(USERS.doctor.u, USERS.doctor.p, ip);
     expect(ok2.status).toBe(200);
   });
 
@@ -276,7 +276,7 @@ describe("API permission matrix", () => {
     expect((await patientsGet(get())).status).toBe(401);
     await loginAs("nurse");
     expect((await patientsGet(get())).status).toBe(200);
-    await loginAs("insurance");
+    await loginAs("payer");
     expect((await patientsGet(get())).status).toBe(403);
   });
 
@@ -284,7 +284,7 @@ describe("API permission matrix", () => {
     expect((await claimsGet(get())).status).toBe(401);
     await loginAs("nurse");
     expect((await claimsGet(get())).status).toBe(403);
-    await loginAs("insurance");
+    await loginAs("payer");
     expect((await claimsGet(get())).status).toBe(200);
   });
 
@@ -304,8 +304,11 @@ describe("API permission matrix", () => {
   });
 
   it("GET /api/snapshots: no patient-level data without patients_view", async () => {
-    // Insurance reviewer: aggregates + claim-linked minimum only — NO PHI.
-    await loginAs("insurance");
+    // hospital_admin: aggregates + claim-linked minimum only — NO PHI.
+    // The external payer gets nothing here (claims come via /api/claims*).
+    await loginAs("payer");
+    expect((await snapshotsGet(get())).status).toBe(403);
+    await loginAs("hosp");
     const ins = await (await snapshotsGet(get())).json();
     expect(ins.snaps).toBeUndefined();
     expect(ins.clinical.monitored).toBeGreaterThan(0);
@@ -321,7 +324,7 @@ describe("API permission matrix", () => {
       );
     }
     // Roles WITH patients_view still receive the full snapshots.
-    for (const who of ["admin", "physician", "hosp"] as const) {
+    for (const who of ["nurse", "doctor", "charge"] as const) {
       await loginAs(who);
       const body = await (await snapshotsGet(get())).json();
       expect(Array.isArray(body.snaps)).toBe(true);
@@ -379,15 +382,15 @@ describe("interventions", () => {
 
     // Nurse still cannot escalate (perm) even though overdue is derived.
     const deny = await interventionPost(
-      post({ patientId: "P-1042", status: "escalated", escalatedTo: "physician" }),
+      post({ patientId: "P-1042", status: "escalated", escalatedTo: "doctor" }),
       ctx({ stepId: step }),
     );
     expect(deny.status).toBe(403);
 
     // Physician escalates the (derived) overdue step -> notify physician.
-    await loginAs("physician");
+    await loginAs("doctor");
     const esc = await interventionPost(
-      post({ patientId: "P-1042", status: "escalated", escalatedTo: "physician" }),
+      post({ patientId: "P-1042", status: "escalated", escalatedTo: "doctor" }),
       ctx({ stepId: step }),
     );
     expect(esc.status).toBe(200);
@@ -444,16 +447,16 @@ describe("interventions", () => {
 
 /* ── claims ── */
 
-describe("claims_edit", () => {
-  it("nurse PATCH → 403; insurance PATCH legal transition → 200 + claim.status audit", async () => {
+describe("claims payer actions", () => {
+  it("nurse PATCH → 403; payer PATCH legal transition → 200 + claim.status audit", async () => {
     const claim = await prisma.insuranceClaim.findFirst({
-      where: { status: "pending" },
+      where: { status: "pending", payerOrg: "payer-sim-a" },
     });
     expect(claim).toBeTruthy();
     await loginAs("nurse");
     const r1 = await claimPatch(patch({ status: "review" }), ctx({ id: claim!.id }));
     expect(r1.status).toBe(403);
-    await loginAs("insurance");
+    await loginAs("payer");
     const r2 = await claimPatch(patch({ status: "review" }), ctx({ id: claim!.id }));
     expect(r2.status).toBe(200);
     const a = await prisma.auditLog.findFirst({
@@ -469,9 +472,9 @@ describe("claims_edit", () => {
 
   it("illegal transition (approved → denied) → 400", async () => {
     const claim = await prisma.insuranceClaim.findFirst({
-      where: { status: "approved" },
+      where: { status: "approved", payerOrg: "payer-sim-a" },
     });
-    await loginAs("insurance");
+    await loginAs("payer");
     const r = await claimPatch(patch({ status: "denied" }), ctx({ id: claim!.id }));
     expect(r.status).toBe(400);
   });
@@ -489,9 +492,9 @@ const uploadReq = (file: File | null, kind = "") => {
 describe("B4 claims lifecycle", () => {
   it("denied requires a valid denialCode; stores it + ClaimEvent", async () => {
     const claim = await prisma.insuranceClaim.findFirst({
-      where: { status: "pending" },
+      where: { status: "pending", payerOrg: "payer-sim-a" },
     });
-    await loginAs("insurance");
+    await loginAs("payer");
     // No code → 400
     expect(
       (
@@ -535,7 +538,7 @@ describe("B4 claims lifecycle", () => {
     const claim = await prisma.insuranceClaim.findFirst({
       where: { status: "denied" },
     });
-    await loginAs("insurance");
+    await loginAs("hosp");
     expect(
       (await claimAppeal(post({}), ctx({ id: claim!.id }))).status,
     ).toBe(400);
@@ -574,7 +577,7 @@ describe("B4 claims lifecycle", () => {
         denialCode: "coding_error",
       },
     });
-    await loginAs("insurance");
+    await loginAs("hosp"); // resubmission is the hospital's appeal flow
     expect(
       (await claimResubmit(post({}), ctx({ id: claim.id }))).status,
     ).toBe(400);
@@ -592,16 +595,17 @@ describe("B4 claims lifecycle", () => {
 
   it("documents: type/size validated, evidence updates readiness", async () => {
     const claim = await prisma.insuranceClaim.findFirst({
-      where: { status: "review" },
+      where: { status: "review", payerOrg: "payer-sim-a" },
+      orderBy: { id: "asc" },
     });
-    await loginAs("nurse"); // no claims_edit
+    await loginAs("nurse"); // no appeal_approve
     const bad = new File(["x"], "x.txt", { type: "text/plain" });
     expect(
       (
         await claimUpload(uploadReq(bad), ctx({ id: claim!.id }))
       ).status,
     ).toBe(403);
-    await loginAs("insurance");
+    await loginAs("hosp");
     expect(
       (await claimUpload(uploadReq(bad), ctx({ id: claim!.id }))).status,
     ).toBe(400);
@@ -647,7 +651,7 @@ describe("B4 claims lifecycle", () => {
     const claim = await prisma.insuranceClaim.findFirst({
       where: { status: "review" },
     });
-    await loginAs("insurance");
+    await loginAs("hosp");
     // PDF bytes declared as PNG → mime_mismatch
     const spoof = new File([new Uint8Array([37, 80, 68, 70])], "x.png", {
       type: "image/png",
@@ -677,7 +681,7 @@ describe("B4 claims lifecycle", () => {
       scan: async () => ({ clean: false, signature: "Eicar-Test", engine: "test-av" }),
     });
     try {
-      await loginAs("insurance");
+      await loginAs("hosp");
       const png = new File(
         [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
         "eicar.png",
@@ -705,11 +709,11 @@ describe("B4 claims lifecycle", () => {
   });
 
   it("GET claim detail → documents + events + readiness", async () => {
-    await loginAs("insurance");
-    // Deterministic: pick a review claim that actually has documents —
-    // Postgres findFirst order is arbitrary without orderBy.
+    await loginAs("payer");
+    // Deterministic: pick a payer-scoped claim that actually has
+    // documents — Postgres findFirst order is arbitrary without orderBy.
     const claims = await prisma.insuranceClaim.findFirst({
-      where: { status: "review", documents: { some: {} } },
+      where: { payerOrg: "payer-sim-a", documents: { some: {} } },
       orderBy: { id: "asc" },
     });
     expect(claims).toBeTruthy();
@@ -868,7 +872,7 @@ describe("handoff accept", () => {
     // Persisted timeline events exist.
     const evts = await prisma.handoffEvent.count({ where: { handoffId: h2.id } });
     expect(evts).toBeGreaterThanOrEqual(4); // created+reviewed+checklist+signoff+accept
-  });
+  }, 15_000); // PGlite: two full handoff lifecycles exceed the 5s default
 
   it("A6: outgoingId === incomingId → 400", async () => {
     await loginAs("charge");
@@ -1058,7 +1062,7 @@ describe("user admin", () => {
 
   it("A3: demoting the last active admin → 400 + audited attempt", async () => {
     await loginAs("admin");
-    const r = await userPatch(patch({ roleKey: "physician" }), ctx({ id: "U-008" }));
+    const r = await userPatch(patch({ roleKey: "doctor" }), ctx({ id: "U-008" }));
     expect(r.status).toBe(400);
     expect(
       await prisma.auditLog.findFirst({
@@ -1124,7 +1128,7 @@ describe("A2 suspended-user session revocation", () => {
     await loginAs("admin");
     expect(
       (
-        await userPatch(patch({ roleKey: "physician" }), ctx({ id: nurse!.id }))
+        await userPatch(patch({ roleKey: "doctor" }), ctx({ id: nurse!.id }))
       ).status,
     ).toBe(200);
     expect(
@@ -1158,7 +1162,7 @@ import { GET as notifGet } from "@/app/api/notifications/route";
 
 describe("B2 risk reassessment", () => {
   it("insurance (no risk_view) → 403; nurse → 200 + RiskAssessment row", async () => {
-    await loginAs("insurance");
+    await loginAs("payer");
     expect(
       (await reassessPost(post({}), ctx({ id: "P-1042" }))).status,
     ).toBe(403);
@@ -1184,7 +1188,7 @@ describe("B2 risk reassessment", () => {
         windowHrs: 24, confidence: 50,
       },
     });
-    await loginAs("physician");
+    await loginAs("doctor");
     const r = await reassessPost(post({}), ctx({ id: "P-1042" }));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -1256,9 +1260,9 @@ describe("B2 risk reassessment", () => {
 
 describe("C1 shared validation", () => {
   it("unknown fields rejected with {error, code, fields} shape", async () => {
-    await loginAs("insurance");
+    await loginAs("payer");
     const claim = await prisma.insuranceClaim.findFirst({
-      where: { status: "pending" },
+      where: { status: "pending", payerOrg: "payer-sim-a" },
     });
     const r = await claimPatch(
       patch({ status: "review", bogus: "field" }),
@@ -1322,7 +1326,7 @@ describe("B7 computed static-data replacements", () => {
       where: { id: "P-6304" }, select: { journeyJson: true },
     });
     const beforeLen = JSON.parse(before!.journeyJson ?? "[]").length;
-    await loginAs("physician");
+    await loginAs("doctor");
     const r = await reassessPost(post({}), ctx({ id: "P-6304" }));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -1411,13 +1415,13 @@ describe("B5 notification center", () => {
     const receipts = await prisma.notificationReceipt.findMany({
       where: { notificationId: n!.id },
     });
-    const ins = await prisma.user.findFirst({ where: { roleKey: "insurance" } });
+    const ins = await prisma.user.findFirst({ where: { roleKey: "payer" } });
     expect(ins).toBeTruthy();
     expect(receipts.some((r) => r.userId === ins!.id)).toBe(false);
     expect(receipts.some((r) => r.userId === "U-002")).toBe(true);
 
     // And the insurance user's notification list has no patient-linked rows.
-    await loginAs("insurance");
+    await loginAs("payer");
     const list = await (await notifGet()).json();
     expect(
       list.notifications.some(
@@ -1447,7 +1451,7 @@ describe("B5 notification center", () => {
     });
     expect(b!.dismissedAt).toBeNull();
     // B still sees it in their list.
-    await loginAs("physician"); // U-001
+    await loginAs("doctor"); // U-001
     const list = await (await notifGet()).json();
     expect(list.notifications.some((x: { id: string }) => x.id === n.id)).toBe(
       true,
@@ -1566,7 +1570,7 @@ describe("pagination", () => {
   });
 
   it("claims: pageSize honoured + status filter", async () => {
-    await loginAs("insurance");
+    await loginAs("payer");
     const r = await claimsGet(
       getQ("http://test/api/claims?pageSize=5&page=1&status=denied"),
     );

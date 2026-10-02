@@ -99,13 +99,13 @@ describe("C1 clinical event store", () => {
     const late = await appendEvent({
       patientId: PID, type: "documentation_entry",
       occurredAt: new Date(now - 8 * 3600e3), // 8h ago, recorded now
-      actorRole: "physician", payload: { note: "late note" },
+      actorRole: "doctor", payload: { note: "late note" },
     });
     expect(late.lateEntry).toBe(true);
     const onTime = await appendEvent({
       patientId: PID, type: "documentation_entry",
       occurredAt: new Date(now - 60e3),
-      actorRole: "physician", payload: { note: "on time" },
+      actorRole: "doctor", payload: { note: "on time" },
     });
     expect(onTime.lateEntry).toBe(false);
     await prisma.clinicalEvent.deleteMany({ where: { patientId: PID } });

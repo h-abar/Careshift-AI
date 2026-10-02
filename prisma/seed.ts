@@ -38,10 +38,10 @@ const prisma = new PrismaClient();
 
 const ROLES = [
   { key: "admin", nameEn: "System Administrator", nameAr: "مدير النظام" },
-  { key: "physician", nameEn: "Physician", nameAr: "طبيب" },
+  { key: "doctor", nameEn: "Doctor", nameAr: "طبيب" },
   { key: "nurse", nameEn: "Nurse", nameAr: "ممرض/ممرضة" },
   { key: "charge_nurse", nameEn: "Charge Nurse", nameAr: "ممرض مسؤول" },
-  { key: "insurance", nameEn: "Insurance Reviewer", nameAr: "مراجع تأمين" },
+  { key: "payer", nameEn: "Payer Reviewer", nameAr: "مراجع شركة التأمين" },
   { key: "hospital_admin", nameEn: "Hospital Administrator", nameAr: "مدير مستشفى" },
 ];
 
@@ -129,6 +129,7 @@ async function main() {
         email: u.email,
         phone: u.phone,
         employeeId: u.employeeId,
+        payerOrg: u.payerOrg ?? null,
         status: u.status,
         lastLoginAt: new Date(Date.now() - (u.lastLoginMin ?? 0) * 60000),
       },
@@ -217,6 +218,9 @@ async function main() {
         icuDays: c.icuDays,
         evidenceJson: JSON.stringify(c.evidence),
         frictionJson: JSON.stringify(c.frictionKeys),
+        // E7 — claims split across two simulated payers so cross-payer
+        // access can be denied and proven in tests.
+        payerOrg: i % 4 === 0 ? "payer-sim-b" : "payer-sim-a",
         // Spread across the last 6 months so the savings trend is real.
         updatedAt: new Date(
           Date.now() - (i % 6) * 30 * 24 * 60 * 60 * 1000,
@@ -379,7 +383,7 @@ async function main() {
       await appendEvent({
         patientId: p.id, type: "documentation_entry",
         occurredAt: new Date(`${new Date().toISOString().slice(0, 10)}T${p.admittedAt}:00`),
-        actorRole: "physician",
+        actorRole: "doctor",
         payload: {
           synthetic: true, simulated: "Simulated",
           // admission assessment — synthetic demo values
@@ -401,7 +405,7 @@ async function main() {
     await appendEvent({
       patientId: "P-1042", type: "procedure",
       occurredAt: new Date(),
-      actorRole: "physician",
+      actorRole: "doctor",
       payload: {
         synthetic: true, simulated: "Simulated",
         code: "13882-00-00",

@@ -1,7 +1,7 @@
 /**
  * C3 — "Assemble claim": rebuild event-backed claim lines from the
  * patient's immutable event store. Hard rule enforced server-side:
- * no supporting events → no line. Requires claims_edit; audited.
+ * no supporting events → no line. Requires claims_view; audited.
  */
 import { requirePerm } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
@@ -10,7 +10,7 @@ import { handle, ok } from "@/lib/server/json";
 
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("claims_edit");
+    const auth = await requirePerm("claims_view");
     const { id } = await ctx.params;
     try {
       const result = await assembleClaim(id);

@@ -182,7 +182,7 @@ export async function assembleClaim(claimId: string): Promise<AssembleResult> {
   // Diagnoses: claim dxKey must be supported by a physician
   // documentation event carrying a diagnosis code — else flagged.
   const docEvents = events.filter(
-    (e) => e.type === "documentation_entry" && e.actorRole === "physician" && e.payload.diagnosis,
+    (e) => e.type === "documentation_entry" && e.actorRole === "doctor" && e.payload.diagnosis,
   );
   const diagnoses = claim.dxKey
     ? [{

@@ -13,7 +13,7 @@ import type { RoleKey, User } from "@/lib/types";
 type U = Omit<User, "password"> & { locked: boolean };
 
 const ROLES: RoleKey[] = [
-  "admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin",
+  "admin", "doctor", "nurse", "charge_nurse", "payer", "hospital_admin",
 ];
 const DEPTS = ["icu", "er", "medical", "surgical", "claims", "operations", "it"];
 

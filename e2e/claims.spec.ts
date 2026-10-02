@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers";
 
 test.describe("claims lifecycle", () => {
-  test("insurance: view claims, open detail, change status", async ({
+  test("hospital admin: view claims, open detail, change status", async ({
     page,
   }) => {
-    await loginAs(page, "insurance");
+    await loginAs(page, "hosp");
     await page.goto("/insurance");
     // claims table renders rows
     await expect(page.locator("tbody tr").first()).toBeVisible({
@@ -21,8 +21,8 @@ test.describe("claims lifecycle", () => {
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test("insurance: upload a document to a claim", async ({ page }) => {
-    await loginAs(page, "insurance");
+  test("hospital admin: upload a document to a claim", async ({ page }) => {
+    await loginAs(page, "hosp");
     await page.goto("/insurance");
     await page
       .getByRole("button", { name: /detail|تفاصيل|claim/i })

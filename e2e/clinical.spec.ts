@@ -94,7 +94,7 @@ test.describe("clinical workflows", () => {
     page,
     browser,
   }) => {
-    await loginAs(page, "physician");
+    await loginAs(page, "doctor");
     await page.goto("/patient/P-1042");
     await page
       .getByRole("button", { name: /Reassess|إعادة تقييم/ })

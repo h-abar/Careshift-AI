@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 const ROLES = z.enum([
-  "admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin",
+  "admin", "doctor", "nurse", "charge_nurse", "payer", "hospital_admin",
 ]);
 
 export const loginSchema = z
@@ -111,7 +111,7 @@ export const interventionSchema = z
   .object({
     patientId: z.string().min(1),
     status: IV_STATUS,
-    escalatedTo: z.enum(["nurse", "charge_nurse", "physician"]).optional(),
+    escalatedTo: z.enum(["nurse", "charge_nurse", "doctor"]).optional(),
     assigneeId: z.string().optional(),
     dueAt: z.string().datetime({ offset: true }).optional(),
     note: z.string().max(500).optional(),

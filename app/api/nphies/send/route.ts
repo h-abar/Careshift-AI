@@ -29,7 +29,7 @@ const schema = z.object({
 
 export const POST = handle(
   async (req: Request) => {
-    const auth = await requirePerm("claims_edit");
+    const auth = await requirePerm("claims_view");
     const { data, error } = await parseBody(req, schema);
     if (error) return error;
     const { claimId, message } = data;

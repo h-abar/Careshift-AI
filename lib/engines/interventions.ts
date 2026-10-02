@@ -21,27 +21,27 @@ const PLANS: Record<string, PlanTemplate[]> = {
   dka: [
     { offsetMin: 0, actionKey: "assessNow", role: "nurse" },
     { offsetMin: 15, actionKey: "recheckGlucose", role: "nurse" },
-    { offsetMin: 30, actionKey: "reviewKetones", role: "physician" },
-    { offsetMin: 45, actionKey: "insulinProtocol", role: "physician" },
+    { offsetMin: 30, actionKey: "reviewKetones", role: "doctor" },
+    { offsetMin: 45, actionKey: "insulinProtocol", role: "doctor" },
     { offsetMin: 60, actionKey: "escalationEval", role: "charge_nurse" },
   ],
   sepsis: [
     { offsetMin: 0, actionKey: "assessNow", role: "nurse" },
     { offsetMin: 15, actionKey: "sepsisBundle", role: "nurse" },
     { offsetMin: 30, actionKey: "lactateRepeat", role: "nurse" },
-    { offsetMin: 45, actionKey: "physicianReview", role: "physician" },
+    { offsetMin: 45, actionKey: "physicianReview", role: "doctor" },
     { offsetMin: 60, actionKey: "escalationEval", role: "charge_nurse" },
   ],
   bleeding: [
     { offsetMin: 0, actionKey: "assessNow", role: "nurse" },
     { offsetMin: 20, actionKey: "repeatVitals", role: "nurse" },
-    { offsetMin: 40, actionKey: "hbCheck", role: "physician" },
+    { offsetMin: 40, actionKey: "hbCheck", role: "doctor" },
     { offsetMin: 60, actionKey: "escalationEval", role: "charge_nurse" },
   ],
   elevated: [
     { offsetMin: 0, actionKey: "assessNow", role: "nurse" },
     { offsetMin: 20, actionKey: "repeatVitals", role: "nurse" },
-    { offsetMin: 40, actionKey: "physicianReview", role: "physician" },
+    { offsetMin: 40, actionKey: "physicianReview", role: "doctor" },
   ],
   routine: [{ offsetMin: 0, actionKey: "routineMonitoring", role: "nurse" }],
 };
@@ -78,9 +78,9 @@ export function buildInterventionPlan(
       completedAt: done ? "09:30" : undefined,
       escalationChain:
         t.role === "nurse"
-          ? ["charge_nurse", "physician"]
+          ? ["charge_nurse", "doctor"]
           : t.role === "charge_nurse"
-            ? ["physician"]
+            ? ["doctor"]
             : ["charge_nurse"],
     };
   });

@@ -32,7 +32,7 @@ export type EventType = (typeof EVENT_TYPES)[number];
 export type EventCategory =
   | "clinical"
   | "nursing"
-  | "physician"
+  | "doctor"
   | "medication"
   | "billing";
 
@@ -70,7 +70,7 @@ export function eventCategories(e: {
   const cats: EventCategory[] = [];
   if (CLINICAL.has(t)) cats.push("clinical");
   if (NURSING.has(t)) cats.push("nursing");
-  if (PHYSICIAN.has(t)) cats.push("physician");
+  if (PHYSICIAN.has(t)) cats.push("doctor");
   if (
     MEDICATION.has(t) &&
     (t === "medication_administered" ||
@@ -80,7 +80,7 @@ export function eventCategories(e: {
   // role-based refinement — a nurse documenting shows under nursing too
   if (e.actorRole === "nurse" && !cats.includes("nursing"))
     cats.push("nursing");
-  if (e.actorRole === "physician" && !cats.includes("physician"))
-    cats.push("physician");
+  if (e.actorRole === "doctor" && !cats.includes("doctor"))
+    cats.push("doctor");
   return cats;
 }

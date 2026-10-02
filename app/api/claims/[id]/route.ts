@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/server/prisma";
-import { requirePerm } from "@/lib/server/session";
+import { requirePerm, requireAnyPerm } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
-import { claimEvent, notifyClaimWatchers } from "@/lib/server/claims";
+import {
+  assertPayerClaim,
+  claimEvent,
+  notifyClaimWatchers,
+} from "@/lib/server/claims";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
 import { isDenialCode } from "@/lib/denial";
 import { handle, ok, parseBody } from "@/lib/server/json";
@@ -21,7 +25,7 @@ const TRANSITIONS: Record<ClaimStatus, ClaimStatus[]> = {
 /** Claim detail: record + documents + per-claim history + live readiness. */
 export const GET = handle(
   async (_req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    await requirePerm("insurance_view");
+    const auth = await requireAnyPerm(["claims_view", "payer_claims"]);
     const { id } = await ctx.params;
     const claim = await prisma.insuranceClaim.findUnique({
       where: { id },
@@ -33,6 +37,7 @@ export const GET = handle(
       },
     });
     if (!claim) return Response.json({ error: "not found" }, { status: 404 });
+    assertPayerClaim(auth, claim);
 
     const engine = (await dbClaims()).find((c) => c.id === id);
     const events = await prisma.claimEvent.findMany({
@@ -57,10 +62,10 @@ export const GET = handle(
   },
 );
 
-/** Claim status transitions — claims_edit only, recorded in the audit trail. */
+/** Claim status transitions — payer_claims only, recorded in the audit trail. */
 export const PATCH = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("claims_edit");
+    const auth = await requirePerm("payer_claims");
     const rg = await rateGuard(auth.user.id, "claimWrite");
     if (rg) return rg;
     const { id } = await ctx.params;
@@ -70,6 +75,7 @@ export const PATCH = handle(
 
     const claim = await prisma.insuranceClaim.findUnique({ where: { id } });
     if (!claim) return Response.json({ error: "not found" }, { status: 404 });
+    assertPayerClaim(auth, claim);
 
     const allowed = TRANSITIONS[claim.status as ClaimStatus] ?? [];
     if (!status || !allowed.includes(status)) {

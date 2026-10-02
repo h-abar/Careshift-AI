@@ -11,7 +11,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { usePatientEvents, type TimelineEvent } from "@/lib/api";
 import { Card, ErrorState, SectionTitle, Skeleton } from "@/components/ui";
 
-const FILTERS = ["", "clinical", "nursing", "physician", "medication", "billing"] as const;
+const FILTERS = ["", "clinical", "nursing", "doctor", "medication", "billing"] as const;
 
 const TYPE_ICON: Record<string, string> = {
   vital_set: "📈",

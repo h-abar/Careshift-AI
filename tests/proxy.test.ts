@@ -15,6 +15,7 @@ vi.mock("next/headers", () => ({
 import { NextRequest } from "next/server";
 import { proxy } from "@/proxy";
 import { signSession, SESSION_COOKIE } from "@/lib/server/session";
+import { prisma } from "@/lib/server/prisma";
 import type { RoleKey } from "@/lib/types";
 
 const req = (path: string, method = "GET", token?: string) =>
@@ -70,28 +71,60 @@ describe("proxy — page gates by role", () => {
     expect(isRedirect(r)).toBe(false);
   });
 
-  it("insurance role → /patients redirects (no patients_view)", async () => {
-    const r = await proxy(req("/patients", "GET", await jwt("insurance")));
-    expect(isRedirect(r)).toBe(true);
+  it("payer → /patients is a real 403 (no patients_view) + access_denied audit", async () => {
+    const r = await proxy(req("/patients", "GET", await jwt("payer")));
+    expect(r.status).toBe(403);
+    expect(await r.text()).toContain("غير مصرّح");
+    expect(
+      await prisma.auditLog.findFirst({
+        where: {
+          action: "access_denied",
+          entityType: "route",
+          entityId: "/patients",
+          userId: "U-X",
+        },
+      }),
+    ).toBeTruthy();
   });
 
-  it("insurance role → /insurance passes", async () => {
-    const r = await proxy(req("/insurance", "GET", await jwt("insurance")));
+  it("payer → /payer passes", async () => {
+    const r = await proxy(req("/payer", "GET", await jwt("payer")));
+    expect(r.status).not.toBe(403);
     expect(isRedirect(r)).toBe(false);
   });
 
-  it("nurse → /users redirects; admin → /users passes", async () => {
+  it("hospital_admin → /claims passes; payer → /claims is 403", async () => {
+    const hosp = await proxy(req("/claims", "GET", await jwt("hospital_admin")));
+    expect(hosp.status).not.toBe(403);
+    const payer = await proxy(req("/claims", "GET", await jwt("payer")));
+    expect(payer.status).toBe(403);
+  });
+
+  it("nurse → /users is 403; admin → /users passes", async () => {
     const nurse = await proxy(req("/users", "GET", await jwt("nurse")));
-    expect(isRedirect(nurse)).toBe(true);
+    expect(nurse.status).toBe(403);
     const admin = await proxy(req("/users", "GET", await jwt("admin")));
+    expect(admin.status).not.toBe(403);
     expect(isRedirect(admin)).toBe(false);
   });
 
-  it("nurse → /audit redirects; hospital_admin → /audit passes", async () => {
+  it("nurse → /audit is 403; hospital_admin → /audit passes", async () => {
     const nurse = await proxy(req("/audit", "GET", await jwt("nurse")));
-    expect(isRedirect(nurse)).toBe(true);
+    expect(nurse.status).toBe(403);
     const hosp = await proxy(req("/audit", "GET", await jwt("hospital_admin")));
     expect(isRedirect(hosp)).toBe(false);
+  });
+
+  it("E2 role landing: '/' redirects non-clinical roles to their home", async () => {
+    const payer = await proxy(req("/", "GET", await jwt("payer")));
+    expect(isRedirect(payer)).toBe(true);
+    expect(payer.headers.get("location")).toContain("/payer");
+    const admin = await proxy(req("/", "GET", await jwt("admin")));
+    expect(admin.headers.get("location")).toContain("/users");
+    const hosp = await proxy(req("/", "GET", await jwt("hospital_admin")));
+    expect(hosp.headers.get("location")).toContain("/reports");
+    const nurse = await proxy(req("/", "GET", await jwt("nurse")));
+    expect(isRedirect(nurse)).toBe(false);
   });
 });
 

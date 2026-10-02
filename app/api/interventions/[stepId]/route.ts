@@ -26,7 +26,7 @@ const TRANSITIONS: Record<string, string[]> = {
   resolved: [],
 };
 
-const ESCALATION_ROLES = new Set(["nurse", "charge_nurse", "physician"]);
+const ESCALATION_ROLES = new Set(["nurse", "charge_nurse", "doctor"]);
 
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ stepId: string }> }) => {
@@ -131,7 +131,7 @@ export const POST = handle(
     const roleUser: Record<string, string | undefined> = {
       nurse: assignment?.nurseId,
       charge_nurse: assignment?.chargeNurseId,
-      physician: assignment?.physicianId,
+      doctor: assignment?.physicianId,
     };
     if (body.status === "overdue") {
       const target = row.assigneeId ?? assignment?.nurseId;

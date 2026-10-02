@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, SESSION_COOKIE } from "@/lib/server/session";
-import { can, type PermKey } from "@/lib/permissions";
+import { can, roleHome, PAGE_PERMS } from "@/lib/permissions";
+import { audit } from "@/lib/server/audit";
 import type { RoleKey } from "@/lib/types";
 
 /**
@@ -20,19 +21,11 @@ import type { RoleKey } from "@/lib/types";
  *    restrictive `default-src 'none'` CSP on API responses,
  *  - HSTS, X-Frame-Options DENY + frame-ancestors 'none', nosniff,
  *    Referrer-Policy, Permissions-Policy, COOP/CORP.
+ *
+ * E1 — PAGE_PERMS lives in lib/permissions.ts (the single source of
+ * truth); denied page requests get a real 403 Arabic page AND an
+ * access_denied audit row (user, route, IP, time).
  */
-const PAGE_PERMS: { prefix: string; perm: PermKey }[] = [
-  { prefix: "/users", perm: "users_manage" },
-  { prefix: "/audit", perm: "audit_view" },
-  { prefix: "/settings", perm: "settings_manage" },
-  { prefix: "/insurance", perm: "insurance_view" },
-  { prefix: "/reports", perm: "reports_view" },
-  { prefix: "/handoff", perm: "handoff_view" },
-  { prefix: "/handoffs", perm: "handoff_view" },
-  { prefix: "/patients", perm: "patients_view" },
-  { prefix: "/patient", perm: "patients_view" },
-  { prefix: "/interventions", perm: "patients_view" },
-];
 
 const PUBLIC_API = ["/api/auth/login", "/api/health", "/api/ready"];
 
@@ -139,6 +132,31 @@ export async function proxy(req: NextRequest) {
       nonce,
       isApi,
     );
+  /**
+   * E1 — real 403 (not a redirect) with an Arabic page, plus an
+   * access_denied audit row (user, route, IP — audit() reads the IP
+   * from req headers under the same trusted-proxy rules as login).
+   */
+  const deny403Page = async (userId: string) => {
+    await audit(
+      {
+        userId,
+        action: "access_denied",
+        entityType: "route",
+        entityId: pathname,
+      },
+      req,
+    ).catch(() => {});
+    const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>403 — غير مصرّح</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f7fb;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:#1e2a3a}.card{background:#fff;border:1px solid #e2e9f2;border-radius:16px;padding:40px 48px;max-width:420px;text-align:center;box-shadow:0 2px 12px rgba(15,42,72,.06)}.code{font-size:44px;font-weight:800;color:#1b5fad;margin:0}h1{font-size:20px;margin:12px 0 8px}p{color:#5b6b7f;font-size:14px;line-height:1.7;margin:0 0 20px}a{display:inline-block;background:#1b5fad;color:#fff;text-decoration:none;padding:10px 24px;border-radius:10px;font-size:14px}.sim{display:inline-block;margin-top:18px;font-size:11px;color:#8a97a8;border:1px dashed #c4cfdd;border-radius:8px;padding:3px 10px}</style></head><body><div class="card"><p class="code">403</p><h1>غير مصرّح بالوصول</h1><p>ليس لديك صلاحية لعرض هذه الصفحة. تم تسجيل محاولة الوصول في سجل التدقيق.</p><a href="/">العودة إلى الرئيسية</a><br><span class="sim">Simulated — بيانات افتراضية</span></div></body></html>`;
+    return applySecurityHeaders(
+      new NextResponse(html, {
+        status: 403,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }),
+      nonce,
+      isApi,
+    );
+  };
   const deny401 = () =>
     applySecurityHeaders(
       NextResponse.json({ error: "unauthenticated" }, { status: 401 }),
@@ -172,10 +190,25 @@ export async function proxy(req: NextRequest) {
   // Public demo route stays reachable without a session.
   if (pathname.startsWith("/demo")) return next();
 
+  // E2 — role landing: a signed-in user on "/" goes to their role home.
+  if (pathname === "/" && payload) {
+    const home = roleHome(payload.role as RoleKey);
+    if (home !== "/") {
+      return applySecurityHeaders(
+        NextResponse.redirect(new URL(home, req.url)),
+        nonce,
+        isApi,
+      );
+    }
+  }
+
   // Page routes: enforce the permission map against the JWT role claim.
   const rule = PAGE_PERMS.find((r) => pathname.startsWith(r.prefix));
-  if (rule && (!payload || !can(payload.role as RoleKey, rule.perm))) {
-    return redirectHome();
+  if (rule) {
+    if (!payload) return redirectHome();
+    if (!can(payload.role as RoleKey, rule.perm)) {
+      return deny403Page(payload.sub);
+    }
   }
   return next();
 }

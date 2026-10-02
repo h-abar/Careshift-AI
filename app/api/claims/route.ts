@@ -1,4 +1,5 @@
-import { requirePerm } from "@/lib/server/session";
+import { requireAnyPerm } from "@/lib/server/session";
+import { payerWhere } from "@/lib/server/claims";
 import { dbSavingsTrend, toClaim } from "@/lib/server/data";
 import { prisma } from "@/lib/server/prisma";
 import { claimReadiness } from "@/lib/engines/claim-readiness";
@@ -6,7 +7,7 @@ import { auditOnce, auditDedupeMin } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
 
 export const GET = handle(async (req: Request) => {
-  const auth = await requirePerm("insurance_view");
+  const auth = await requireAnyPerm(["claims_view", "payer_claims"]);
   const url = new URL(req.url);
   const status = url.searchParams.get("status") ?? "";
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
@@ -14,7 +15,11 @@ export const GET = handle(async (req: Request) => {
     50,
     Math.max(1, Number(url.searchParams.get("pageSize")) || 20),
   );
-  const where = status ? { status } : {};
+  // E7 — payer orgs only ever list their own claims.
+  const where = {
+    ...(status ? { status } : {}),
+    ...payerWhere(auth),
+  };
   const [total, rows, savingsTrend] = await Promise.all([
     prisma.insuranceClaim.count({ where }),
     prisma.insuranceClaim.findMany({

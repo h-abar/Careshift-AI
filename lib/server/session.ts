@@ -105,11 +105,11 @@ function toSessionUser(r: {
   roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
   email: string; phone: string; employeeId: string; status: string;
   consentAt: Date | null; lastLoginAt: Date | null; createdAt: Date;
-  termsVersion: string; tenantId: string;
+  termsVersion: string; tenantId: string; payerOrg: string | null;
 }): Omit<User, "password"> {
   return {
     id: r.id, username: r.username, nameEn: r.nameEn, nameAr: r.nameAr,
-    tenantId: r.tenantId,
+    tenantId: r.tenantId, payerOrg: r.payerOrg,
     role: r.roleKey as User["role"], dept: r.dept,
     specialty: { en: r.specialtyEn, ar: r.specialtyAr },
     email: r.email, phone: r.phone, employeeId: r.employeeId,

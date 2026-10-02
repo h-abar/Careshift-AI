@@ -52,7 +52,7 @@ test.describe("B6 governance pages", () => {
     page,
   }) => {
     // login WITHOUT the auto-accept helper so the gate is exercised
-    await login(page, CREDS.insurance.u, CREDS.insurance.p);
+    await login(page, CREDS.payer.u, CREDS.payer.p);
     const consent = page.getByRole("dialog", {
       name: /simulated data|بيانات محاكاة/i,
     });

@@ -103,7 +103,7 @@ export async function backfillEvents(baseDate = new Date()): Promise<{
       await appendEvent({
         patientId: p.id, encounterId: enc, type: "order",
         occurredAt: hm(base, p.admittedAt),
-        actorRole: "physician",
+        actorRole: "doctor",
         payload: { synthetic: true, simulated: "Simulated", orderKind: "medication", medKey: m },
         sourceRecordId: id,
       });

@@ -5,14 +5,20 @@
  * Audited.
  */
 import { requirePerm } from "@/lib/server/session";
+import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
+import { assertPayerClaim } from "@/lib/server/claims";
 import { simulateAdjudication } from "@/lib/server/adjudication";
 import { handle, ok } from "@/lib/server/json";
 
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("claims_edit");
+    const auth = await requirePerm("payer_claims");
     const { id } = await ctx.params;
+    assertPayerClaim(
+      auth,
+      await prisma.insuranceClaim.findUnique({ where: { id } }),
+    );
     try {
       const r = await simulateAdjudication(id);
       await audit({

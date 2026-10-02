@@ -146,7 +146,7 @@ function HandoffWizard({
     });
 
   const staff = users.filter((u) =>
-    ["physician", "nurse", "charge_nurse"].includes(u.role),
+    ["doctor", "nurse", "charge_nurse"].includes(u.role),
   );
   const select =
     "w-full rounded-lg border border-[#e2e9f2] bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#0e9bb5]/50";

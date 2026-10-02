@@ -13,7 +13,7 @@ import { validateAppealEventIds } from "@/lib/server/adjudication";
  */
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("claims_edit");
+    const auth = await requirePerm("appeal_approve");
     const rg = await rateGuard(auth.user.id, "claimWrite");
     if (rg) return rg;
     const { id } = await ctx.params;
@@ -32,7 +32,7 @@ export const POST = handle(
 
     // C6 — an appeal package may contain ONLY existing events that
     // belong to this claim's patient (clinician-approved = this call
-    // itself, made under claims_edit and audited).
+    // itself, made under appeal_approve and audited).
     if (eventIds?.length) {
       const v = await validateAppealEventIds(id, eventIds);
       if (!v.ok) {

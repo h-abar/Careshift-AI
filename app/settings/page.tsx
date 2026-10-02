@@ -7,7 +7,7 @@ import { Card, SectionTitle } from "@/components/ui";
 import type { RoleKey } from "@/lib/types";
 
 const ROLES: RoleKey[] = [
-  "admin", "physician", "nurse", "charge_nurse", "insurance", "hospital_admin",
+  "admin", "doctor", "nurse", "charge_nurse", "payer", "hospital_admin",
 ];
 const DEPTS = ["icu", "er", "medical", "surgical", "claims", "operations", "it"];
 

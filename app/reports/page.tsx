@@ -20,7 +20,7 @@ export default function ReportsPage() {
   const { t, lang } = useI18n();
   const { can } = useAuth();
   // Reports-safe aggregates — /api/snapshots carries handoff/claim counts and
-  // the savings trend, so roles without handoff_view / insurance_view (e.g.
+  // the savings trend, so roles without handoff_view / claims_view (e.g.
   // physician, insurance) never hit a 403 endpoint from this page.
   const { data: s, loading, error, refetch } = useOrg();
 

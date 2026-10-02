@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { ApiError } from "@/lib/server/session";
+import { ApiError, verifyToken, SESSION_COOKIE } from "@/lib/server/session";
+import { audit } from "@/lib/server/audit";
 import { logger, requestId, routeLabel } from "@/lib/server/log";
 import { recordRequest } from "@/lib/server/metrics";
 import { captureError } from "@/lib/server/errors";
@@ -80,6 +81,24 @@ export function handle<Args extends unknown[]>(
       if (e instanceof ApiError) {
         recordRequest(route, e.status, ms);
         logger.info({ rid, method: req?.method, route, status: e.status, ms: Math.round(ms) }, "request");
+        // E1 — every authenticated denial is an auditable access_denied
+        // event (user from the JWT, route + IP from the request).
+        if (e.status === 403 && req) {
+          const token = req.headers
+            .get("cookie")
+            ?.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]+)`))?.[1];
+          const payload = token ? await verifyToken(token) : null;
+          await audit(
+            {
+              userId: payload?.sub ?? "unknown",
+              action: "access_denied",
+              entityType: "route",
+              entityId: new URL(req.url).pathname,
+              sessionId: payload?.sid,
+            },
+            req,
+          ).catch(() => {});
+        }
         return NextResponse.json(
           { error: e.message },
           { status: e.status, headers: { "x-request-id": rid } },

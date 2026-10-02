@@ -11,7 +11,7 @@ const ar: Record<string, string> = {
   "nav.command": "مركز القيادة",
   "nav.handoff": "التسليم الذكي",
   "nav.interventions": "الحلقة المغلقة",
-  "nav.insurance": "مطالبات التأمين الصحي",
+  "nav.insurance": "مطالبات التأمين الصحي", "nav.claimsItem": "مراقبة المطالبات",
 
   // ── Common ──
   "common.patient": "المريض",
@@ -316,10 +316,10 @@ const ar: Record<string, string> = {
 
   // ── User roles ──
   "userRole.admin": "مسؤول النظام",
-  "userRole.physician": "طبيب",
+  "userRole.doctor": "طبيب",
   "userRole.nurse": "ممرض/ة",
   "userRole.charge_nurse": "ممرض مسؤول",
-  "userRole.insurance": "مراجع تأمين",
+  "userRole.payer": "مراجع شركة التأمين",
   "userRole.hospital_admin": "مدير مستشفى",
 
   "ustatus.active": "نشط",
@@ -337,8 +337,8 @@ const ar: Record<string, string> = {
   "perm.intervention_escalate": "تصعيد التدخلات",
   "perm.journey_view": "مشاهدة رحلة المريض",
   "perm.evidence_view": "مشاهدة الأدلة",
-  "perm.insurance_view": "مشاهدة مطالبات التأمين الصحي",
-  "perm.command_view": "مشاهدة مركز القيادة",
+  "perm.claims_view": "مشاهدة مطالبات التأمين الصحي",
+  "perm.clinical_decide": "اتخاذ قرار سريري", "perm.payer_claims": "بوابة مراجعة المؤمّن",
   "perm.reports_view": "مشاهدة التقارير",
   "perm.users_manage": "إدارة المستخدمين",
   "perm.depts_manage": "إدارة الأقسام",
@@ -954,7 +954,7 @@ const ar: Record<string, string> = {
   "tech.archCap": "تقف Careshift بين أنظمة المستشفى ونفيس — ديمو محاكاة",
   "tech.noArtifact": "غير مُولَّد — شغّل سكربتات SBOM/audit",
   // ── B6 governance navigation ──
-  "nav.governance": "الحوكمة",
+  "nav.governance": "الحوكمة والإدارة", "nav.clinical": "العمل السريري", "nav.claims": "المطالبات والأدلة", "nav.reference": "المرجعية", "nav.payer": "بوابة المؤمّن",
   "nav.rulesCalc": "قواعد الحساب",
   "nav.rulesGeneral": "القواعد العامة",
   "nav.terms": "شروط الاستخدام",

@@ -50,7 +50,7 @@ export function ClaimDetail({
 }) {
   const { t } = useI18n();
   const { can } = useAuth();
-  const canEdit = can("claims_edit");
+  const canEdit = can("appeal_approve") || can("payer_claims");
   const [open, setOpen] = useState(false);
   const [pendingDenied, setPendingDenied] = useState(false);
   const [denialCode, setDenialCode] = useState("");

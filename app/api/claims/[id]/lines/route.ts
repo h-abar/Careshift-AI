@@ -8,6 +8,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/server/prisma";
 import { requirePerm, requireAnyPerm } from "@/lib/server/session";
 import { audit } from "@/lib/server/audit";
+import { assertPayerClaim } from "@/lib/server/claims";
 import { addManualLine, ClaimAssemblyError } from "@/lib/server/claim-assembly";
 import { handle, ok, parseBody } from "@/lib/server/json";
 
@@ -22,8 +23,17 @@ const manualLineSchema = z.object({
 
 export const GET = handle(
   async (_req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    await requireAnyPerm(["claims_edit", "insurance_view"]);
+    const auth = await requireAnyPerm([
+      "appeal_approve", "claims_view", "payer_claims",
+    ]);
     const { id } = await ctx.params;
+    assertPayerClaim(
+      auth,
+      await prisma.insuranceClaim.findUnique({
+        where: { id },
+        select: { payerOrg: true },
+      }),
+    );
     const lines = await prisma.claimLine.findMany({
       where: { claimId: id }, orderBy: { seq: "asc" },
     });
@@ -79,7 +89,7 @@ export const GET = handle(
 
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("claims_edit");
+    const auth = await requirePerm("appeal_approve");
     const { id } = await ctx.params;
     const parsed = await parseBody(req, manualLineSchema);
     if (parsed.error) return parsed.error;

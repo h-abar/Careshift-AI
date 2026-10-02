@@ -12,7 +12,7 @@ import { rateGuard } from "@/lib/server/ratelimit";
  */
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("claims_edit");
+    const auth = await requirePerm("appeal_approve");
     const rg = await rateGuard(auth.user.id, "claimWrite");
     if (rg) return rg;
     const { id } = await ctx.params;

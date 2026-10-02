@@ -43,6 +43,7 @@ model User {
   email      String    @unique
   phone      String
   employeeId String    @unique
+  payerOrg   String?   // E1 — external payer organization (role=payer only)
   status     String    // active | suspended
   consentAt  DateTime? // PDPL: demo-data disclaimer acknowledged
   termsVersion String  @default("") // B3: accepted terms version
@@ -242,6 +243,7 @@ model InsuranceClaim {
    *  (version+1) linked back via supersedesId; history never rewrote. */
   version     Int      @default(1)
   supersedesId String?
+  payerOrg    String?  // E7 — which payer this claim was submitted to
   updatedAt   DateTime @default(now())
   updatedBy   String?
   documents   ClaimDocument[]

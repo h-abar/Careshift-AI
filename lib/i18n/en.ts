@@ -11,7 +11,7 @@ const en: Record<string, string> = {
   "nav.command": "Command Center",
   "nav.handoff": "Smart Handoff",
   "nav.interventions": "Closed-Loop",
-  "nav.insurance": "Health Insurance Claims",
+  "nav.insurance": "Health Insurance Claims", "nav.claimsItem": "Claims Monitor",
 
   // ── Common ──
   "common.patient": "Patient",
@@ -316,10 +316,10 @@ const en: Record<string, string> = {
 
   // ── User roles ──
   "userRole.admin": "System Administrator",
-  "userRole.physician": "Physician",
+  "userRole.doctor": "Physician",
   "userRole.nurse": "Nurse",
   "userRole.charge_nurse": "Charge Nurse",
-  "userRole.insurance": "Insurance Reviewer",
+  "userRole.payer": "Payer Reviewer",
   "userRole.hospital_admin": "Hospital Admin",
 
   "ustatus.active": "Active",
@@ -337,8 +337,8 @@ const en: Record<string, string> = {
   "perm.intervention_escalate": "Escalate interventions",
   "perm.journey_view": "View patient journey",
   "perm.evidence_view": "View evidence",
-  "perm.insurance_view": "View health insurance claims",
-  "perm.command_view": "View command center",
+  "perm.claims_view": "View health insurance claims",
+  "perm.clinical_decide": "Make clinical decision", "perm.payer_claims": "Payer review portal",
   "perm.reports_view": "View reports",
   "perm.users_manage": "Manage users",
   "perm.depts_manage": "Manage departments",
@@ -954,7 +954,7 @@ const en: Record<string, string> = {
   "tech.archCap": "Careshift sits between hospital systems and NPHIES — Simulated demo",
   "tech.noArtifact": "not generated — run the SBOM/audit scripts",
   // ── B6 governance navigation ──
-  "nav.governance": "Governance",
+  "nav.governance": "Governance & Admin", "nav.clinical": "Clinical Work", "nav.claims": "Claims & Evidence", "nav.reference": "Reference", "nav.payer": "Payer Portal",
   "nav.rulesCalc": "Calculation rules",
   "nav.rulesGeneral": "General rules",
   "nav.terms": "Terms of use",

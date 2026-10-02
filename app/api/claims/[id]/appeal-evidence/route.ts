@@ -9,7 +9,7 @@ import { handle, ok } from "@/lib/server/json";
 
 export const GET = handle(
   async (_req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    await requirePerm("claims_edit");
+    await requirePerm("appeal_approve");
     const { id } = await ctx.params;
     try {
       return ok(await appealEvidence(id));

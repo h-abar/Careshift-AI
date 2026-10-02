@@ -77,25 +77,18 @@ test.describe("i18n + a11y", () => {
   test("axe: admin pages", async ({ page }) => {
     await loginAs(page, "admin");
     for (const path of [
-      "/",
-      "/patients",
-      "/patient/P-1042",
-      "/interventions",
-      "/handoffs",
-      "/insurance",
-      "/reports",
       "/users",
       "/audit",
       "/settings",
+      "/rules/general",
+      "/references/scientific",
     ]) {
       await axePage(page, path);
     }
-    const hid = await anyHandoffId(page);
-    if (hid) await axePage(page, `/handoffs/${hid}`);
   });
 
-  test("axe: physician pages", async ({ page }) => {
-    await loginAs(page, "physician");
+  test("axe: doctor pages", async ({ page }) => {
+    await loginAs(page, "doctor");
     for (const path of ["/", "/patients", "/patient/P-1042", "/interventions", "/handoffs", "/reports"]) {
       await axePage(page, path);
     }
@@ -112,16 +105,18 @@ test.describe("i18n + a11y", () => {
     });
   }
 
-  test("axe: insurance reviewer pages", async ({ page }) => {
-    await loginAs(page, "insurance");
-    for (const path of ["/", "/insurance", "/reports"]) {
+  // E7 replaces this with the /payer portal — until then the payer's
+  // reachable surface is the shared reference pages only.
+  test("axe: payer pages", async ({ page }) => {
+    await loginAs(page, "payer");
+    for (const path of ["/terms", "/rules/general", "/references/scientific"]) {
       await axePage(page, path);
     }
   });
 
   test("axe: hospital admin pages", async ({ page }) => {
     await loginAs(page, "hosp");
-    for (const path of ["/", "/patients", "/patient/P-1042", "/interventions", "/reports", "/audit"]) {
+    for (const path of ["/reports", "/audit", "/insurance"]) {
       await axePage(page, path);
     }
   });

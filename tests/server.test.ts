@@ -19,20 +19,35 @@ describe("permissions", () => {
     }
   });
 
-  it("nurse cannot see insurance or manage users", () => {
-    expect(can("nurse", "insurance_view")).toBe(false);
+  it("nurse cannot see claims or manage users", () => {
+    expect(can("nurse", "claims_view")).toBe(false);
     expect(can("nurse", "users_manage")).toBe(false);
     expect(can("nurse", "audit_view")).toBe(false);
     expect(can("nurse", "patients_view")).toBe(true);
     expect(can("nurse", "intervention_execute")).toBe(true);
   });
 
-  it("insurance reviewer sees claims but cannot act clinically", () => {
-    expect(can("insurance", "insurance_view")).toBe(true);
-    expect(can("insurance", "evidence_view")).toBe(true);
-    expect(can("insurance", "handoff_accept")).toBe(false);
-    expect(can("insurance", "intervention_execute")).toBe(false);
-    expect(can("insurance", "users_manage")).toBe(false);
+  it("payer (external) sees payer claims but nothing clinical", () => {
+    expect(can("payer", "payer_claims")).toBe(true);
+    for (const p of PERMISSION_KEYS) {
+      if (p === "payer_claims") continue;
+      expect(can("payer", p)).toBe(false);
+    }
+  });
+
+  it("doctor decides clinically; nurse cannot", () => {
+    expect(can("doctor", "clinical_decide")).toBe(true);
+    expect(can("doctor", "intervention_escalate")).toBe(true);
+    expect(can("nurse", "clinical_decide")).toBe(false);
+  });
+
+  it("hospital_admin sees claims monitor + audit, never clinical pages", () => {
+    expect(can("hospital_admin", "claims_view")).toBe(true);
+    expect(can("hospital_admin", "appeal_approve")).toBe(true);
+    expect(can("hospital_admin", "reports_view")).toBe(true);
+    expect(can("hospital_admin", "audit_view")).toBe(true);
+    expect(can("hospital_admin", "patients_view")).toBe(false);
+    expect(can("hospital_admin", "clinical_decide")).toBe(false);
   });
 
   it("charge nurse manages handoffs and escalations", () => {
@@ -41,9 +56,17 @@ describe("permissions", () => {
     expect(can("charge_nurse", "intervention_escalate")).toBe(true);
   });
 
-  it("admin holds the full permission set", () => {
-    for (const p of PERMISSION_KEYS) {
+  it("admin manages system but has no clinical access (E1 matrix)", () => {
+    for (const p of [
+      "users_manage", "depts_manage", "settings_manage", "audit_view",
+    ] as const) {
       expect(can("admin", p)).toBe(true);
+    }
+    for (const p of [
+      "patients_view", "clinical_decide", "payer_claims",
+      "claims_view", "handoff_view",
+    ] as const) {
+      expect(can("admin", p)).toBe(false);
     }
   });
 
@@ -71,11 +94,11 @@ describe("password hashing", () => {
 
 describe("session tokens", () => {
   it("signs and verifies a session payload", async () => {
-    const token = await signSession({ sub: "U-001", sid: "s1", role: "physician" });
+    const token = await signSession({ sub: "U-001", sid: "s1", role: "doctor" });
     const payload = await verifyToken(token);
     expect(payload?.sub).toBe("U-001");
     expect(payload?.sid).toBe("s1");
-    expect(payload?.role).toBe("physician");
+    expect(payload?.role).toBe("doctor");
     expect(payload?.imp).toBeUndefined();
   });
 

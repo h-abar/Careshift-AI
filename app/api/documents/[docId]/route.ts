@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/server/prisma";
-import { requirePerm } from "@/lib/server/session";
+import { requireAnyPerm } from "@/lib/server/session";
+import { assertPayerClaim } from "@/lib/server/claims";
 import { handle } from "@/lib/server/json";
 import { uploadDir } from "@/app/api/claims/[id]/documents/route";
 
@@ -13,12 +14,16 @@ import { uploadDir } from "@/app/api/claims/[id]/documents/route";
  */
 export const GET = handle(
   async (_req: Request, ctx: { params: Promise<{ docId: string }> }) => {
-    await requirePerm("insurance_view");
+    const auth = await requireAnyPerm(["claims_view", "payer_claims"]);
     const { docId } = await ctx.params;
-    const doc = await prisma.claimDocument.findUnique({ where: { id: docId } });
+    const doc = await prisma.claimDocument.findUnique({
+      where: { id: docId },
+      include: { claim: { select: { payerOrg: true } } },
+    });
     if (!doc || doc.scanStatus !== "clean") {
       return Response.json({ error: "not found" }, { status: 404 });
     }
+    assertPayerClaim(auth, doc.claim);
 
     const file = path.join(uploadDir(), doc.storedAs);
     const buf = await readFile(file).catch(() => null);

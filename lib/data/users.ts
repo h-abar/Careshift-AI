@@ -8,7 +8,7 @@ export const users: User[] = [
   {
     id: "U-001", nameEn: "Dr. Ahmed Salem", nameAr: "د. أحمد سالم",
     username: "a.salem",
-    role: "physician", dept: "icu",
+    role: "doctor", dept: "icu",
     specialty: { en: "Internal Medicine", ar: "باطنية" },
     email: "a.salem@hospital.sa", phone: "+966 5X XXX 1201",
     employeeId: "EMP-1021", status: "active", termsVersion: "", tenantId: "demo",
@@ -35,7 +35,7 @@ export const users: User[] = [
   {
     id: "U-004", nameEn: "Dr. Lina Haddad", nameAr: "د. لينا حداد",
     username: "l.haddad",
-    role: "physician", dept: "medical",
+    role: "doctor", dept: "medical",
     specialty: { en: "Endocrinology", ar: "غدد صماء وسكري" },
     email: "l.haddad@hospital.sa", phone: "+966 5X XXX 4477",
     employeeId: "EMP-4477", status: "active", termsVersion: "", tenantId: "demo",
@@ -44,9 +44,9 @@ export const users: User[] = [
   {
     id: "U-005", nameEn: "Mona Alotaibi", nameAr: "منى العتيبي",
     username: "m.alotaibi",
-    role: "insurance", dept: "claims",
+    role: "payer", dept: "claims", payerOrg: "payer-sim-a",
     specialty: { en: "Claims Review", ar: "مراجعة المطالبات" },
-    email: "m.alotaibi@hospital.sa", phone: "+966 5X XXX 5542",
+    email: "m.alotaibi@payer.example", phone: "+966 5X XXX 5542",
     employeeId: "EMP-5542", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 18, createdAt: "2024-09-15",
   },
@@ -80,7 +80,7 @@ export const users: User[] = [
   {
     id: "U-009", nameEn: "Dr. Reem Farouk", nameAr: "د. ريم فاروق",
     username: "r.farouk",
-    role: "physician", dept: "er",
+    role: "doctor", dept: "er",
     specialty: { en: "Emergency Medicine", ar: "طب طوارئ" },
     email: "r.farouk@hospital.sa", phone: "+966 5X XXX 9012",
     employeeId: "EMP-9012", status: "suspended", termsVersion: "", tenantId: "demo",
@@ -94,6 +94,15 @@ export const users: User[] = [
     email: "n.hassan@hospital.sa", phone: "+966 5X XXX 0143",
     employeeId: "EMP-0143", status: "active", termsVersion: "", tenantId: "demo",
     consentAt: "2025-01-01T00:00:00Z", lastLoginMin: 31, createdAt: "2025-07-01",
+  },
+  {
+    id: "U-011", nameEn: "Tariq Saleh", nameAr: "طارق صالح",
+    username: "t.saleh",
+    role: "payer", dept: "claims", payerOrg: "payer-sim-b",
+    specialty: { en: "Claims Review", ar: "مراجعة المطالبات" },
+    email: "t.saleh@payer-b.example", phone: "+966 5X XXX 1212",
+    employeeId: "EMP-1212", status: "active", termsVersion: "", tenantId: "demo",
+    consentAt: "2025-01-01T00:00:00Z", lastLoginMin: null, createdAt: "2025-09-01",
   },
 ];
 

@@ -19,7 +19,7 @@ const MAIN_NAV: { href: string; key: string; icon: string; perm?: PermKey }[] = 
   { href: "/handoffs", key: "nav.handoffs", icon: "handoffs", perm: "handoff_view" },
   { href: "/patients", key: "nav.patients", icon: "patients", perm: "patients_view" },
   { href: "/interventions", key: "nav.interventions", icon: "interventions", perm: "patients_view" },
-  { href: "/insurance", key: "nav.insurance", icon: "insurance", perm: "insurance_view" },
+  { href: "/insurance", key: "nav.insurance", icon: "insurance", perm: "claims_view" },
   { href: "/reports", key: "nav.reports", icon: "reports", perm: "reports_view" },
 ];
 

@@ -4,8 +4,10 @@
  * actor roles, never names; patient identified by encounter/claim id.
  * Every access is audited (PDPL need-to-know).
  */
-import { requirePerm } from "@/lib/server/session";
+import { requireAnyPerm } from "@/lib/server/session";
+import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
+import { assertPayerClaim } from "@/lib/server/claims";
 import {
   buildPackage, verifyPackage, packageToFhirStyle, packageToPdf,
 } from "@/lib/server/claim-package";
@@ -13,8 +15,15 @@ import { handle, ok } from "@/lib/server/json";
 
 export const GET = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("insurance_view");
+    const auth = await requireAnyPerm(["claims_view", "payer_claims"]);
     const { id } = await ctx.params;
+    assertPayerClaim(
+      auth,
+      await prisma.insuranceClaim.findUnique({
+        where: { id },
+        select: { payerOrg: true },
+      }),
+    );
     const format = new URL(req.url).searchParams.get("format");
     const pkg = await buildPackage(id);
     if (!pkg) return Response.json({ error: "not found" }, { status: 404 });
@@ -44,8 +53,15 @@ export const GET = handle(
 /** Verify integrity — recomputes all hashes against the live store. */
 export const POST = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requirePerm("insurance_view");
+    const auth = await requireAnyPerm(["claims_view", "payer_claims"]);
     const { id } = await ctx.params;
+    assertPayerClaim(
+      auth,
+      await prisma.insuranceClaim.findUnique({
+        where: { id },
+        select: { payerOrg: true },
+      }),
+    );
     const result = await verifyPackage(id);
     await audit({
       userId: auth.user.id, action: "claim.package.verify",

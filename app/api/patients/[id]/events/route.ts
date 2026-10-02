@@ -14,7 +14,7 @@ import { closedLoopChain } from "@/lib/server/chains";
 
 export const GET = handle(
   async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const auth = await requireAnyPerm(["patients_view", "insurance_view"]);
+    const auth = await requireAnyPerm(["patients_view", "claims_view"]);
     const { id } = await ctx.params;
     const category = new URL(req.url).searchParams.get("category");
     const insurer = !can(auth.user.role, "patients_view");

@@ -74,6 +74,7 @@ async function freshClaim() {
       patientId: p.id, amountSar: 1000, status: "pending",
       dxKey: "dka", losDays: 2, icuDays: 0,
       evidenceJson: "[]", frictionJson: "[]",
+      payerOrg: "payer-sim-a",
     },
   });
   return { claim: c, patientId: p.id };
@@ -155,7 +156,7 @@ describe("C6 event-driven adjudication", () => {
       patientId, type: "lab_result",
       occurredAt: new Date(), sourceRecordId: "test",
     });
-    await loginAs("m.alotaibi", "Demo@5542");
+    await loginAs("f.shammari", "Demo@6613");
     // fabricated id → 422
     expect(
       (await appealPost(
@@ -181,7 +182,7 @@ describe("C6 event-driven adjudication", () => {
   it("resubmit creates a new version linked to the old claim", async () => {
     const { claim } = await freshClaim();
     await simulateAdjudication(claim.id);
-    await loginAs("m.alotaibi", "Demo@5542");
+    await loginAs("f.shammari", "Demo@6613");
     const r = await resubmitPost(
       post({ note: "documentation completed" }), ctx(claim.id),
     );
