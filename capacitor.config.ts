@@ -14,13 +14,16 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // iPad note: APKs are Android-only. On iPad use this web app via Safari
 // ("Add to Home Screen" for PWA-style fullscreen) or build iOS on a Mac.
 const API_ORIGIN = process.env.API_ORIGIN;
+// CAP_CLEARTEXT=1 → allow http:// origins (LAN demo/dev tablets only —
+// production deployments must use HTTPS and leave this unset).
+const CLEARTEXT = process.env.CAP_CLEARTEXT === "1";
 
 const config: CapacitorConfig = {
   appId: "ai.careshift.app",
   appName: "Careshift AI",
   webDir: "out",
   ...(API_ORIGIN
-    ? { server: { url: API_ORIGIN, cleartext: false } }
+    ? { server: { url: API_ORIGIN, cleartext: CLEARTEXT } }
     : {}),
 };
 
