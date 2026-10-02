@@ -935,6 +935,24 @@ const ar: Record<string, string> = {
   "feat.decision-support": "دعم القرار وإجهاد التنبيهات",
   "feat.claims": "المطالبات والتوثيق",
   "feat.other": "أخرى / مجموعات بيانات ومصطلحات",
+  // ── B5 technical references ──
+  "tech.title": "المراجع التقنية",
+  "tech.sub": "الحزمة التقنية وواجهات API الخارجية وأنظمة الترميز ومجموعات البيانات والوضع الأمني وSBOM",
+  "tech.stack": "الحزمة التشغيلية",
+  "tech.devDeps": "تبعيات تطوير",
+  "tech.apis": "واجهات API الخارجية",
+  "tech.api": "الواجهة",
+  "tech.cache": "سياسة التخزين",
+  "tech.attr": "النسب",
+  "tech.codes": "أنظمة الترميز (جدول المصطلحات)",
+  "tech.datasets": "مجموعات البيانات",
+  "tech.security": "الضوابط الأمنية (المنفذة)",
+  "tech.components": "مكوّنًا",
+  "tech.vulns": "الثغرات",
+  "tech.licenses": "ملخص التراخيص",
+  "tech.arch": "البنية",
+  "tech.archCap": "تقف Careshift بين أنظمة المستشفى ونفيس — ديمو محاكاة",
+  "tech.noArtifact": "غير مُولَّد — شغّل سكربتات SBOM/audit",
 };
 
 export default ar;

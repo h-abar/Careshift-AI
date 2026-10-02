@@ -32,6 +32,10 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+# B5 — generated artifacts the technical-references API reads at runtime
+COPY --from=builder /app/docs/sbom.json ./docs/sbom.json
+COPY --from=builder /app/docs/audit-summary.json ./docs/audit-summary.json
+COPY --from=builder /app/docs/license-summary.json ./docs/license-summary.json
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && mkdir -p /app/uploads && chown -R careshift:careshift /app
 USER careshift

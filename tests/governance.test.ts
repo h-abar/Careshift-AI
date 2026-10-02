@@ -5,6 +5,7 @@
  * B2: RBAC matrix is derived from lib/permissions — never hand-typed.
  * B3: versioned terms — accept records version+timestamp, audited.
  * B4: scientific references grouped by feature + PDF/BibTeX/RIS export.
+ * B5: technical references generated from package.json + artifacts.
  */
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { execSync } from "node:child_process";
@@ -33,6 +34,7 @@ import { POST as termsAccept } from "@/app/api/terms/accept/route";
 import { TERMS_VERSION, TERMS_SECTIONS } from "@/lib/terms";
 import { GET as sciGet } from "@/app/api/references/scientific/route";
 import { GET as sciExport } from "@/app/api/references/scientific/export/route";
+import { GET as techGet } from "@/app/api/references/technical/route";
 import en from "@/lib/i18n/en";
 import ar from "@/lib/i18n/ar";
 
@@ -231,5 +233,43 @@ describe("B4 scientific references", () => {
     const risText = await ris.text();
     expect(risText).toContain("TY  - JOUR");
     expect(risText).toContain("ER  -");
+  });
+});
+
+describe("B5 technical references", () => {
+  it("serves stack, code systems and artifact summaries", async () => {
+    await loginAs("m.alotaibi", "Demo@5542");
+    const res = await techGet();
+    expect(res.status).toBe(200);
+    const d = await res.json();
+    // stack mirrors package.json
+    const pkg = JSON.parse(
+      (await import("node:fs")).readFileSync("package.json", "utf-8"),
+    );
+    const names = d.stack.runtime.map((x: { name: string }) => x.name);
+    expect(names).toContain("next");
+    expect(names).toContain("react");
+    for (const x of d.stack.runtime) {
+      expect(x.version).toBe(pkg.dependencies[x.name]);
+    }
+    // code systems come from the Terminology table
+    const termCount = await prisma.terminology.count();
+    expect(
+      d.codeSystems.reduce(
+        (n: number, c: { entries: number }) => n + c.entries,
+        0,
+      ),
+    ).toBe(termCount);
+    // SBOM artifact matches the committed file
+    expect(d.sbom.format).toBe("CycloneDX");
+    expect(d.sbom.components).toBeGreaterThan(100);
+    // audit summary is a real captured run
+    expect(d.audit.vulnerabilities.total).toBe(0);
+    // every external API has a real https URL — nothing invented
+    for (const a of d.externalApis) {
+      expect(a.url).toMatch(/^https:\/\//);
+      expect(a.attribution.length).toBeGreaterThan(0);
+    }
+    expect(d.licenses.passed).toBe(true);
   });
 });

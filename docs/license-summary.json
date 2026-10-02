@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-10-02T11:29:53.788629Z",
+  "tool": "license-checker-rseidelsohn 5.0.1 --production --failOn GPL-3.0;AGPL-3.0;LGPL-3.0;SSPL-1.0;CC-BY-SA-4.0;UNLICENSED;UNKNOWN",
+  "passed": true,
+  "summary": {
+    "MIT": 139,
+    "ISC": 37,
+    "Apache-2.0": 17,
+    "BSD-3-Clause": 9,
+    "OFL-1.1": 2,
+    "Apache-2.0 AND LGPL-3.0-or-later": 1,
+    "CC-BY-4.0": 1,
+    "(MPL-2.0 OR Apache-2.0)": 1,
+    "BSD-2-Clause": 1,
+    "MIT*": 1,
+    "Unlicense": 1,
+    "0BSD": 1,
+    "MIT AND ISC": 1
+  }
+}

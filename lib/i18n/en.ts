@@ -935,6 +935,24 @@ const en: Record<string, string> = {
   "feat.decision-support": "Decision support & alert fatigue",
   "feat.claims": "Claims & documentation",
   "feat.other": "Other / datasets & terminology",
+  // ── B5 technical references ──
+  "tech.title": "Technical references",
+  "tech.sub": "Stack, external APIs, code systems, datasets, security posture and SBOM",
+  "tech.stack": "Runtime stack",
+  "tech.devDeps": "dev dependencies",
+  "tech.apis": "External APIs",
+  "tech.api": "API",
+  "tech.cache": "Cache policy",
+  "tech.attr": "Attribution",
+  "tech.codes": "Code systems (Terminology table)",
+  "tech.datasets": "Datasets",
+  "tech.security": "Security controls (implemented)",
+  "tech.components": "components",
+  "tech.vulns": "Vulnerabilities",
+  "tech.licenses": "License summary",
+  "tech.arch": "Architecture",
+  "tech.archCap": "Careshift sits between hospital systems and NPHIES — Simulated demo",
+  "tech.noArtifact": "not generated — run the SBOM/audit scripts",
 };
 
 export default en;
