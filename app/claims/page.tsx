@@ -38,7 +38,20 @@ const STATUS_COLORS: Record<string, string> = {
   denied: "#f87171",
 };
 
-export default function InsurancePage() {
+/**
+ * E4 — which role must clear each readiness-checklist gap. The system
+ * auto-submits once the item exists; the exception is routed to its owner.
+ */
+const CHECKLIST_OWNER: Record<string, string> = {
+  diagnosis: "doctor",
+  justification: "doctor",
+  clinician: "doctor",
+  intervention: "nurse",
+  timeline: "nurse",
+  lab: "charge_nurse",
+};
+
+export default function ClaimsMonitorPage() {
   const { t, lang } = useI18n();
   const { data: org } = useOrg();
   const [claimsPage, setClaimsPage] = useState(1);
@@ -274,9 +287,10 @@ export default function InsurancePage() {
         </Card>
       </div>
 
-      {/* Claim readiness — friction prevention */}
+      {/* E4 — exceptions queue: claims the auto-pipeline cannot submit
+          yet, with the exact missing item and the role that must fix it */}
       <Card>
-        <SectionTitle sub={t("ins.valueNote")}>{t("ins.readinessCheck")}</SectionTitle>
+        <SectionTitle sub={t("ins.exceptionsSub")}>{t("ins.exceptions")}</SectionTitle>
         <div className="grid gap-4 lg:grid-cols-2">
           {riskyClaims.map(({ c, r }) => (
             <div
@@ -331,6 +345,11 @@ export default function InsurancePage() {
                       {item.ok ? "✓" : "⚠"}
                     </span>
                     {t(`ev.${item.key}`)}
+                    {!item.ok && CHECKLIST_OWNER[item.key] && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-px text-[9px] font-bold text-amber-800">
+                        → {t(`userRole.${CHECKLIST_OWNER[item.key]}`)}
+                      </span>
+                    )}
                   </span>
                 ))}
               </div>

@@ -38,8 +38,11 @@ const NEXT_STATUS: Record<ClaimStatus, ClaimStatus[]> = {
 };
 
 /**
- * Expandable claim panel: denial-code-gated status changes, document
- * upload/list, appeal & resubmit paths, and the per-claim history trail.
+ * Expandable claim panel. E4 splits capabilities to match the server:
+ * - payer_claims  → adjudication only: accept / deny with coded reason.
+ * - appeal_approve → hospital side: appeal/resubmit + evidence upload.
+ * There is no internal "submit claim" button — assembly/submission is
+ * automatic (E7); hospital_admin monitors and fixes exceptions.
  */
 export function ClaimDetail({
   claim,
@@ -50,7 +53,8 @@ export function ClaimDetail({
 }) {
   const { t } = useI18n();
   const { can } = useAuth();
-  const canEdit = can("appeal_approve") || can("payer_claims");
+  const canAdjudicate = can("payer_claims");
+  const canFixEvidence = can("appeal_approve");
   const [open, setOpen] = useState(false);
   const [pendingDenied, setPendingDenied] = useState(false);
   const [denialCode, setDenialCode] = useState("");
@@ -154,10 +158,10 @@ export function ClaimDetail({
         <Skeleton rows={3} className="mt-2" />
       ) : (
         <div className="mt-3 space-y-3">
-          {/* lifecycle actions */}
-          {canEdit && (
+          {/* lifecycle actions — payer adjudicates; hospital appeals */}
+          {(canAdjudicate || canFixEvidence) && (
             <div className="flex flex-wrap items-center gap-2">
-              {!pendingDenied ? (
+              {canAdjudicate && (!pendingDenied ? (
                 <select
                   value={claim.status}
                   title={t("claim.changeStatus")}
@@ -206,8 +210,8 @@ export function ClaimDetail({
                     {t("usr.cancel")}
                   </button>
                 </>
-              )}
-              {claim.status === "denied" && (
+              ))}
+              {canFixEvidence && claim.status === "denied" && (
                 <>
                   <button
                     onClick={() => setAppealMode("appeal")}
@@ -280,7 +284,7 @@ export function ClaimDetail({
           )}
 
           {/* C3 — event-backed claim lines */}
-          <ClaimLines claimId={claim.id} canEdit={canEdit} />
+          <ClaimLines claimId={claim.id} canEdit={canFixEvidence} />
 
           {/* documents */}
           <div>
@@ -288,7 +292,7 @@ export function ClaimDetail({
               <span className="text-[11px] font-semibold text-slate-600">
                 {t("claim.documents")} ({detail.documents.length})
               </span>
-              {canEdit && (
+              {canFixEvidence && (
                 <span className="flex items-center gap-2">
                   <select
                     value={kind}

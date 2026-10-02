@@ -273,8 +273,8 @@ const en: Record<string, string> = {
   "inv.completed": "Completed",
 
   // ── Insurance screen ──
-  "ins.title": "Health Insurance Claims",
-  "ins.subtitle": "Prevent avoidable claim friction — not just predict denials",
+  "ins.title": "Claims Monitor",
+  "ins.subtitle": "The system assembles and submits claims automatically from clinical events — this screen is for monitoring and exceptions",
   "ins.exposure": "Current Exposure",
   "ins.highRisk": "High-risk patients",
   "ins.potentialIcu": "Potential ICU escalations",
@@ -289,6 +289,8 @@ const en: Record<string, string> = {
   "ins.avoided": "Avoided cost",
   "ins.residual": "Residual exposure",
   "ins.readinessCheck": "Claim Readiness Checklist",
+  "ins.exceptions": "Exceptions Queue",
+  "ins.exceptionsSub": "Claims the auto-pipeline could not complete — missing item and the role that must fix it",
   "ins.linkedClaim": "Linked claim",
   "ins.valueNote":
     "Every closed-loop intervention becomes structured evidence — accelerating settlement and reducing disputes.",
