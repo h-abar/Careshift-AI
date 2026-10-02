@@ -10,7 +10,8 @@
  */
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/server/prisma";
-import { env } from "@/lib/server/env";
+
+export const LATE_ENTRY_MINUTES = Number(process.env.LATE_ENTRY_MINUTES ?? 240);
 
 if (typeof window !== "undefined") {
   throw new Error("lib/server/events.ts is server-only");
@@ -75,7 +76,7 @@ export async function appendEvent(
     select: { hash: true },
   });
   const recordedAt = input.recordedAt ?? new Date();
-  const lateMin = Number(env().LATE_ENTRY_MINUTES ?? 240);
+  const lateMin = LATE_ENTRY_MINUTES;
   const base = {
     patientId: input.patientId,
     encounterId: input.encounterId ?? ENCOUNTER_ID(input.patientId),

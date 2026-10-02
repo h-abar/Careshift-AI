@@ -10,6 +10,7 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/server/prisma";
 import { verifyChain } from "@/lib/server/events";
+import { textPdf } from "@/lib/pdf";
 
 if (typeof window !== "undefined") {
   throw new Error("lib/server/claim-package.ts is server-only");
@@ -231,11 +232,9 @@ export function packageToFhirStyle(pkg: ClaimPackage) {
   };
 }
 
-/** Minimal PDF writer — Helvetica/base14, Latin text only. */
+/** Minimal PDF writer — shared implementation in lib/pdf.ts. */
 export function packageToPdf(pkg: ClaimPackage): Buffer {
-  const esc = (s: string) => s.replace(/[\\()]/g, (c) => `\\${c}`);
   const text: string[] = [
-    "Careshift AI — Claim Evidence Package (Simulated)",
     `Claim: ${pkg.claimId}   Encounter: ${pkg.encounterId}   Status: ${pkg.status}`,
     `Diagnosis key: ${pkg.dxKey}`,
     `Generated: ${pkg.generatedAt}`,
@@ -254,25 +253,5 @@ export function packageToPdf(pkg: ClaimPackage): Buffer {
     "",
     PACKAGE_LABEL,
   ];
-  const stream = text
-    .map((t, i) => `BT /F1 ${i === 0 ? 12 : 9} Tf 40 ${800 - i * 14} Td (${esc(t)}) Tj ET`)
-    .join("\n");
-  const objs = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offs: number[] = [];
-  for (const [i, o] of objs.entries()) {
-    offs.push(pdf.length);
-    pdf += `${i + 1} 0 obj\n${o}\nendobj\n`;
-  }
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-  for (const off of offs) pdf += `${String(off).padStart(10, "0")} 00000 n \n`;
-  pdf += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return Buffer.from(pdf, "latin1");
+  return textPdf("Careshift AI — Claim Evidence Package (Simulated)", text);
 }
