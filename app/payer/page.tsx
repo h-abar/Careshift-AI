@@ -15,6 +15,9 @@ import {
   Skeleton,
 } from "@/components/ui";
 
+import { ClaimBornVisual } from "@/components/claim-born-visual";
+import { StoryRibbon } from "@/components/story-ribbon";
+
 const STATUS_STYLE: Record<string, string> = {
   approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
   pending: "bg-slate-100 text-slate-600 border-slate-200",
@@ -40,6 +43,9 @@ export default function PayerPortal() {
 
   return (
     <div className="space-y-6">
+      {/* Story Ribbon */}
+      <StoryRibbon activeStep="claim" patientId="P-1042" patientName="نورة القحطاني" />
+
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
@@ -51,6 +57,9 @@ export default function PayerPortal() {
           {t("ev.simulated")}
         </span>
       </div>
+
+      {/* Visual verified evidence chain for P-1042 with big verify button */}
+      <ClaimBornVisual showPayerVerifyButton={true} />
 
       <Card>
         <SectionTitle sub={t("payer.scopeNote")}>
