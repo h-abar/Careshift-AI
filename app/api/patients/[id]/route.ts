@@ -1,6 +1,8 @@
 import { requirePerm } from "@/lib/server/session";
 import { dbPatient, dbSnapshots, invalidateSnapshots } from "@/lib/server/data";
 import { runRiskAssessment } from "@/lib/server/risk";
+import { emitAlertEvent } from "@/lib/server/chains";
+import { openDoctorTask } from "@/lib/server/doctor-tasks";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { handle, ok, parseBody } from "@/lib/server/json";
@@ -140,6 +142,11 @@ export const PATCH = handle(
 
     const patient = await dbPatient(id);
     const { risk, crossedUp } = await runRiskAssessment(patient!);
+    // E6 — vitals-driven escalation: alert event + doctor action task.
+    if (crossedUp) {
+      await emitAlertEvent(id, risk.level, auth.user.id);
+      await openDoctorTask(id, risk.score);
+    }
     await audit(
       {
         userId: auth.user.id,

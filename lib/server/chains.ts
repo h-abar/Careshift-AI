@@ -127,8 +127,8 @@ export async function carryOverActionItems(
 
 export interface ChainStep {
   step:
-    | "risk" | "alert" | "acknowledged" | "intervention"
-    | "completed" | "documented" | "claim";
+    | "risk" | "alert" | "acknowledged" | "decision" | "intervention"
+    | "completed" | "reassessed" | "documented" | "claim";
   status: "ok" | "gap" | "na";
   eventId?: string;
   at?: string;
@@ -162,8 +162,24 @@ export async function closedLoopChain(patientId: string): Promise<{
                e.occurredAt >= alert.occurredAt,
       )
     : undefined;
+  // E6 — the doctor decision + scheduled re-assessment sit between the
+  // acknowledgement and the intervention, but only when the alert was
+  // escalated to a doctor task (NEWS2 >= 5 / single-parameter 3).
+  const needsDecision = !!first("doctor_task_opened");
+  const decision = ack
+    ? events.find(
+        (e) => e.type === "doctor_decision" &&
+               e.occurredAt >= ack.occurredAt,
+      )
+    : undefined;
   const ivStarted = first("intervention_started");
   const ivDone = first("intervention_completed");
+  const reassessed = decision
+    ? events.find(
+        (e) => e.type === "score_computed" &&
+               e.occurredAt > decision.occurredAt,
+      )
+    : undefined;
   const doc = events.find(
     (e) => e.type === "documentation_entry" &&
            (!ivDone || e.occurredAt >= ivDone.occurredAt),
@@ -194,8 +210,10 @@ export async function closedLoopChain(patientId: string): Promise<{
       "acknowledged", ack, !!alert,
       ackGap ? `no acknowledgement within ${CHAIN_ACK_MINUTES} min (prototype)` : "unacknowledged",
     ),
+    step("decision", decision, needsDecision && !!ack, "no doctor decision recorded"),
     step("intervention", ivStarted, !!(alert || risk), "no intervention started"),
     step("completed", ivDone, !!ivStarted, "intervention never completed"),
+    step("reassessed", reassessed, needsDecision && !!decision, "no NEWS2 re-assessment after decision"),
     step("documented", doc, !!ivDone, "no documentation entry"),
     step("claim", claimEv, false),
   ];

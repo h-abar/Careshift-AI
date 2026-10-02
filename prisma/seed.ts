@@ -67,6 +67,7 @@ async function main() {
   await prisma.insuranceClaim.deleteMany();
   await prisma.handoff.deleteMany();
   await prisma.assignment.deleteMany();
+  await prisma.doctorTask.deleteMany();
   await prisma.notificationReceipt.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.shiftHandoff.deleteMany();
@@ -278,6 +279,41 @@ async function main() {
         },
       },
     });
+  }
+
+  // E6 — an open doctor action task on a deteriorating patient whose
+  // attending is the demo doctor a.salem (U-001): the doctor home
+  // "Needs your action" widget and the ladder demo work live.
+  {
+    const deteriorating = "P-7455";
+    const asg = await prisma.assignment.findUnique({
+      where: { patientId: deteriorating },
+    });
+    if (asg) {
+      const task = await prisma.doctorTask.create({
+        data: {
+          patientId: deteriorating,
+          doctorId: asg.physicianId,
+          level: "urgent",
+          score: 5,
+          nextEscalateAt: new Date(Date.now() + 5 * 60_000),
+        },
+      });
+      await prisma.notification.create({
+        data: {
+          id: `n-${task.id}`,
+          level: "critical",
+          key: "notif.doctorTask",
+          patientId: deteriorating,
+          entityType: "doctor_task",
+          entityId: task.id,
+          detail: "5",
+          receipts: {
+            create: [{ id: `n-${task.id}-r0`, userId: asg.physicianId }],
+          },
+        },
+      });
+    }
   }
 
   await prisma.shiftHandoff.createMany({

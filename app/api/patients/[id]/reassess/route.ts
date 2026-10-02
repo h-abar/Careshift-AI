@@ -4,6 +4,7 @@ import {
   emitScoreEvent, emitAlertEvent, emitPrioritySnapshot,
 } from "@/lib/server/chains";
 import { runRiskAssessment } from "@/lib/server/risk";
+import { openDoctorTask } from "@/lib/server/doctor-tasks";
 import { prisma } from "@/lib/server/prisma";
 import { audit } from "@/lib/server/audit";
 import { handle, ok } from "@/lib/server/json";
@@ -31,7 +32,11 @@ export const POST = handle(
       { score: risk.score, level: risk.level, conditionKey: risk.conditionKey },
       auth.user.id,
     );
-    if (crossedUp) await emitAlertEvent(id, risk.level, auth.user.id);
+    if (crossedUp) {
+      await emitAlertEvent(id, risk.level, auth.user.id);
+      // E6 — an escalated alert opens a doctor action task (NEWS2 >= 5).
+      await openDoctorTask(id, risk.score);
+    }
     const snaps = await dbSnapshots();
     const rank = snaps.findIndex((s) => s.patient.id === id) + 1;
     const mine = snaps.find((s) => s.patient.id === id);
