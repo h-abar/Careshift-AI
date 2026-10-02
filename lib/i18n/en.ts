@@ -867,6 +867,27 @@ const en: Record<string, string> = {
   "calc.class.kpi": "operational KPI",
   "calc.class.prototype": "prototype setting",
   "auditAction.rules.export": "Exported calculation rules PDF",
+  // ── B2 general rules ──
+  "gen.title": "General rules & policies",
+  "gen.sub": "Operational policies generated from runtime config and the RBAC matrix",
+  "gen.prio": "Patient prioritization policy",
+  "gen.prioNote": "Order uses validated indicators only; clinical judgment always overrides the list.",
+  "gen.infoOnly": "Shown as information only — never reorders",
+  "gen.alert": "Alert policy",
+  "gen.when": "Trigger",
+  "gen.action": "Action",
+  "gen.timers": "Acknowledge / seen timers",
+  "gen.handoff": "Handoff policy",
+  "gen.escalation": "Escalation format",
+  "gen.data": "Data policy",
+  "gen.synthetic": "Synthetic data label",
+  "gen.rbac": "Roles & permissions matrix",
+  "gen.perm": "Permission",
+  "gen.audit": "Audit policy",
+  "gen.retention": "Retention",
+  "gen.rl": "Rate limits",
+  "gen.days": "days",
+  "gen.lateEntry": "Late-entry flag threshold",
 };
 
 export default en;

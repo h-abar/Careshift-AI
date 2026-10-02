@@ -867,6 +867,27 @@ const ar: Record<string, string> = {
   "calc.class.kpi": "مؤشر تشغيلي",
   "calc.class.prototype": "إعداد أولي",
   "auditAction.rules.export": "تصدير PDF لقواعد الحساب",
+  // ── B2 general rules ──
+  "gen.title": "القواعد والسياسات العامة",
+  "gen.sub": "سياسات تشغيلية مولّدة من إعدادات النظام ومصفوفة الصلاحيات",
+  "gen.prio": "سياسة أولوية المرضى",
+  "gen.prioNote": "الترتيب يستخدم مؤشرات مُتحققًا منها فقط؛ والحكم السريري يتقدّم دائمًا على القائمة.",
+  "gen.infoOnly": "تُعرض للاطلاع فقط — لا تُعيد الترتيب",
+  "gen.alert": "سياسة التنبيهات",
+  "gen.when": "المُفعِّل",
+  "gen.action": "الإجراء",
+  "gen.timers": "مؤقّتات الإقرار / المعاينة",
+  "gen.handoff": "سياسة التسليم",
+  "gen.escalation": "صيغة التصعيد",
+  "gen.data": "سياسة البيانات",
+  "gen.synthetic": "وسم البيانات الاصطناعية",
+  "gen.rbac": "مصفوفة الأدوار والصلاحيات",
+  "gen.perm": "الصلاحية",
+  "gen.audit": "سياسة التدقيق",
+  "gen.retention": "مدد الاحتفاظ",
+  "gen.rl": "حدود المعدل",
+  "gen.days": "يومًا",
+  "gen.lateEntry": "عتبة وسم الإدخال المتأخر",
 };
 
 export default ar;

@@ -2,6 +2,7 @@
  * Prompt B — governance APIs. Real DB (schema=test).
  * B1: calculation rules come from the KB with classifications, version
  *     history and attached references; PDF export is a real PDF.
+ * B2: RBAC matrix is derived from lib/permissions — never hand-typed.
  */
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { execSync } from "node:child_process";
@@ -23,6 +24,8 @@ import { GET as calcGet } from "@/app/api/rules/calculation/route";
 import { GET as calcPdf } from "@/app/api/rules/calculation/pdf/route";
 import { POST as loginPost } from "@/app/api/auth/login/route";
 import { diffJson } from "@/lib/governance";
+import { GET as generalGet } from "@/app/api/rules/general/route";
+import { ROLE_PERMISSIONS, PERMISSION_KEYS } from "@/lib/permissions";
 
 beforeAll(async () => {
   execSync("npx tsx scripts/deallocate.ts", {
@@ -105,3 +108,30 @@ describe("B1 calculation rules from the knowledge base", () => {
   });
 });
 
+
+describe("B2 general rules from config + RBAC", () => {
+  it("RBAC matrix matches lib/permissions exactly", async () => {
+    await loginAs("m.alotaibi", "Demo@5542");
+    const res = await generalGet();
+    expect(res.status).toBe(200);
+    const d = await res.json();
+    expect(d.rbac.permissions).toEqual(PERMISSION_KEYS);
+    expect(d.rbac.roles.sort()).toEqual(
+      Object.keys(ROLE_PERMISSIONS).sort(),
+    );
+    for (const role of d.rbac.roles) {
+      for (const p of d.rbac.permissions) {
+        expect(
+          d.rbac.matrix[role as keyof typeof ROLE_PERMISSIONS][p],
+        ).toBe(
+          ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS][
+            p as keyof (typeof ROLE_PERMISSIONS)[keyof typeof ROLE_PERMISSIONS]
+          ],
+        );
+      }
+    }
+    expect(d.prioritization.order.length).toBeGreaterThan(0);
+    expect(d.audit.retentionDays.audit).toBeGreaterThan(0);
+    expect(d.audit.lateEntryMinutes).toBeGreaterThan(0);
+  });
+});
