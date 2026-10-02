@@ -13,6 +13,7 @@ import { fmtSarK } from "@/lib/format";
 import type { PatientSnapshot } from "@/lib/aggregate";
 import type { Assignment } from "@/lib/types";
 import { useDoctorTasks } from "@/components/doctor-task-card";
+import { DoctorDecisionConsole } from "@/components/doctor-decision-console";
 import { NurseCockpit } from "@/components/nurse-cockpit";
 import { WardBedBoard } from "@/components/ward-bed-board";
 import {
@@ -310,100 +311,10 @@ function DoctorTasksCard() {
 
 /* ═══════════ E2 — Doctor home ═══════════ */
 function DoctorHome() {
-  const { t, lang } = useI18n();
-  const { user } = useAuth();
   const d = useHomeData();
   if (d.loading) return <Skeleton rows={5} />;
   if (d.error) return <ErrorState onRetry={d.refetch} />;
-  if (!user) return <Loading />;
-
-  // Department list: my assigned patients + every patient in my dept.
-  const dept = d.snaps
-    .filter((s) =>
-      d.assignments.some(
-        (a) =>
-          a.patientId === s.patient.id &&
-          (a.physicianId === user.id || a.dept === user.dept),
-      ),
-    )
-    .sort((a, b) => (a.priority?.sortKey ?? 0) - (b.priority?.sortKey ?? 0));
-  const deteriorations = dept.filter(
-    (s) =>
-      (s.priority && s.priority.tier >= 2) ||
-      s.priority?.info.nurseConcern,
-  );
-  const escalations = d.notifications.filter(
-    (n) => n.level === "critical" || n.level === "warning",
-  );
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-[#13304d] sm:text-2xl">
-          {t("home.doctorTitle")}
-        </h1>
-        <p className="mt-0.5 text-sm text-slate-600">
-          {lang === "ar" ? user.nameAr : user.nameEn} ·{" "}
-          {t(`userRole.${user.role}`)} · {t(`dept.${user.dept}`)}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label={t("home.deptPatients")} value={dept.length} />
-        <KpiCard
-          label={t("home.newDeteriorations")}
-          value={deteriorations.length}
-          accent="text-red-600"
-        />
-        <KpiCard
-          label={t("home.escalationsToMe")}
-          value={escalations.length}
-          accent="text-amber-700"
-        />
-        <KpiCard label={t("home.unread")} value={d.unread} accent="text-sky-700" />
-      </div>
-
-      {/* E6 — top widget: escalated alerts that stay open until decided */}
-      <DoctorTasksCard />
-
-      <Card>
-        <SectionTitle sub={t("home.whyHint")}>
-          {t("home.newDeteriorations")}
-        </SectionTitle>
-        {deteriorations.length === 0 ? (
-          <p className="py-4 text-center text-sm text-slate-600">
-            {t("my.nothing")}
-          </p>
-        ) : (
-          <div className="space-y-2.5">
-            {deteriorations.map((s) => (
-              <SnapRow key={s.patient.id} s={s} />
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <SectionTitle>{t("home.priorityList")}</SectionTitle>
-          <div className="space-y-2.5">
-            {dept.slice(0, 6).map((s) => (
-              <SnapRow key={s.patient.id} s={s} />
-            ))}
-          </div>
-          <Link
-            href="/patients"
-            className="mt-3 block text-center text-xs font-semibold text-[#0b7a8d] hover:underline"
-          >
-            {t("common.viewAll")} →
-          </Link>
-        </Card>
-        <AlertsCard userId={user.id} />
-      </div>
-
-      <AwaitingAccept userId={user.id} />
-    </div>
-  );
+  return <DoctorDecisionConsole snaps={d.snaps} />;
 }
 
 /* ═══════════ E2 — Charge nurse home (shift overview) ═══════════ */

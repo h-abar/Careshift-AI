@@ -9,6 +9,7 @@ import type { Assignment, HandoffRecord } from "@/lib/types";
 import { news2Score, news2Tier } from "@/lib/engines/priority";
 import { useToast } from "@/components/toast";
 import { Card, SectionTitle } from "@/components/ui";
+import { StoryRibbon } from "@/components/story-ribbon";
 
 interface NurseCockpitProps {
   snaps: PatientSnapshot[];
@@ -113,6 +114,9 @@ export function NurseCockpit({
 
   return (
     <div className="space-y-6">
+      {/* Story Ribbon */}
+      <StoryRibbon activeStep="alert" patientId="P-1042" patientName="نورة القحطاني" />
+
       {/* ══ 1. My Active Shift Bar ══ */}
       <div className="rounded-3xl border border-teal-500/20 bg-gradient-to-r from-[#0d2a4d] via-[#0b2440] to-[#081a2e] p-6 text-white shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -388,6 +392,10 @@ export function NurseCockpit({
                         <span className="font-mono font-semibold text-slate-700">
                           {step.dueInMin || 15} {isAr ? "دقيقة" : "min"}
                         </span>
+                        {" · "}
+                        <span className="font-semibold text-cyan-800 bg-cyan-100/80 px-2 py-0.5 rounded text-[10px]">
+                          {isAr ? "أمر من د. أحمد سالم 02:25" : "from Dr. Ahmed Salem 02:25"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -446,6 +454,15 @@ export function NurseCockpit({
           }}
         />
       )}
+      {/* ══ Floating + Vitals Action Button (G4) ══ */}
+      <button
+        type="button"
+        onClick={() => setVitalsPatient(myPatients[0] ?? snaps[0] ?? null)}
+        className="fixed bottom-6 start-6 z-40 flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-teal-600 via-teal-700 to-emerald-600 px-5 py-3.5 text-sm font-black text-white shadow-2xl hover:scale-105 hover:from-teal-500 hover:to-emerald-500 transition-all border border-white/20 active:scale-95 cursor-pointer ring-4 ring-teal-500/20"
+      >
+        <span className="text-xl">🫀</span>
+        <span>{isAr ? "+ تسجيل علامات حيوية (NEWS2)" : "+ Record Vitals (NEWS2)"}</span>
+      </button>
     </div>
   );
 }
@@ -528,8 +545,8 @@ function QuickVitalsModal({
       if (resJson.crossedUp || isUrgent || isEmergency) {
         toast(
           isAr
-            ? `⚠️ تم تسجيل العلامات وحساب NEWS2 = ${computedScore}. تم فتح تكليف طبي عاجل للطبيب المعالج تلقائياً!`
-            : `⚠️ Recorded vitals: NEWS2 = ${computedScore}. Urgent Doctor Action Task opened automatically!`,
+            ? `⚠️ تم تسجيل العلامات وحساب NEWS2 = ${computedScore} — تم إشعار الطبيب المعالج تلقائياً: د. أحمد سالم (فتح تكليف عاجل)`
+            : `⚠️ Recorded vitals: NEWS2 = ${computedScore} — Doctor notified: Dr. Ahmed Salem (Urgent Decision Task opened)`,
           "error",
         );
       } else {
