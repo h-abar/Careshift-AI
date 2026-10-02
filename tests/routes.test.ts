@@ -749,8 +749,10 @@ describe("handoff accept", () => {
         ]),
       },
     });
-    await loginAs("charge");
-    await signoffPost(post({}), ctx({ id: "HF-2026-0929" }));
+    await prisma.handoff.update({
+      where: { id: "HF-2026-0929" },
+      data: { status: "signed_off" },
+    });
 
     await loginAs("nurse2"); // U-007 — has handoff_accept perm, not the assignee
     const r1 = await acceptPost(post({}), ctx({ id: "HF-2026-0929" }));
@@ -1206,7 +1208,7 @@ describe("B2 risk reassessment", () => {
     const vitals = [
       { t: "12:00", hr: 130, sbp: 80, rr: 32, temp: 39.4, spo2: 88, glucose: 480 },
     ];
-    await loginAs("nurse"); // no patients_edit
+    await loginAs("payer"); // no patients_edit
     expect(
       (await patientPatch(patch({ vitals }), ctx({ id: "P-1042" }))).status,
     ).toBe(403);

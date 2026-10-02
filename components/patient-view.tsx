@@ -29,6 +29,7 @@ import {
 import type { JourneyKind } from "@/lib/types";
 import { EventTimeline } from "@/components/event-timeline";
 import { DoctorTaskCard } from "@/components/doctor-task-card";
+import { PatientMedicalRecord } from "@/components/patient-medical-record";
 
 const KIND_ICON: Record<JourneyKind, string> = {
   admission: "🏥",
@@ -47,6 +48,7 @@ export function PatientView({ patientId }: { patientId: string }) {
   const { can } = useAuth();
   const toast = useToast();
   const [reassessing, setReassessing] = useState(false);
+  const [viewMode, setViewMode] = useState<"medical_record" | "ai_journey">("medical_record");
   if (error) return <ErrorState onRetry={refetch} />;
   if (!data) return <Skeleton rows={6} />;
   const {
@@ -133,10 +135,46 @@ export function PatientView({ patientId }: { patientId: string }) {
         </div>
       </div>
 
-      {/* E6 — open doctor action task for this patient (doctor only) */}
-      <DoctorTaskCard patientId={p.id} onChanged={refetch} />
+      {/* Mode Switcher: Unified Medical Record vs AI Journey */}
+      <div className="flex items-center gap-2 rounded-2xl bg-slate-100 p-1.5 w-fit">
+        <button
+          onClick={() => setViewMode("medical_record")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+            viewMode === "medical_record"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <span>📋</span>
+          <span>{lang === "ar" ? "السجل الطبي الموحد (EHR)" : "Unified Medical Record (EHR)"}</span>
+        </button>
+        <button
+          onClick={() => setViewMode("ai_journey")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+            viewMode === "ai_journey"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <span>🧠</span>
+          <span>{lang === "ar" ? "مسار الذكاء الاصطناعي والمحاكي" : "Clinical AI & Journey Simulator"}</span>
+        </button>
+      </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      {viewMode === "medical_record" ? (
+        <PatientMedicalRecord
+          patient={p}
+          risk={risk}
+          plan={plan}
+          journey={journey}
+          insurance={ins}
+          claim={linkedClaim}
+          onRefetch={refetch}
+        />
+      ) : (
+        <>
+          <DoctorTaskCard patientId={p.id} onChanged={refetch} />
+          <div className="grid gap-4 lg:grid-cols-3">
         {/* ── Journey timeline ── */}
         <Card className="lg:col-span-1">
           <SectionTitle sub={t(`condition.${risk.conditionKey}`)}>
@@ -594,6 +632,8 @@ export function PatientView({ patientId }: { patientId: string }) {
 
       {/* C2 — hash-chained event timeline */}
       <EventTimeline patientId={p.id} />
+        </>
+      )}
     </div>
   );
 }

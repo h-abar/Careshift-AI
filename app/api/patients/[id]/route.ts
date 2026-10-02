@@ -69,6 +69,18 @@ export const GET = handle(
       },
       req,
     );
+    await audit(
+      {
+        userId: auth.user.id,
+        action: "patient.chart_view",
+        entityType: "patient",
+        entityId: id,
+        sessionId: auth.sid,
+        prev: { role: auth.user.role },
+        next: { openedAt: new Date().toISOString() },
+      },
+      req,
+    );
 
     return ok({
       patient: snap.patient,

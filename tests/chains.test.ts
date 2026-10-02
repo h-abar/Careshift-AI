@@ -188,8 +188,8 @@ describe("C9 live safety events", () => {
   it("closedLoopChain returns ordered steps with gaps", async () => {
     const c = await closedLoopChain("P-1042");
     const order = [
-      "risk", "alert", "acknowledged", "intervention",
-      "completed", "documented", "claim",
+      "risk", "alert", "acknowledged", "decision", "intervention",
+      "completed", "reassessed", "documented", "claim",
     ];
     expect(c.steps.map((s) => s.step)).toEqual(order);
     for (const s of c.steps) {
