@@ -37,6 +37,8 @@ interface Auth {
   stopSwitch: () => Promise<boolean>;
   /** PDPL demo-data disclaimer — records consentAt on the user. */
   consent: () => Promise<boolean>;
+  /** B3 — accepts the current terms version; records termsVersion+timestamp. */
+  acceptTerms: () => Promise<boolean>;
   can: (perm: PermKey) => boolean;
 }
 
@@ -50,6 +52,7 @@ const Ctx = createContext<Auth>({
   switchUser: async () => false,
   stopSwitch: async () => false,
   consent: async () => false,
+  acceptTerms: async () => false,
   can: () => false,
 });
 
@@ -138,6 +141,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const acceptTerms = useCallback(async () => {
+    try {
+      const d = await postJson<{ user: SessionUser; version: string }>(
+        "/api/terms/accept",
+        {},
+      );
+      setUser(d.user);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const value = useMemo<Auth>(
     () => ({
       user,
@@ -149,9 +165,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       switchUser,
       stopSwitch,
       consent,
+      acceptTerms,
       can: (p) => (user ? can(user.role, p) : false),
     }),
-    [user, impersonator, loading, login, logout, switchUser, stopSwitch, consent],
+    [user, impersonator, loading, login, logout, switchUser, stopSwitch, consent, acceptTerms],
   );
 
   if (loading) return null;

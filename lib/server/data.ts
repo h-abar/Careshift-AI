@@ -52,6 +52,7 @@ export function toUser(r: {
   roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
   email: string; phone: string; employeeId: string; status: string;
   consentAt: Date | null; lastLoginAt: Date | null; createdAt: Date;
+  termsVersion: string;
 }): Omit<User, "password"> {
   return {
     id: r.id, username: r.username, nameEn: r.nameEn, nameAr: r.nameAr,
@@ -59,6 +60,7 @@ export function toUser(r: {
     specialty: { en: r.specialtyEn, ar: r.specialtyAr },
     email: r.email, phone: r.phone, employeeId: r.employeeId,
     status: r.status as "active" | "suspended",
+    termsVersion: r.termsVersion,
     consentAt: r.consentAt?.toISOString() ?? null,
     lastLoginMin: r.lastLoginAt
       ? Math.max(0, Math.round((Date.now() - r.lastLoginAt.getTime()) / 60000))

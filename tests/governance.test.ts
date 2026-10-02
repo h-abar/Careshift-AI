@@ -3,6 +3,7 @@
  * B1: calculation rules come from the KB with classifications, version
  *     history and attached references; PDF export is a real PDF.
  * B2: RBAC matrix is derived from lib/permissions — never hand-typed.
+ * B3: versioned terms — accept records version+timestamp, audited.
  */
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { execSync } from "node:child_process";
@@ -26,6 +27,11 @@ import { POST as loginPost } from "@/app/api/auth/login/route";
 import { diffJson } from "@/lib/governance";
 import { GET as generalGet } from "@/app/api/rules/general/route";
 import { ROLE_PERMISSIONS, PERMISSION_KEYS } from "@/lib/permissions";
+import { GET as termsGet } from "@/app/api/terms/route";
+import { POST as termsAccept } from "@/app/api/terms/accept/route";
+import { TERMS_VERSION, TERMS_SECTIONS } from "@/lib/terms";
+import en from "@/lib/i18n/en";
+import ar from "@/lib/i18n/ar";
 
 beforeAll(async () => {
   execSync("npx tsx scripts/deallocate.ts", {
@@ -133,5 +139,41 @@ describe("B2 general rules from config + RBAC", () => {
     expect(d.prioritization.order.length).toBeGreaterThan(0);
     expect(d.audit.retentionDays.audit).toBeGreaterThan(0);
     expect(d.audit.lateEntryMinutes).toBeGreaterThan(0);
+  });
+});
+
+describe("B3 versioned terms acceptance", () => {
+  it("GET is public and returns the current version + sections", async () => {
+    cookieStore.clear();
+    const res = await termsGet();
+    expect(res.status).toBe(200);
+    const d = await res.json();
+    expect(d.version).toBe(TERMS_VERSION);
+    expect(d.sections).toEqual(TERMS_SECTIONS);
+    for (const s of TERMS_SECTIONS) {
+      expect(en[`terms.s.${s}.title`]).toBeTruthy();
+      expect(ar[`terms.s.${s}.title`]).toBeTruthy();
+      expect(en[`terms.s.${s}.body`]).toBeTruthy();
+      expect(ar[`terms.s.${s}.body`]).toBeTruthy();
+    }
+  });
+
+  it("accept records version+timestamp and writes an audit row", async () => {
+    await loginAs("m.alotaibi", "Demo@5542");
+    const res = await termsAccept();
+    expect(res.status).toBe(200);
+    const d = await res.json();
+    expect(d.version).toBe(TERMS_VERSION);
+    expect(d.user.termsVersion).toBe(TERMS_VERSION);
+    const row = await prisma.user.findUniqueOrThrow({
+      where: { username: "m.alotaibi" },
+    });
+    expect(row.termsVersion).toBe(TERMS_VERSION);
+    expect(row.termsAcceptedAt).toBeTruthy();
+    const a = await prisma.auditLog.findFirst({
+      where: { action: "terms.accept", entityId: row.id },
+    });
+    expect(a).toBeTruthy();
+    expect(JSON.parse(a!.nextJson!).version).toBe(TERMS_VERSION);
   });
 });

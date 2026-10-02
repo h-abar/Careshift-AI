@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import { useAuth } from "@/lib/auth";
+import { TERMS_VERSION } from "@/lib/terms";
 import type { PermKey } from "@/lib/permissions";
 import { Icon } from "@/components/icons";
 import { NotificationCenter } from "@/components/notification-center";
@@ -38,7 +39,7 @@ const MOBILE_NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, toggle } = useI18n();
-  const { user, impersonator, stopSwitch, consent, can } = useAuth();
+  const { user, impersonator, stopSwitch, consent, acceptTerms, can } = useAuth();
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
 
@@ -51,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Gate the whole workspace behind the login screen — except the public demo.
   if (!user) {
-    if (pathname === "/demo")
+    if (pathname === "/demo" || pathname === "/terms")
       return (
         <main className="min-h-screen bg-[#f4f7fa] px-4 py-6 sm:px-6">{children}</main>
       );
@@ -168,6 +169,41 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               {t("consent.accept")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── B3 terms gate — after consent, blocks until the current terms
+           version is accepted; re-prompts when TERMS_VERSION changes. ── */}
+      {user.consentAt && user.termsVersion !== TERMS_VERSION && !impersonator && pathname !== "/terms" && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="terms-gate-title"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#13304d]/50 p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 id="terms-gate-title" className="text-base font-bold text-[#13304d]">
+              {t("terms.gateTitle")}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {t("terms.gateBody")}
+            </p>
+            <p className="mt-2 text-[11px] text-slate-400">v{TERMS_VERSION}</p>
+            <div className="mt-4 flex gap-2">
+              <Link
+                href="/terms"
+                className="flex-1 rounded-xl border border-[#e2e9f2] py-2.5 text-center text-sm font-bold text-slate-600 hover:border-[#0e9bb5]/40"
+              >
+                {t("terms.read")}
+              </Link>
+              <button
+                onClick={acceptTerms}
+                className="flex-1 rounded-xl bg-[#0b7a8d] py-2.5 text-sm font-bold text-white hover:bg-[#075e6e]"
+              >
+                {t("terms.accept")}
+              </button>
+            </div>
           </div>
         </div>
       )}

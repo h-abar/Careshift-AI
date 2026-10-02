@@ -163,6 +163,8 @@ export interface User {
   status: "active" | "suspended";
   /** ISO timestamp of demo-data consent acknowledgement; null = pending. */
   consentAt: string | null;
+  /** B3 — accepted terms version ("" = never accepted → re-prompt). */
+  termsVersion: string;
   lastLoginMin: number | null; // minutes ago; null = never logged in
   createdAt: string;
 }

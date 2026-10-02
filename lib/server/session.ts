@@ -104,6 +104,7 @@ function toSessionUser(r: {
   roleKey: string; dept: string; specialtyEn: string; specialtyAr: string;
   email: string; phone: string; employeeId: string; status: string;
   consentAt: Date | null; lastLoginAt: Date | null; createdAt: Date;
+  termsVersion: string;
 }): Omit<User, "password"> {
   return {
     id: r.id, username: r.username, nameEn: r.nameEn, nameAr: r.nameAr,
@@ -112,6 +113,7 @@ function toSessionUser(r: {
     email: r.email, phone: r.phone, employeeId: r.employeeId,
     status: r.status as "active" | "suspended",
     consentAt: r.consentAt?.toISOString() ?? null,
+    termsVersion: r.termsVersion,
     lastLoginMin: r.lastLoginAt
       ? Math.max(0, Math.round((Date.now() - r.lastLoginAt.getTime()) / 60000))
       : null,

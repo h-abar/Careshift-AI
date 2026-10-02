@@ -34,6 +34,8 @@ model User {
   employeeId String    @unique
   status     String    // active | suspended
   consentAt  DateTime? // PDPL: demo-data disclaimer acknowledged
+  termsVersion String  @default("") // B3: accepted terms version
+  termsAcceptedAt DateTime?         // B3: acceptance timestamp
   lastLoginAt DateTime?
   createdAt  DateTime  @default(now())
   role       Role      @relation(fields: [roleKey], references: [key])
