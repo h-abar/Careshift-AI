@@ -916,6 +916,25 @@ const en: Record<string, string> = {
   "terms.s.contact.title": "8. Contact",
   "terms.s.contact.body": "Questions about these terms: open an issue in the project repository (contact placeholder — to be replaced before any deployment).",
   "auditAction.terms.accept": "Accepted the terms of use",
+  // ── B4 scientific references ──
+  "refsci.title": "Scientific references",
+  "refsci.sub": "Every citation the engines rely on — grouped by feature, searchable",
+  "refsci.all": "All",
+  "refsci.usedBy": "Used by",
+  "refsci.limTitle": "Limitations and unverified items",
+  "refsci.lim.nphies": "NPHIES FS IG 1.0.0 is marked notForPublication — terminology validation is partial; NPHIES applies its own business rules.",
+  "refsci.lim.mimic": "MIMIC-IV is a planned validation dataset — the running demo uses simulated seed data only.",
+  "refsci.lim.codes": "SBS / medication code systems are public fragments only; missing codes are flagged, never guessed.",
+  "ref.kind.pmid": "Journal article (PubMed)",
+  "ref.kind.doi": "Journal article (DOI)",
+  "ref.kind.url": "Official source / guideline",
+  "feat.early-warning": "Early warning",
+  "feat.sepsis": "Sepsis",
+  "feat.handoff": "Handoff",
+  "feat.nursing-care": "Nursing care",
+  "feat.decision-support": "Decision support & alert fatigue",
+  "feat.claims": "Claims & documentation",
+  "feat.other": "Other / datasets & terminology",
 };
 
 export default en;

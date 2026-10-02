@@ -4,6 +4,7 @@
  *     history and attached references; PDF export is a real PDF.
  * B2: RBAC matrix is derived from lib/permissions — never hand-typed.
  * B3: versioned terms — accept records version+timestamp, audited.
+ * B4: scientific references grouped by feature + PDF/BibTeX/RIS export.
  */
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { execSync } from "node:child_process";
@@ -30,6 +31,8 @@ import { ROLE_PERMISSIONS, PERMISSION_KEYS } from "@/lib/permissions";
 import { GET as termsGet } from "@/app/api/terms/route";
 import { POST as termsAccept } from "@/app/api/terms/accept/route";
 import { TERMS_VERSION, TERMS_SECTIONS } from "@/lib/terms";
+import { GET as sciGet } from "@/app/api/references/scientific/route";
+import { GET as sciExport } from "@/app/api/references/scientific/export/route";
 import en from "@/lib/i18n/en";
 import ar from "@/lib/i18n/ar";
 
@@ -175,5 +178,58 @@ describe("B3 versioned terms acceptance", () => {
     });
     expect(a).toBeTruthy();
     expect(JSON.parse(a!.nextJson!).version).toBe(TERMS_VERSION);
+  });
+});
+
+describe("B4 scientific references", () => {
+  it("groups every reference under exactly one feature", async () => {
+    await loginAs("m.alotaibi", "Demo@5542");
+    const res = await sciGet();
+    expect(res.status).toBe(200);
+    const d = await res.json();
+    const total = await prisma.reference.count();
+    expect(d.total).toBe(total);
+    const seen = new Set<string>();
+    for (const g of d.groups) {
+      for (const r of g.refs) {
+        expect(seen.has(r.key)).toBe(false); // no double-grouping
+        seen.add(r.key);
+      }
+    }
+    expect(seen.size).toBe(total);
+    // a rule-attached reference lists its citing rule
+    const flat = d.groups.flatMap(
+      (g: { refs: { key: string; rules: { key: string }[] }[] }) => g.refs,
+    );
+    const smith = flat.find(
+      (r: { key: string }) => r.key === "smith2013",
+    );
+    expect(smith.rules.length).toBeGreaterThan(0);
+  });
+
+  it("exports PDF, BibTeX and RIS", async () => {
+    await loginAs("m.alotaibi", "Demo@5542");
+    const pdf = await sciExport(
+      new Request("http://test/api/x?fmt=pdf"),
+    );
+    expect(pdf.status).toBe(200);
+    expect(
+      Buffer.from(await pdf.arrayBuffer())
+        .subarray(0, 5)
+        .toString("latin1"),
+    ).toBe("%PDF-");
+
+    const bib = await sciExport(
+      new Request("http://test/api/x?fmt=bib"),
+    );
+    const bibText = await bib.text();
+    expect(bibText).toContain("@article{smith2013");
+
+    const ris = await sciExport(
+      new Request("http://test/api/x?fmt=ris"),
+    );
+    const risText = await ris.text();
+    expect(risText).toContain("TY  - JOUR");
+    expect(risText).toContain("ER  -");
   });
 });

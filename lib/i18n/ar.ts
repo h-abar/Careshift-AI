@@ -916,6 +916,25 @@ const ar: Record<string, string> = {
   "terms.s.contact.title": "٨. التواصل",
   "terms.s.contact.body": "لأسئلة حول هذه الشروط: افتح مشكلة في مستودع المشروع (عنصر نائب للتواصل — يُستبدل قبل أي نشر).",
   "auditAction.terms.accept": "قبول شروط الاستخدام",
+  // ── B4 scientific references ──
+  "refsci.title": "المراجع العلمية",
+  "refsci.sub": "كل مرجع تعتمد عليه المحركات — مجمّعة بحسب الميزة وقابلة للبحث",
+  "refsci.all": "الكل",
+  "refsci.usedBy": "مستخدم في",
+  "refsci.limTitle": "القيود والعناصر غير المُتحقق منها",
+  "refsci.lim.nphies": "دليل NPHIES FS IG 1.0.0 موسوم notForPublication — تحقق المصطلحات جزئي؛ وتطبّق نفيس قواعد عملها الخاصة.",
+  "refsci.lim.mimic": "MIMIC-IV مجموعة بيانات تحقق مخطط لها — الديمو الحالي يعمل على بيانات محاكاة مزروعة فقط.",
+  "refsci.lim.codes": "أنظمة ترميز SBS والأدوية أجزاء عامة فقط؛ الأكواد الناقصة تُوسم ولا تُخمَّن أبدًا.",
+  "ref.kind.pmid": "مقال علمي (PubMed)",
+  "ref.kind.doi": "مقال علمي (DOI)",
+  "ref.kind.url": "مصدر رسمي / إرشادات",
+  "feat.early-warning": "الإنذار المبكر",
+  "feat.sepsis": "الإنتان",
+  "feat.handoff": "التسليم",
+  "feat.nursing-care": "الرعاية التمريضية",
+  "feat.decision-support": "دعم القرار وإجهاد التنبيهات",
+  "feat.claims": "المطالبات والتوثيق",
+  "feat.other": "أخرى / مجموعات بيانات ومصطلحات",
 };
 
 export default ar;
