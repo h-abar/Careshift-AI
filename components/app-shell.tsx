@@ -93,7 +93,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               {lang === "ar" ? user.nameAr : user.nameEn}
             </div>
             <div className="truncate text-[10px] text-slate-600">
-              {t(`userRole.${user.role}`)} · {t(`dept.${user.dept}`)}
+              {user.role === "payer"
+                ? (lang === "ar" ? "مدقق شركة التأمين · مراجعة المطالبات" : "Payer Adjudicator · Claims Review")
+                : `${t(`userRole.${user.role}`)} · ${t(`dept.${user.dept}`)}`}
             </div>
           </div>
         </div>
@@ -232,9 +234,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* E3 — tenant badge (hospital name + Simulated) + role + shift */}
           <div className="hidden items-center gap-2 rounded-lg border border-[#e2e9f2] bg-[#f8fafc] px-3 py-1.5 md:flex">
             <Icon name="home" className="h-4 w-4 text-[#0b7a8d]" />
-            <span className="text-xs font-semibold text-[#13304d]">
-              {tenant ? (lang === "ar" ? tenant.nameAr : tenant.nameEn) : t("dept.hospital")}
-            </span>
+            {user.role === "payer" ? (
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#0b7a8d]">
+                <span>🛡️</span>
+                <span>{lang === "ar" ? "شركة بوبا / التعاونية للتأمين (NPHIES Gateway)" : "Bupa & Tawuniya Insurance (NPHIES)"}</span>
+              </span>
+            ) : (
+              <span className="text-xs font-semibold text-[#13304d]">
+                {tenant ? (lang === "ar" ? tenant.nameAr : tenant.nameEn) : t("dept.hospital")}
+              </span>
+            )}
             {(tenant?.simulated ?? true) && (
               <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
                 {t("ev.simulated")}
@@ -242,7 +251,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
             <span className="text-xs text-slate-600">·</span>
             <span className="text-xs text-slate-600">
-              {t(`userRole.${user.role}`)} · {t(`hf.shift.${shiftKey}`)}
+              {user.role === "payer"
+                ? (lang === "ar" ? "حساب الدافع المعتمد · مدقق طبي أول" : "Verified Payer · Senior Adjudicator")
+                : `${t(`userRole.${user.role}`)} · ${t(`hf.shift.${shiftKey}`)}`}
             </span>
           </div>
 

@@ -17,6 +17,7 @@ import { DoctorDecisionConsole } from "@/components/doctor-decision-console";
 import { NurseCockpit } from "@/components/nurse-cockpit";
 import { WardBedBoard } from "@/components/ward-bed-board";
 import { StoryRibbon } from "@/components/story-ribbon";
+import { PayerConsole } from "@/components/payer-console";
 import {
   Card,
   ErrorState,
@@ -51,6 +52,7 @@ export default function Home() {
   if (user.role === "charge_nurse") return <ChargeHome />;
   if (user.role === "admin" || user.role === "hospital_admin")
     return <CommandCenter />;
+  if (user.role === "payer") return <PayerConsole />;
   if (!can("patients_view")) return <OversightHome />;
   return <MyWork />;
 }
