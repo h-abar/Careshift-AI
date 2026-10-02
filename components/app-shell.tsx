@@ -12,6 +12,7 @@ import { NotificationCenter } from "@/components/notification-center";
 import { UserMenu } from "@/components/user-menu";
 import { LoginScreen } from "@/components/login-screen";
 import { Avatar } from "@/components/ui";
+import { DemoTourDock } from "@/components/demo-tour-dock";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, toggle } = useI18n();
@@ -291,6 +292,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </p>
           <DataFreshness />
         </footer>
+        <DemoTourDock />
       </div>
 
       {/* ── Mobile bottom navigation ── */}
