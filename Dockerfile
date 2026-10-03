@@ -32,6 +32,13 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+# Seed runtime deps: demo dataset + pooled-connection URL helper + KB bundle.
+COPY --from=builder /app/lib ./lib
+COPY --from=builder /app/scripts/bouncer-url.ts ./scripts/bouncer-url.ts
+COPY --from=builder /app/knowledge ./knowledge
+# The traced prisma.config.ts imports dotenv which is not shipped in the
+# runner stage; migrate deploy only needs the schema + DATABASE_URL env.
+RUN rm -f prisma.config.ts
 # B5 — generated artifacts the technical-references API reads at runtime
 COPY --from=builder /app/docs/sbom.json ./docs/sbom.json
 COPY --from=builder /app/docs/audit-summary.json ./docs/audit-summary.json
