@@ -113,6 +113,14 @@ function applySecurityHeaders(res: NextResponse, nonce: string, isApi: boolean) 
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // Canonical host: apex → www (Railway serves both; pick one for SEO/cookies).
+  if (req.nextUrl.hostname === "careshift-ai.com") {
+    const url = req.nextUrl.clone();
+    url.hostname = "www.careshift-ai.com";
+    return NextResponse.redirect(url, 308);
+  }
+
   const isApi = pathname.startsWith("/api");
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
