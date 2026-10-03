@@ -37,10 +37,8 @@ COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/scripts/bouncer-url.ts ./scripts/bouncer-url.ts
 COPY --from=builder /app/knowledge ./knowledge
 # Standalone tracing only ships deps reachable from server code — the seed
-# script also needs bcryptjs and the generated Prisma client.
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# script pulls lib/server/* transitively, so merge in the full install.
+COPY --from=builder /app/node_modules ./node_modules
 # The traced prisma.config.ts imports dotenv which is not shipped in the
 # runner stage; migrate deploy only needs the schema + DATABASE_URL env.
 RUN rm -f prisma.config.ts
